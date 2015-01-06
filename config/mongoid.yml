@@ -1,0 +1,6 @@
+development:
+  sessions:
+    default:
+      database: snailmail
+      hosts:
+        - localhost:27017
