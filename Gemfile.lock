@@ -1,23 +1,32 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (2.3.18)
+    activemodel (3.2.21)
+      activesupport (= 3.2.21)
+      builder (~> 3.0.0)
+    activesupport (3.2.21)
+      i18n (~> 0.6, >= 0.6.4)
+      multi_json (~> 1.0)
     addressable (2.3.6)
     ansi (1.4.3)
-    bson (1.2.4)
-    builder (3.2.2)
+    bson (1.11.1)
+    bson_ext (1.11.1)
+      bson (~> 1.11.1)
+    builder (3.0.4)
     coderay (1.1.0)
     crack (0.4.2)
       safe_yaml (~> 1.0.0)
     daemons (1.1.9)
-    durran-validatable (2.0.1)
     eventmachine (1.0.4)
     hashie (3.3.2)
     httparty (0.13.3)
       json (~> 1.8)
       multi_xml (>= 0.5.2)
+    i18n (0.7.0)
+    iconv (1.0.4)
     jsmin (1.0.1)
     json (1.8.1)
+    kgio (2.9.2)
     method_source (0.8.2)
     minitest (4.7.5)
     minitest-reporters (0.14.24)
@@ -25,15 +34,15 @@ GEM
       builder
       minitest (>= 2.12, < 5.0)
       powerbar
-    mongo (1.2.4)
-      bson (>= 1.2.4)
-    mongoid (1.9.5)
-      activesupport (< 3.0.0)
-      bson (~> 1.2.1)
-      durran-validatable (>= 2.0.1)
-      mongo (~> 1.2.1)
-      will_paginate (< 2.9)
+    mongoid (3.1.6)
+      activemodel (~> 3.2)
+      moped (~> 1.4)
+      origin (~> 1.0)
+      tzinfo (~> 0.3.29)
+    moped (1.5.2)
+    multi_json (1.10.1)
     multi_xml (0.5.5)
+    origin (1.1.0)
     powerbar (1.0.11)
       ansi (~> 1.4.0)
       hashie (>= 1.1.0)
@@ -46,6 +55,7 @@ GEM
       rack
     rack-test (0.6.2)
       rack (>= 1.0)
+    raindrops (0.13.0)
     rake (10.4.2)
     safe_yaml (1.0.4)
     sinatra (1.4.5)
@@ -66,23 +76,32 @@ GEM
     turn (0.9.7)
       ansi
       minitest (~> 4)
+    tzinfo (0.3.42)
+    unicorn (4.8.3)
+      kgio (~> 2.6)
+      rack
+      raindrops (~> 0.7)
     webmock (1.20.4)
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
-    will_paginate (2.3.16)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
+  bson_ext
   httparty
+  iconv (~> 1.0.3)
+  json
   minitest-reporters
-  mongoid
+  mongoid (~> 3.1.6)
   pry
   rack
   rake
   sinatra
   sinatra-assetpack (= 0.1.5)
   thin
+  tilt (~> 1.4.1)
   turn
+  unicorn
   webmock

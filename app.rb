@@ -27,7 +27,7 @@ post '/user/:id/mail/new' do
   @user = SnailMail::User.find(params[:id])
   
   @message = SnailMail::Message.create!({
-    id: SecureRandom.uuid
+    id: SecureRandom.uuid,
     from: @user.id,
     to: params["to"],
     content: params["content"],
