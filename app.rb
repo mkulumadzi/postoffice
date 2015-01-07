@@ -17,22 +17,10 @@ post '/person/new' do
     zip: data["zip"]
   })
 
-  status 201
+  person_link = "http://localhost:9292/person/id/#{person.id}"
+  headers = { "location" => person_link }
 
-end
-
-post '/test' do
-
-  person = SnailMail::Person.create!({
-      username: "test",
-      name: "Test",
-      address1: "here",
-      city: "there",
-      state: "somewhere",
-      zip: "00000"
-    })
-
-    status 201
+  [201, headers, nil]
 
 end
 

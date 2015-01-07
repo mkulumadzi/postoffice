@@ -23,27 +23,30 @@ describe '/person/new' do
 	describe 'post /person/new' do
 
 		before do
-			@data = JSON.prase("{'username':'ewaters'}")
+			@data = '{"username":"kasabian", "name":"Kasabian"}'
 		end
 
-		it 'must process the json body as parameters' do
-			post ('/person/new', @data)
-			json_parse(last_response.body).must_equal "Foo"
+		it 'must return a 201 status code' do
+			post '/person/new', @data	
+			last_response.status.must_equal 201
+		end
+
+		it 'must return an empty body' do
+			post '/person/new', @data
+			last_response.body.must_equal ""
+		end
+
+		it 'must include a link to the person in the header' do
+			post '/person/new', @data
+			assert_match(/http:\/\/localhost\:9292\/person\/id\/\w{24}/, last_response.header["location"])
 		end
 
 	end
 
 end
 
-describe 'test endpoint' do
+describe '/person/id/:id' do
 
-	describe 'post /test' do
-
-		it 'must return a 201 status code' do
-			post '/test'
-			last_response.status.must_equal 201
-		end
-
-	end
+	
 
 end
