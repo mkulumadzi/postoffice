@@ -25,8 +25,16 @@ post '/person/new' do
 end
 
 get '/person/id/:id' do
-  # @person = SnailMail::Person.find(params[:id])
-  # @messages = SnailMail::Message.where(from: @person.id).to_a
+  begin
+    person = SnailMail::Person.find_by(_id: params[:id])
+    status = 200
+    response_body = person.as_document.as_json.to_s
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+    response_body = nil
+  end
+
+  [status, response_body]
 end
 
 get '/people' do

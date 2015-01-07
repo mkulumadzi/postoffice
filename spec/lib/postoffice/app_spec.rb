@@ -47,6 +47,42 @@ end
 
 describe '/person/id/:id' do
 
-	
+	describe 'get /person/id/:id' do
+
+		before do
+			data = '{"username":"kasabian", "name":"Kasabian"}'
+			post '/person/new', data
+			@location = last_response.headers["location"]
+			@id = @location.split('/')[-1]
+		end
+
+		it 'must return a 200 status code' do
+			get "/person/id/#{@id}"
+			last_response.status.must_equal 200
+		end
+
+		# To do: improve this test...
+		it 'must return a JSON document for the person in the response body' do
+			get "/person/id/#{@id}"
+			last_response.body.must_include "Kasabian"
+		end
+
+	end
+
+	describe 'resource not found' do
+
+		before do
+			get "person/id/abc"
+		end
+
+		it 'must return 404 if the person is not found' do
+			last_response.status.must_equal 404
+		end
+
+		it 'must return an empty response body if the person is not found' do
+			last_response.body.must_equal ""
+		end
+
+	end
 
 end
