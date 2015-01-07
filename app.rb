@@ -28,17 +28,24 @@ get '/person/id/:id' do
   begin
     person = SnailMail::Person.find_by(_id: params[:id])
     status = 200
+
+    #To Do: Figure out a way to return a JSON document, not a string representation of one
     response_body = person.as_document.as_json.to_s
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
     response_body = nil
   end
-
+  
   [status, response_body]
 end
 
 get '/people' do
-  # @people = SnailMail::Person.all.to_a
+  people = ""
+  SnailMail::Person.each do |person|
+    people << person.as_document.as_json.to_s
+  end
+  
+  [200, people]
 end
 
 post '/person/:id/mail/new' do

@@ -26,6 +26,10 @@ describe '/person/new' do
 			@data = '{"username":"kasabian", "name":"Kasabian"}'
 		end
 
+		# after do
+		# 	SnailMail::Person.delete_all
+		# end
+
 		it 'must return a 201 status code' do
 			post '/person/new', @data	
 			last_response.status.must_equal 201
@@ -83,6 +87,21 @@ describe '/person/id/:id' do
 			last_response.body.must_equal ""
 		end
 
+	end
+
+end
+
+describe '/people' do
+
+	it 'must return a 200 status code' do
+		get '/people'
+		last_response.status.must_equal 200
+	end
+
+	# To do: improve this test...
+	it 'must return a collection with all of the people' do
+		get '/people'
+		last_response.body.must_include "_id"
 	end
 
 end
