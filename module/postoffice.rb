@@ -4,6 +4,7 @@ lib_path = File.expand_path('../', __FILE__)
 
 Bundler.require(:default)
 
+ENV['RACK_ENV'] = 'development'
 Mongoid.load!('config/mongoid.yml')
 
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each do |file|

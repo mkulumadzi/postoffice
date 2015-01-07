@@ -10,9 +10,5 @@ module SnailMail
 		field :state, type: String
 		field :zip, type: String
 
-		def self.validate(name)
-			self.all.map { |person| person.name }.include?(name)
-		end
-
 	end
 end

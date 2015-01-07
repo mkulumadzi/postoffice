@@ -1,5 +1,6 @@
 # Load the main file
 require_relative '../module/postoffice'
+require_relative '../app'
 
 # Dependencies
 require 'minitest/autorun'
@@ -9,10 +10,9 @@ require 'rack/test'
 require 'bundler/setup'
 require 'rubygems'
 require 'mongoid'
+require 'mocha/setup'
 
 Bundler.require(:default)
-
-Mongoid.load!('config/mongoid.yml')
 
 #Minitest reporter
 reporter_options = { color: true}

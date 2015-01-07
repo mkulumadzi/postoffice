@@ -1,6 +1,6 @@
 development:
   sessions:
     default:
-      database: snailmail
+      database: postoffice
       hosts:
         - localhost:27017

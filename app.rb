@@ -1,19 +1,39 @@
 require_relative 'module/postoffice'
 
 get '/' do
+  "Hello World!"
 end
 
 post '/person/new' do
-  content_type :json
+
+  data = JSON.parse request.body.read
 
   person = SnailMail::Person.create!({
-    username: params["username"],
-    name: params["name"],
-    address1: params["address1"],
-    city: params["city"],
-    state: params["state"],
-    zip: params["zip"]
+    username: data["username"],
+    name: data["name"],
+    address1: data["address1"],
+    city: data["city"],
+    state: data["state"],
+    zip: data["zip"]
   })
+
+  status 201
+
+end
+
+post '/test' do
+
+  person = SnailMail::Person.create!({
+      username: "test",
+      name: "Test",
+      address1: "here",
+      city: "there",
+      state: "somewhere",
+      zip: "00000"
+    })
+
+    status 201
+
 end
 
 get '/person/id/:id' do
