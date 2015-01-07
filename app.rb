@@ -74,3 +74,24 @@ post '/person/id/:id/mail/new' do
   [status, headers, nil]
 
 end
+
+get '/mail/id/:id' do
+
+  begin
+    mail = SnailMail::Mail.find_by(_id: params[:id])
+    status = 200
+
+    response_body = mail.as_document.as_json.to_s
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+    response_body = nil
+  end
+
+  # To Do: return response in parseable format
+  [status, response_body]
+
+end
+
+get '/mail' do
+
+end

@@ -149,7 +149,7 @@ describe '/person/id/:id/mail/new' do
 
 	end
 
-	describe 'post for a person that does not exist' do
+	describe 'post mail for a person that does not exist' do
 
 		before do
 			from_id = 'abc'
@@ -168,6 +168,60 @@ describe '/person/id/:id/mail/new' do
 		end
 
 		it 'should return an empty response body' do
+			last_response.body.must_equal ""
+		end
+
+	end
+
+end
+
+describe '/mail/id/:id' do
+
+	describe 'get /mail/id/:id' do
+
+		before do
+
+			from_person = '{"username":"kasabian", "name":"Kasabian"}'
+			post '/person/new', from_person
+			from_location = last_response.headers["location"]
+			from_id = from_location.split('/')[-1]
+
+			to_person = '{"username":"grimes", "name":"Grimes"}'
+			post '/person/new', to_person
+			to_location = last_response.headers["location"]
+			to_id = to_location.split('/')[-1]
+
+			data = '{"to": "' + to_id + '", "content": "Hey"}'
+			post "/person/id/#{from_id}/mail/new", data
+			mail_location = last_response.headers["location"]
+			@mail_id = mail_location.split('/')[-1]
+
+		end
+
+		it 'must return a 200 status code' do
+			get "/mail/id/#{@mail_id}"
+			last_response.status.must_equal 200
+		end
+
+		# To do: improve this test...
+		it 'must return a JSON document for the mail in the response body' do
+			get "/mail/id/#{@mail_id}"
+			last_response.body.must_include "Hey"
+		end
+
+	end
+
+	describe 'resource not found' do
+
+		before do
+			get "mail/id/abc"
+		end
+
+		it 'must return 404 if the mail is not found' do
+			last_response.status.must_equal 404
+		end
+
+		it 'must return an empty response body if the mail is not found' do
 			last_response.body.must_equal ""
 		end
 
