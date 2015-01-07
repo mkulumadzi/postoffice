@@ -12,8 +12,7 @@ describe SnailMail::Person do
 	describe 'create a person' do
 
 		before do
-			@num_records = SnailMail::Person.count
-			SnailMail::Person.create!(
+			@person = SnailMail::Person.create!(
 				name: "Evan",
 				username: "ewaters",
 				address1: "121 W 3rd St",
@@ -24,28 +23,27 @@ describe SnailMail::Person do
 		end
 
 		it 'must create a new person record' do
-			SnailMail::Person.count.must_equal @num_records + 1
+			@person.must_be_instance_of SnailMail::Person
 		end
 
-		# To Do: Test this, better
 		it 'must store the name' do
-			SnailMail::Person.where(name: "Evan").exists?.must_equal true
+			@person.name.must_equal 'Evan'
 		end
 
 		it 'must store the username' do
-			SnailMail::Person.where(username: "ewaters").exists?.must_equal true
+			@person.username.must_equal 'ewaters'
 		end
 
 		it 'must store the address' do
-			SnailMail::Person.where(address1: "121 W 3rd St").exists?.must_equal true
+			@person.address1.must_equal '121 W 3rd St'
 		end
 
 		it 'must store the state' do
-			SnailMail::Person.where(state: "NY").exists?.must_equal true
+			@person.state.must_equal 'NY'
 		end
 
 		it 'must store the zip code' do
-			SnailMail::Person.where(zip: "10012").exists?.must_equal true
+			@person.zip.must_equal '10012'
 		end
 
 	end

@@ -29,33 +29,48 @@ get '/person/id/:id' do
     person = SnailMail::Person.find_by(_id: params[:id])
     status = 200
 
-    #To Do: Figure out a way to return a JSON document, not a string representation of one
     response_body = person.as_document.as_json.to_s
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
     response_body = nil
   end
-  
+
+  # To Do: return response in parseable format
   [status, response_body]
 end
 
+# To Do: Add searching, filtering
 get '/people' do
   people = ""
   SnailMail::Person.each do |person|
     people << person.as_document.as_json.to_s
   end
   
+  # To Do: return response in parseable format
   [200, people]
 end
 
-post '/person/:id/mail/new' do
-  @person = SnailMail::Person.find(params[:id])
-  
-  @message = SnailMail::Message.create!({
-    id: SecureRandom.uuid,
-    from: @person.username,
-    to: params["to"],
-    content: params["content"],
-    status: "SENT"
-  })
+post '/person/id/:id/mail/new' do
+  begin
+    person = SnailMail::Person.find_by(_id: params[:id])
+    data = JSON.parse request.body.read
+
+    mail = SnailMail::Mail.create!({
+      from: params[:id],
+      to: data["to"],
+      content: data["content"],
+      status: "SENT",
+      days_to_arrive: SnailMail::Mail.days_to_arrive
+    })
+
+    mail_link = "http://localhost:9292/mail/id/#{mail.id}"
+    headers = { "location" => mail_link }
+    status = 201
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+    headers = nil
+  end
+
+  [status, headers, nil]
+
 end
