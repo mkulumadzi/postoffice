@@ -1,10 +1,12 @@
-require_relative 'module/posnail-office'
+require_relative 'module/postoffice'
 
 get '/' do
 end
 
-post '/user/new' do
-  user = SnailMail::User.create!({
+post '/person/new' do
+  content_type :json
+
+  person = SnailMail::Person.create!({
     username: params["username"],
     name: params["name"],
     address1: params["address1"],
@@ -14,21 +16,21 @@ post '/user/new' do
   })
 end
 
-get '/user/id/:id' do
-  # @user = SnailMail::User.find(params[:id])
-  # @messages = SnailMail::Message.where(from: @user.id).to_a
+get '/person/id/:id' do
+  # @person = SnailMail::Person.find(params[:id])
+  # @messages = SnailMail::Message.where(from: @person.id).to_a
 end
 
-get '/users' do
-  # @users = SnailMail::User.all.to_a
+get '/people' do
+  # @people = SnailMail::Person.all.to_a
 end
 
-post '/user/:id/mail/new' do
-  @user = SnailMail::User.find(params[:id])
+post '/person/:id/mail/new' do
+  @person = SnailMail::Person.find(params[:id])
   
   @message = SnailMail::Message.create!({
     id: SecureRandom.uuid,
-    from: @user.id,
+    from: @person.username,
     to: params["to"],
     content: params["content"],
     status: "SENT"

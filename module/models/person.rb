@@ -1,5 +1,5 @@
 module SnailMail
-	class User
+	class Person
 		include Mongoid::Document
 		include Mongoid::Timestamps
 
@@ -11,7 +11,7 @@ module SnailMail
 		field :zip, type: String
 
 		def self.validate(name)
-			self.all.map { |user| user.name }.include?(name)
+			self.all.map { |person| person.name }.include?(name)
 		end
 
 	end

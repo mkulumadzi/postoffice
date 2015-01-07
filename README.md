@@ -1,7 +1,7 @@
-PosnailOffice
+postoffice
 =============
 
-SnailMail Server
+The SnailMail Server
 
 ## Setup
 

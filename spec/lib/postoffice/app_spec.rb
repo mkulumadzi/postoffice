@@ -1,12 +1,13 @@
 ENV['RACK_ENV'] = 'test'
 
 require 'rack/test'
-require '../spec_helper'
+require 'minitest/autorun'
+require_relative '../../spec_helper'
 
 include Rack::Test::Methods
 
 def app
-  SnailMail::Application
+  Sinatra::Application
 end
 
 describe 'app_root' do
