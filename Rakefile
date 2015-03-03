@@ -3,6 +3,7 @@ ENV['RACK_ENV'] = 'development'
 require 'rake/testtask'
 require 'bundler/setup'
 require 'mongoid'
+require_relative 'module/postoffice.rb'
 
 Rake::TestTask.new do |t|
 	t.test_files = FileList['spec/lib/postoffice/*_spec.rb']
@@ -13,25 +14,9 @@ Mongoid.load!("config/mongoid.yml")
 
 task :default => :test
 
-namespace :db do
-    task :create_indexes, :environment do |t, args|
-        unless args[:environment]
-            puts "Must provide an environment"
-            exit
-        end
+task :create_indexes do
 
-        yaml = YAML.load_file("mongoid.yml")
+	Mongoid.load!("config/mongoid.yml")
+	SnailMail::Person.create_indexes
 
-        env_info = yaml[args[:environment]]
-        unless env_info
-            puts "Unknown environment"
-            exit
-        end
-
-        Mongoid.configure do |config|
-            config.from_hash(env_info)
-        end
-
-        SnailMail::Person.create_indexes
-    end
 end

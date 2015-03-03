@@ -64,6 +64,9 @@ post '/person/id/:id/mail/new' do
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
     headers = nil
+  rescue Moped::Errors::OperationFailure
+    status = 403
+    headers = nil
   end
 
   [status, headers, nil]

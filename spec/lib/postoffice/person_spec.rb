@@ -7,40 +7,51 @@ describe SnailMail::Person do
 	describe 'create a person' do
 
 		before do
-			@person = SnailMail::Person.create!(
+
+			@person1_username = SnailMail::Person.random_username
+			@person1 = SnailMail::Person.create!(
 				name: "Evan",
-				username: "ewaters",
+				username: "#{@person1_username}",
 				address1: "121 W 3rd St",
 				city: "New York",
 				state: "NY",
 				zip: "10012"
 			)
+
+		end
+
+		it 'should create a random username' do
+			assert_match(/[[:upper:]]{8}/, @person1_username)
 		end
 
 		describe 'store the fields' do
 
 			it 'must create a new person record' do
-				@person.must_be_instance_of SnailMail::Person
+				@person1.must_be_instance_of SnailMail::Person
 			end
 
 			it 'must store the name' do
-				@person.name.must_equal 'Evan'
+				@person1.name.must_equal 'Evan'
 			end
 
 			it 'must store the username' do
-				@person.username.must_equal 'ewaters'
+				@person1.username.must_equal "#{@person1_username}"
 			end
 
 			it 'must store the address' do
-				@person.address1.must_equal '121 W 3rd St'
+				@person1.address1.must_equal '121 W 3rd St'
+			end
+
+			it 'must store the city' do
+				@person1.city.must_equal 'New York'
 			end
 
 			it 'must store the state' do
-				@person.state.must_equal 'NY'
+				@person1.state.must_equal 'NY'
 			end
 
 			it 'must store the zip code' do
-				@person.zip.must_equal '10012'
+				@person1.zip.must_equal '10012'
 			end
 
 		end
@@ -48,27 +59,25 @@ describe SnailMail::Person do
 		describe 'ensure username is unique' do
 
 			before do
-				SnailMail::Person.create!(
-					name: "Neal",
-					username: "nwaters",
-					address1: "44 Prichard Street",
-					city: "Somerville",
-					state: "MA",
-					zip: "02134"
+				@person1_username = SnailMail::Person.random_username
+				@person1 = SnailMail::Person.create!(
+					name: "Evan",
+					username: "#{@person1_username}",
+					address1: "121 W 3rd St",
+					city: "New York",
+					state: "NY",
+					zip: "10012"
 				)
 			end
 
 			it 'must thrown an error if a record is submitted with a duplicate username' do
-				assert_raises (
+				assert_raises(Moped::Errors::OperationFailure) {
 					SnailMail::Person.create!(
-						name: "Neal",
-						username: "nwaters",
-						address1: "44 Prichard Street",
-						city: "Somerville",
-						state: "MA",
-						zip: "02134"
+						name: "Evan",
+						username: "#{@person1_username}",
+						address1: "44 Prichard Street"
 					)
-				).must_equal 'foo'
+				}
 			end
 
 		end
@@ -77,42 +86,40 @@ describe SnailMail::Person do
 
 	describe 'get people' do
 
+		before do
+			@person1_username = SnailMail::Person.random_username
+			@person1 = SnailMail::Person.create!(
+				name: "Evan",
+				username: "#{@person1_username}",
+				address1: "121 W 3rd St",
+				city: "New York",
+				state: "NY",
+				zip: "10012"
+			)
+		end
+
 		it 'must get all of the people if no parameters are given' do
-			num_people = SnailMail::Person.count
 			people = SnailMail::Person.get_people
-			people.length.must_equal num_people
+			people.length.must_equal SnailMail::Person.count
 		end
 
 		it 'must filter the records by username when it is passed in as a parameter' do
-			num_people = SnailMail::Person.where({username: "ewaters"}).count
+			num_people = SnailMail::Person.where({username: "#{@person1_username}"}).count
 			params = Hash.new
-			params[:username] = "ewaters"
+			params[:username] = "#{@person1_username}"
 			people = SnailMail::Person.get_people params
 			people.length.must_equal num_people
 		end
 
 		it 'must filter the records by username and name when both are passed in as a parameter' do
-			num_people = SnailMail::Person.where({username: "ewaters", name: "Evan"}).count
+			num_people = SnailMail::Person.where({username: "#{@person1_username}", name: "Evan"}).count
 			params = Hash.new
-			params[:username] = "ewaters"
+			params[:username] = "#{@person1_username}"
 			params[:name] = "Evan"
 			people = SnailMail::Person.get_people params
 			people.length.must_equal num_people
 		end
 
 	end
-
-	# describe 'find people by criteria' do
-
-	# 	before do
-	# 		@people = SnailMail::Person.get_it "kasabian"
-	# 	end
-
-	# 	## Commenting out this test for now while I fix the getting and rendering.
-	# 	# it 'must return people with the correct username' do
-	# 	# 	@people.must_include "kasabian"
-	# 	# end
-
-	# end
 
 end

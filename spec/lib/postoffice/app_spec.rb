@@ -23,21 +23,20 @@ describe '/person/new' do
 	describe 'post /person/new' do
 
 		before do
-			@data = '{"username":"kasabian", "name":"Kasabian"}'
+			username = SnailMail::Person.random_username
+			data = '{"username": "' + username + '", "name":"Kasabian"}'
+			post '/person/new', data
 		end
 
-		it 'must return a 201 status code' do
-			post '/person/new', @data	
+		it 'must return a 201 status code' do	
 			last_response.status.must_equal 201
 		end
 
 		it 'must return an empty body' do
-			post '/person/new', @data
 			last_response.body.must_equal ""
 		end
 
 		it 'must include a link to the person in the header' do
-			post '/person/new', @data
 			assert_match(/http:\/\/localhost\:9292\/person\/id\/\w{24}/, last_response.header["location"])
 		end
 
@@ -50,7 +49,8 @@ describe '/person/id/:id' do
 	describe 'get /person/id/:id' do
 
 		before do
-			data = '{"username":"kasabian", "name":"Kasabian"}'
+			@username = SnailMail::Person.random_username
+			data = '{"username": "' + @username + '", "name":"Kasabian"}'
 			post '/person/new', data
 			@location = last_response.headers["location"]
 			@id = @location.split('/')[-1]
@@ -64,7 +64,7 @@ describe '/person/id/:id' do
 		# To do: improve this test...
 		it 'must return a JSON document as a hash in the response body with the username' do
 			get "/person/id/#{@id}"
-			last_response.body.must_include '"username":"kasabian"'
+			last_response.body.must_include @username
 		end
 
 	end
@@ -102,7 +102,10 @@ describe '/people' do
 	end
 
 	it 'must return a filtered collection if parameters are given' do
-		get '/people?username=ewaters'
+		username = SnailMail::Person.random_username
+		data = '{"username": "' + username + '", "name":"Kasabian"}'
+		post '/person/new', data
+		get "/people?username=#{username}"
 		last_response.body.must_include "_id"
 	end
 
@@ -113,12 +116,18 @@ describe '/person/id/:id/mail/new' do
 	describe 'post /person/id/:id/mail/new' do
 
 		before do
-			from_person = '{"username":"ewaters", "name":"Evan"}'
-			post '/person/new', from_person
-			from_location = last_response.headers["location"]
-			from_id = from_location.split('/')[-1]
-			data = '{"from": "ewaters", "to": "nwaters", "content": "Hey"}'
-			post "/person/id/#{from_id}/mail/new", data
+			@person1 = SnailMail::Person.create!(
+				name: "Evan",
+				username: SnailMail::Person.random_username
+			)
+
+			@person2 = SnailMail::Person.create!(
+				name: "Neal",
+				username: SnailMail::Person.random_username
+			)
+
+			data = '{"to": "' + @person2.username + '", "content": "Hey"}'
+			post "/person/id/#{@person1.id}/mail/new", data
 		end
 
 		it 'must get a status of 201' do
@@ -147,7 +156,13 @@ describe '/person/id/:id/mail/new' do
 
 		before do
 			from_id = 'abc'
-			data = '{"from": "ewaters", "to": "nwaters", "content": "Hey"}'
+
+			@person2 = SnailMail::Person.create!(
+				name: "Neal",
+				username: SnailMail::Person.random_username
+			)
+
+			data = '{"to": "' + @person2.username + '", "content": "Hey"}'
 			post "/person/id/#{from_id}/mail/new", data
 		end
 
@@ -169,12 +184,19 @@ describe '/mail/id/:id' do
 
 		before do
 
-			from_person = '{"username":"ewaters", "name":"Evan"}'
-			post '/person/new', from_person
-			from_location = last_response.headers["location"]
-			from_id = from_location.split('/')[-1]
-			data = '{"from": "ewaters", "to": "nwaters", "content": "Hey"}'
-			post "/person/id/#{from_id}/mail/new", data
+			@person1 = SnailMail::Person.create!(
+				name: "Evan",
+				username: SnailMail::Person.random_username
+			)
+
+			@person2 = SnailMail::Person.create!(
+				name: "Neal",
+				username: SnailMail::Person.random_username
+			)
+
+			data = '{"to": "' + @person2.username + '", "content": "Hey"}'
+			post "/person/id/#{@person1.id}/mail/new", data
+
 			mail_location = last_response.headers["location"]
 			@mail_id = mail_location.split('/')[-1]
 
@@ -224,7 +246,21 @@ describe '/mail' do
 	end
 
 	it 'must return a filtered collection if parameters are given' do
-		get '/mail?from=ewaters'
+
+		@person1 = SnailMail::Person.create!(
+			name: "Evan",
+			username: SnailMail::Person.random_username
+		)
+
+		@person2 = SnailMail::Person.create!(
+			name: "Neal",
+			username: SnailMail::Person.random_username
+		)
+
+		data = '{"to": "' + @person2.username + '", "content": "Hey"}'
+		post "/person/id/#{@person1.id}/mail/new", data
+
+		get "/mail?from=#{@person1.username}"
 		last_response.body.must_include "_id"
 	end
 

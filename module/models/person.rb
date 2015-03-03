@@ -11,5 +11,11 @@ module SnailMail
 		field :zip, type: String
 
 		index({ username: 1 }, { unique: true })
+
+		#Generate a random username as a hack to get around the unique index
+		def self.random_username
+			(0...8).map { (65 + rand(26)).chr }.join
+		end
+		
 	end
 end
