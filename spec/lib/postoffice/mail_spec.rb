@@ -19,8 +19,8 @@ describe SnailMail::Mail do
 		# To Do: Add validation to enforce from: and to: as foreign keys for people
 		before do
 			@mail = SnailMail::Mail.create!(
-				from: "Evan",
-				to: "Neal",
+				from: "ewaters",
+				to: "nwaters",
 				content: "What up",
 				status: "SENT",
 				days_to_arrive: 3
@@ -32,11 +32,11 @@ describe SnailMail::Mail do
 		end
 
 		it 'must store the person it is from' do
-			@mail.from.must_equal 'Evan'
+			@mail.from.must_equal 'ewaters'
 		end
 
 		it 'must store person it is to' do
-			@mail.to.must_equal 'Neal'
+			@mail.to.must_equal 'nwaters'
 		end
 
 		it 'must store the content' do
@@ -49,6 +49,33 @@ describe SnailMail::Mail do
 
 		it 'must store the days to arrive' do
 			@mail.days_to_arrive.must_equal 3
+		end
+
+	end
+
+	describe 'get mail' do
+
+		it 'must get all of the mail if no parameters are given' do
+			num_mail = SnailMail::Mail.count
+			mail = SnailMail::Mail.get_mail
+			mail.length.must_equal num_mail
+		end
+
+		it 'must filter the records by from when it is passed in as a parameter' do
+			num_mail = SnailMail::Mail.where({from: "ewaters"}).count
+			params = Hash.new
+			params[:from] = "ewaters"
+			mail = SnailMail::Mail.get_mail params
+			mail.length.must_equal num_mail
+		end
+
+		it 'must filter the records by username and name when both are passed in as a parameter' do
+			num_mail = SnailMail::Mail.where({from: "ewaters", to: "nwaters"}).count
+			params = Hash.new
+			params[:from] = "ewaters"
+			params[:to] = "nwaters"
+			mail = SnailMail::Mail.get_mail params
+			mail.length.must_equal num_mail
 		end
 
 	end

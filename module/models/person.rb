@@ -10,5 +10,6 @@ module SnailMail
 		field :state, type: String
 		field :zip, type: String
 
+		index({ username: 1 }, { unique: true })
 	end
 end

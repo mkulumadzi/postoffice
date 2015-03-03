@@ -26,10 +26,6 @@ describe '/person/new' do
 			@data = '{"username":"kasabian", "name":"Kasabian"}'
 		end
 
-		# after do
-		# 	SnailMail::Person.delete_all
-		# end
-
 		it 'must return a 201 status code' do
 			post '/person/new', @data	
 			last_response.status.must_equal 201
@@ -66,9 +62,9 @@ describe '/person/id/:id' do
 		end
 
 		# To do: improve this test...
-		it 'must return a JSON document for the person in the response body' do
+		it 'must return a JSON document as a hash in the response body with the username' do
 			get "/person/id/#{@id}"
-			last_response.body.must_include "Kasabian"
+			last_response.body.must_include '"username":"kasabian"'
 		end
 
 	end
@@ -98,9 +94,15 @@ describe '/people' do
 		last_response.status.must_equal 200
 	end
 
-	# To do: improve this test...
-	it 'must return a collection with all of the people' do
+	# To do: improve these tests...
+	# It kind of duplicates the test for People.find_all - maybe just test that this method is called?
+	it 'must return a collection with all of the people if no paremters are entered' do
 		get '/people'
+		last_response.body.must_include "_id"
+	end
+
+	it 'must return a filtered collection if parameters are given' do
+		get '/people?username=ewaters'
 		last_response.body.must_include "_id"
 	end
 
@@ -111,22 +113,12 @@ describe '/person/id/:id/mail/new' do
 	describe 'post /person/id/:id/mail/new' do
 
 		before do
-
-			from_person = '{"username":"kasabian", "name":"Kasabian"}'
+			from_person = '{"username":"ewaters", "name":"Evan"}'
 			post '/person/new', from_person
 			from_location = last_response.headers["location"]
 			from_id = from_location.split('/')[-1]
-
-			to_person = '{"username":"grimes", "name":"Grimes"}'
-			post '/person/new', to_person
-			to_location = last_response.headers["location"]
-			to_id = to_location.split('/')[-1]
-
-			data = '{"to": "' + to_id + '", "content": "Hey"}'
+			data = '{"from": "ewaters", "to": "nwaters", "content": "Hey"}'
 			post "/person/id/#{from_id}/mail/new", data
-			mail_location = last_response.headers["location"]
-			@mail_id = mail_location.split('/')[-1]
-
 		end
 
 		it 'must get a status of 201' do
@@ -142,7 +134,9 @@ describe '/person/id/:id/mail/new' do
 		end
 
 		it 'must use the days_to_arrive_method to generate a random number of days for the mail' do
-			mail = SnailMail::Mail.find_by(_id: @mail_id)
+			mail_location = last_response.headers["location"]
+			mail_id = mail_location.split('/')[-1]
+			mail = SnailMail::Mail.find(mail_id)
 			range = (3..5).to_a
 			range.include?(mail.days_to_arrive).must_equal true
 		end
@@ -153,13 +147,7 @@ describe '/person/id/:id/mail/new' do
 
 		before do
 			from_id = 'abc'
-
-			to_person = '{"username":"grimes", "name":"Grimes"}'
-			post '/person/new', to_person
-			to_location = last_response.headers["location"]
-			to_id = to_location.split('/')[-1]
-
-			data = '{"to": "' + to_id + '", "content": "Hey"}'
+			data = '{"from": "ewaters", "to": "nwaters", "content": "Hey"}'
 			post "/person/id/#{from_id}/mail/new", data
 		end
 
@@ -181,17 +169,11 @@ describe '/mail/id/:id' do
 
 		before do
 
-			from_person = '{"username":"kasabian", "name":"Kasabian"}'
+			from_person = '{"username":"ewaters", "name":"Evan"}'
 			post '/person/new', from_person
 			from_location = last_response.headers["location"]
 			from_id = from_location.split('/')[-1]
-
-			to_person = '{"username":"grimes", "name":"Grimes"}'
-			post '/person/new', to_person
-			to_location = last_response.headers["location"]
-			to_id = to_location.split('/')[-1]
-
-			data = '{"to": "' + to_id + '", "content": "Hey"}'
+			data = '{"from": "ewaters", "to": "nwaters", "content": "Hey"}'
 			post "/person/id/#{from_id}/mail/new", data
 			mail_location = last_response.headers["location"]
 			@mail_id = mail_location.split('/')[-1]
@@ -225,6 +207,25 @@ describe '/mail/id/:id' do
 			last_response.body.must_equal ""
 		end
 
+	end
+
+end
+
+describe '/mail' do
+
+	it 'must return a 200 status code' do
+		get '/mail'
+		last_response.status.must_equal 200
+	end
+
+	it 'must return a collection with all of the mail if no parameters are entered' do
+		get '/mail'
+		last_response.body.must_include "_id"
+	end
+
+	it 'must return a filtered collection if parameters are given' do
+		get '/mail?from=ewaters'
+		last_response.body.must_include "_id"
 	end
 
 end

@@ -25,29 +25,24 @@ post '/person/new' do
 end
 
 get '/person/id/:id' do
+  content_type :json
   begin
-    person = SnailMail::Person.find_by(_id: params[:id])
+    person = SnailMail::Person.find(params[:id])
     status = 200
-
-    response_body = person.as_document.as_json.to_s
+    response_body = person.as_document.to_json
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
     response_body = nil
   end
 
-  # To Do: return response in parseable format
   [status, response_body]
 end
 
 # To Do: Add searching, filtering
 get '/people' do
-  people = ""
-  SnailMail::Person.each do |person|
-    people << person.as_document.as_json.to_s
-  end
-  
-  # To Do: return response in parseable format
-  [200, people]
+  content_type :json
+  response_body = SnailMail::Person.get_people(params).to_json
+  [200, response_body]
 end
 
 post '/person/id/:id/mail/new' do
@@ -56,7 +51,7 @@ post '/person/id/:id/mail/new' do
     data = JSON.parse request.body.read
 
     mail = SnailMail::Mail.create!({
-      from: params[:id],
+      from: person.username,
       to: data["to"],
       content: data["content"],
       status: "SENT",
@@ -76,12 +71,12 @@ post '/person/id/:id/mail/new' do
 end
 
 get '/mail/id/:id' do
+  content_type :json
 
   begin
-    mail = SnailMail::Mail.find_by(_id: params[:id])
+    mail = SnailMail::Mail.find(params[:id])
     status = 200
-
-    response_body = mail.as_document.as_json.to_s
+    response_body = mail.as_document.to_json
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
     response_body = nil
@@ -93,5 +88,7 @@ get '/mail/id/:id' do
 end
 
 get '/mail' do
-
+  content_type :json
+  response_body = SnailMail::Mail.get_mail(params).to_json
+  [200, response_body]
 end
