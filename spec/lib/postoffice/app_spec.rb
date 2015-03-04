@@ -10,6 +10,7 @@ end
 
 describe app do
 
+# Set up data for testing
 	let ( :person1 ) {
 		SnailMail::Person.create!(
 			name: "Evan",
@@ -95,7 +96,6 @@ describe app do
 				last_response.status.must_equal 200
 			end
 
-			# To do: improve this test...
 			it 'must return a JSON document as a hash in the response body with the username' do
 				get "/person/id/#{person1.id}"
 				last_response.body.must_include person1.username
@@ -258,6 +258,7 @@ describe app do
 			mail1.mail_it
 
 			# Put the arrival date safely in the past
+			# To do: implement a "deliver now" feature that could be used for these tests
 			mail1.scheduled_to_arrive = mail1.scheduled_to_arrive - 6 * 86400
 			mail1.save
 

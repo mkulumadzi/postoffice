@@ -121,7 +121,6 @@ describe SnailMail::Mail do
 
 			mail1.mail_it
 
-			# Put the arrival date for mail1 safely in the past
 			mail1.scheduled_to_arrive = mail1.scheduled_to_arrive - 6 * 86400
 			mail1.save
 

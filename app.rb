@@ -1,9 +1,11 @@
 require_relative 'module/postoffice'
 
+
 get '/' do
   "Hello World!"
 end
 
+# Create a new person
 post '/person/new' do
 
   data = JSON.parse request.body.read
@@ -30,6 +32,7 @@ post '/person/new' do
 
 end
 
+# Retrieve a single person record
 get '/person/id/:id' do
   content_type :json
   begin
@@ -44,13 +47,16 @@ get '/person/id/:id' do
   [status, response_body]
 end
 
-# To Do: Add searching, filtering
+# View records for all people in the database.
+# Filtering implemented, for example: /people?username=bigedubs
 get '/people' do
   content_type :json
   response_body = SnailMail::Person.get_people(params).to_json
   [200, response_body]
 end
 
+# Creae a new piece of mail
+# Mail from is interpreted by the ID in the URI
 post '/person/id/:id/mail/new' do
   begin
     person = SnailMail::Person.find_by(_id: params[:id])
@@ -77,6 +83,7 @@ post '/person/id/:id/mail/new' do
 
 end
 
+# Retrieve a piece of mail
 get '/mail/id/:id' do
   content_type :json
 
@@ -89,17 +96,18 @@ get '/mail/id/:id' do
     response_body = nil
   end
 
-  # To Do: return response in parseable format
   [status, response_body]
 
 end
 
+# View all mail in the system
 get '/mail' do
   content_type :json
   response_body = SnailMail::Mail.get_mail(params).to_json
   [200, response_body]
 end
 
+# View delivered mail for a person
 get '/person/id/:id/mailbox' do
   content_type :json
 
