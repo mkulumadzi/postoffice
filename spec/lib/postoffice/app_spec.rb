@@ -238,6 +238,7 @@ describe app do
 		end
 
 		it 'must return a collection with all of the mail if no parameters are entered' do
+			mail1
 			get '/mail'
 			last_response.body.must_include "_id"
 		end
