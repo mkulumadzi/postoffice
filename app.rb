@@ -8,19 +8,25 @@ post '/person/new' do
 
   data = JSON.parse request.body.read
 
-  person = SnailMail::Person.create!({
-    username: data["username"],
-    name: data["name"],
-    address1: data["address1"],
-    city: data["city"],
-    state: data["state"],
-    zip: data["zip"]
-  })
+  begin
+    person = SnailMail::Person.create!({
+      username: data["username"],
+      name: data["name"],
+      address1: data["address1"],
+      city: data["city"],
+      state: data["state"],
+      zip: data["zip"]
+    })
 
-  person_link = "http://localhost:9292/person/id/#{person.id}"
-  headers = { "location" => person_link }
+    person_link = "http://localhost:9292/person/id/#{person.id}"
+    headers = { "location" => person_link }
+    status = 201
+  rescue Moped::Errors::OperationFailure
+    status = 403
+    headers = nil
+  end
 
-  [201, headers, nil]
+  [status, headers, nil]
 
 end
 
@@ -53,9 +59,7 @@ post '/person/id/:id/mail/new' do
     mail = SnailMail::Mail.create!({
       from: person.username,
       to: data["to"],
-      content: data["content"],
-      status: "SENT",
-      days_to_arrive: SnailMail::Mail.days_to_arrive
+      content: data["content"]
     })
 
     mail_link = "http://localhost:9292/mail/id/#{mail.id}"
@@ -94,4 +98,19 @@ get '/mail' do
   content_type :json
   response_body = SnailMail::Mail.get_mail(params).to_json
   [200, response_body]
+end
+
+get '/person/id/:id/mailbox' do
+  content_type :json
+
+  begin
+    response_body = SnailMail::Mail.mailbox(params).to_json
+    status = 200
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+    response_body = nil
+  end
+
+  [status, response_body]
+
 end
