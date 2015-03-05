@@ -165,15 +165,6 @@ describe app do
 				assert_match(/http:\/\/localhost\:9292\/mail\/id\/\w{24}/, last_response.header["location"])
 			end
 
-			## Handle this later with a separate route.
-			# it 'must send the mail' do
-			# 	mail_location = last_response.headers["location"]
-			# 	mail_id = mail_location.split('/')[-1]
-			# 	mail = SnailMail::Mail.find(mail_id)
-
-			# 	mail.status.must_equal "SENT"
-			# end
-
 		end
 
 		describe 'post mail for a person that does not exist' do
@@ -223,6 +214,64 @@ describe app do
 			end
 
 			it 'must return an empty response body if the mail is not found' do
+				last_response.body.must_equal ""
+			end
+
+		end
+
+		describe 'post /mail/id/:id/send' do
+
+			before do
+				post "/mail/id/#{mail1.id}/send"
+			end
+
+			it 'must send the mail' do
+				mail = SnailMail::Mail.find(mail1.id)
+				mail.status.must_equal "SENT"
+			end
+
+			it 'must be scheduled to arrive' do
+				mail = SnailMail::Mail.find(mail1.id)			
+				mail.scheduled_to_arrive.must_be_instance_of DateTime
+			end
+
+			it 'must return a 204 status code' do
+				last_response.status.must_equal 204
+			end
+
+			it 'must return an empty response body' do
+				last_response.body.must_equal ""
+			end
+
+			describe 'try to send mail that has already been sent' do
+
+				before do
+					post "/mail/id/#{mail1.id}/send"
+				end
+
+				it 'must return a 403 status' do
+					last_response.status.must_equal 403
+				end
+
+				it 'must retur an empty response body' do
+					last_response.body.must_equal ""
+				end
+
+			end
+
+		end
+
+		describe 'send to a missing piece of mail' do
+
+			before do
+				post "/mail/id/abc/send"
+			end
+
+			it 'must return 404 if the mail is not found' do
+				last_response.status.must_equal 404
+			end
+
+			it 'must return an empty response body' do
 				last_response.body.must_equal ""
 			end
 

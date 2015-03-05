@@ -52,6 +52,10 @@ describe SnailMail::Mail do
 			mail1.content.must_equal 'What up'
 		end
 
+		it 'must have a default status of "DRAFT"' do
+			mail1.status.must_equal 'DRAFT'
+		end
+
 	end
 
 	describe 'send mail' do
@@ -80,6 +84,16 @@ describe SnailMail::Mail do
 
 		it 'must have status of SENT' do
 			mail1.status.must_equal "SENT"
+		end
+
+		describe 'try to send mail that has already been sent' do
+
+			it 'must throw an error' do
+				assert_raises(ArgumentError) {
+					mail1.mail_it
+				}
+			end
+
 		end
 
 		## TO DO Figure out how to test this - the tests above work even if the record isn't saved

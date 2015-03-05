@@ -6,7 +6,7 @@ module SnailMail
 		field :from, type: String
 		field :to, type: String
 		field :content, type: String
-		field :status, type: String
+		field :status, type: String, default: "DRAFT"
 		field :scheduled_to_arrive, type: DateTime
 
 		def days_to_arrive
@@ -18,6 +18,7 @@ module SnailMail
 		end
 
 		def mail_it
+			raise ArgumentError, "Mail must be in DRAFT state to send" unless self.status == "DRAFT"
 			self.status = "SENT"
 			self.scheduled_to_arrive = arrive_when
 			self.save
