@@ -1,5 +1,16 @@
 module SnailMail
-	class Mail
+
+	class MailService
+
+		def self.create_mail person_id, data
+			person = SnailMail::Person.find(person_id)
+
+		    mail = SnailMail::Mail.create!({
+		      from: person.username,
+		      to: data["to"],
+		      content: data["content"]
+		    })
+		end
 
 		def self.get_mail params = {}
 			mails = []
@@ -21,4 +32,5 @@ module SnailMail
 		end
 
 	end
+
 end

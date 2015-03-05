@@ -73,7 +73,7 @@ describe SnailMail::Person do
 	describe 'get people' do
 
 		it 'must get all of the people if no parameters are given' do
-			people = SnailMail::Person.get_people
+			people = SnailMail::PersonService.get_people
 			people.length.must_equal SnailMail::Person.count
 		end
 
@@ -81,7 +81,7 @@ describe SnailMail::Person do
 			num_people = SnailMail::Person.where({username: "#{person1.username}"}).count
 			params = Hash.new
 			params[:username] = "#{person1.username}"
-			people = SnailMail::Person.get_people params
+			people = SnailMail::PersonService.get_people params
 			people.length.must_equal num_people
 		end
 
@@ -90,7 +90,7 @@ describe SnailMail::Person do
 			params = Hash.new
 			params[:username] = "#{person1.username}"
 			params[:name] = "Evan"
-			people = SnailMail::Person.get_people params
+			people = SnailMail::PersonService.get_people params
 			people.length.must_equal num_people
 		end
 

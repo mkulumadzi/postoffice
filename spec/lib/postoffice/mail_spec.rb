@@ -106,7 +106,7 @@ describe SnailMail::Mail do
 
 		it 'must get all of the mail if no parameters are given' do
 			num_mail = SnailMail::Mail.count
-			mail = SnailMail::Mail.get_mail
+			mail = SnailMail::MailService.get_mail
 			mail.length.must_equal num_mail
 		end
 
@@ -114,7 +114,7 @@ describe SnailMail::Mail do
 			num_mail = SnailMail::Mail.where({from: "#{person1.username}"}).count
 			params = Hash.new
 			params[:from] = "#{person1.username}"
-			mail = SnailMail::Mail.get_mail params
+			mail = SnailMail::MailService.get_mail params
 			mail.length.must_equal num_mail
 		end
 
@@ -123,7 +123,7 @@ describe SnailMail::Mail do
 			params = Hash.new
 			params[:from] = "#{person1.username}"
 			params[:to] = "#{person2.username}"
-			mail = SnailMail::Mail.get_mail params
+			mail = SnailMail::MailService.get_mail params
 			mail.length.must_equal num_mail
 		end
 
@@ -147,11 +147,11 @@ describe SnailMail::Mail do
 		end
 
 		it 'must get mail that has arrived' do
-			SnailMail::Mail.mailbox(@params).to_s.must_include mail1.id.to_s
+			SnailMail::MailService.mailbox(@params).to_s.must_include mail1.id.to_s
 		end
 
 		it 'must not show mail that has not arrived' do
-			SnailMail::Mail.mailbox(@params).to_s.match(/#{mail2.id.to_s}/).must_equal nil
+			SnailMail::MailService.mailbox(@params).to_s.match(/#{mail2.id.to_s}/).must_equal nil
 		end
 
 	end
