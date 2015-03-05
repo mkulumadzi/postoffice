@@ -13,7 +13,7 @@ post '/person/new' do
   begin
     person = SnailMail::PersonService.create_person data
 
-    person_link = "http://localhost:9292/person/id/#{person.id}"
+    person_link = "#{ENV['SNAILMAIL_BASE_URL']}/person/id/#{person.id}"
     headers = { "location" => person_link }
     status = 201
   rescue Moped::Errors::OperationFailure
@@ -56,7 +56,7 @@ post '/person/id/:id/mail/new' do
   begin
     mail = SnailMail::MailService.create_mail params[:id], data
 
-    mail_link = "http://localhost:9292/mail/id/#{mail.id}"
+    mail_link = "#{ENV['SNAILMAIL_BASE_URL']}/mail/id/#{mail.id}"
     headers = { "location" => mail_link }
     status = 201
   rescue Mongoid::Errors::DocumentNotFound

@@ -53,6 +53,12 @@ describe app do
 				last_response.body.must_include "Hello World"
 			end
 		end 
+
+		describe 'SNAILMAIL_BASE_URL' do
+			it 'must have a value for SNAILMAIL BASE URL' do
+				ENV['SNAILMAIL_BASE_URL'].must_be_instance_of String
+			end
+		end
 	end
 
 	describe '/person/new' do
@@ -74,7 +80,7 @@ describe app do
 			end
 
 			it 'must include a link to the person in the header' do
-				assert_match(/http:\/\/localhost\:9292\/person\/id\/\w{24}/, last_response.header["location"])
+				assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/person\/id\/\w{24}/, last_response.header["location"])
 			end
 
 			it 'must return a 403 error if a duplicate username is posted' do
@@ -162,7 +168,7 @@ describe app do
 			end
 
 			it 'must include a link to the mail in the header' do
-				assert_match(/http:\/\/localhost\:9292\/mail\/id\/\w{24}/, last_response.header["location"])
+				assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/mail\/id\/\w{24}/, last_response.header["location"])
 			end
 
 		end
