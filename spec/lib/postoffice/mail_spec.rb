@@ -102,6 +102,19 @@ describe SnailMail::Mail do
 
 	end
 
+	describe 'deliver mail now' do
+
+		before do
+			mail1.mail_it
+			mail1.deliver_now
+		end
+
+		it 'must not be scheduled to arrive in the future' do
+			assert_operator mail1.scheduled_to_arrive, :<=, Time.now
+		end
+
+	end
+
 	describe 'get mail' do
 
 		it 'must get all of the mail if no parameters are given' do
@@ -134,9 +147,7 @@ describe SnailMail::Mail do
 		before do
 
 			mail1.mail_it
-
-			mail1.scheduled_to_arrive = mail1.scheduled_to_arrive - 6 * 86400
-			mail1.save
+			mail1.deliver_now
 
 			mail2.mail_it
 			mail2.save

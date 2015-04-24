@@ -24,6 +24,12 @@ module SnailMail
 			self.save
 		end
 
+		def deliver_now
+			raise ArgumentError, "Mail must be in SENT state to deliver" unless self.status == "SENT"
+			self.scheduled_to_arrive = Time.now
+			self.save
+		end
+
 	end
 
 end

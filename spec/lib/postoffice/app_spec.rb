@@ -259,7 +259,7 @@ describe app do
 					last_response.status.must_equal 403
 				end
 
-				it 'must retur an empty response body' do
+				it 'must return an empty response body' do
 					last_response.body.must_equal ""
 				end
 
@@ -271,6 +271,60 @@ describe app do
 
 			before do
 				post "/mail/id/abc/send"
+			end
+
+			it 'must return 404 if the mail is not found' do
+				last_response.status.must_equal 404
+			end
+
+			it 'must return an empty response body' do
+				last_response.body.must_equal ""
+			end
+
+		end
+
+		describe 'post /mail/id/:id/deliver' do
+
+			before do
+				post "/mail/id/#{mail1.id}/send"
+				post "/mail/id/#{mail1.id}/deliver"
+			end
+
+			it 'must be scheduled to arrive in the past' do
+				mail = SnailMail::Mail.find(mail1.id)			
+				assert_operator mail.scheduled_to_arrive, :<=, Time.now
+			end
+
+			it 'must return a 204 status code' do
+				last_response.status.must_equal 204
+			end
+
+			it 'must return an empty response body' do
+				last_response.body.must_equal ""
+			end
+
+		end
+
+		describe 'try to deliver mail that has not been sent' do
+
+			before do
+				post "/mail/id/#{mail1.id}/deliver"
+			end
+
+			it 'must return a 403 status' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return empty response body' do
+				last_response.body.must_equal ""
+			end
+
+		end
+
+		describe 'send to a missing piece of mail' do
+
+			before do
+				post "/mail/id/abc/deliver"
 			end
 
 			it 'must return 404 if the mail is not found' do
