@@ -192,6 +192,16 @@ describe app do
 
 	end
 
+	describe '/person/id/:id/mail/send-now' do
+
+		describe 'post /person/id/:id/mail/send-now' do
+
+			#TO DO implement ability to send mail right away (instead of creating a draft)
+
+		end
+
+	end
+
 	describe '/mail/id/:id' do
 
 		describe 'get /mail/id/:id' do
@@ -360,7 +370,7 @@ describe app do
 
 	end
 
-	describe '/person/id/:id/inbox' do
+	describe '/person/id/:id/mailbox' do
 
 		before do
 
