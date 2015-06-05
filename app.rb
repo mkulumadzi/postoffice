@@ -49,13 +49,35 @@ get '/people' do
 end
 
 # Creae a new piece of mail
-# Mail from is interpreted by the ID in the URI
+# Mail from field is interpreted by the ID in the URI
 post '/person/id/:id/mail/new' do
   data = JSON.parse request.body.read
 
   begin
     mail = SnailMail::MailService.create_mail params[:id], data
+    mail_link = "#{ENV['SNAILMAIL_BASE_URL']}/mail/id/#{mail.id}"
+    headers = { "location" => mail_link }
+    status = 201
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+    headers = nil
+  rescue Moped::Errors::OperationFailure
+    status = 403
+    headers = nil
+  end
 
+  [status, headers, nil]
+
+end
+
+# TO DO: Implement feature enabling mail to be sent right away (rather than entering a 'draft' state.)
+
+post '/person/id/:id/mail/send' do
+  data = JSON.parse request.body.read
+
+  begin
+    mail = SnailMail::MailService.create_mail params[:id], data
+    mail.mail_it
     mail_link = "#{ENV['SNAILMAIL_BASE_URL']}/mail/id/#{mail.id}"
     headers = { "location" => mail_link }
     status = 201
@@ -116,6 +138,7 @@ post '/mail/id/:id/send' do
 
 end
 
+# Deliver a piece of mail
 post '/mail/id/:id/deliver' do
 
    begin

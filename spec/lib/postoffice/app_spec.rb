@@ -192,11 +192,31 @@ describe app do
 
 	end
 
-	describe '/person/id/:id/mail/send-now' do
+	describe '/person/id/:id/mail/send' do
 
-		describe 'post /person/id/:id/mail/send-now' do
+		describe 'post /person/id/:id/mail/send' do
 
-			#TO DO implement ability to send mail right away (instead of creating a draft)
+			before do
+				post "/person/id/#{person1.id}/mail/send", mail_data
+			end
+
+			it 'must get a status of 201' do
+				last_response.status.must_equal 201
+			end
+
+			it 'must return an empty body' do
+				last_response.body.must_equal ""
+			end
+
+			it 'must include a link to the mail in the header' do
+				assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/mail\/id\/\w{24}/, last_response.header["location"])
+			end
+
+			it 'must have sent the mail' do
+				mail_id = last_response.header["location"].split("/").pop
+				mail = SnailMail::Mail.find(mail_id)
+				mail.status.must_equal "SENT"
+			end
 
 		end
 
