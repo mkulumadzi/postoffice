@@ -14,14 +14,14 @@ describe app do
 	let ( :person1 ) {
 		SnailMail::Person.create!(
 			name: "Evan",
-			username: SnailMail::Person.random_username
+			username: SnailMail::Person.random_username,
 		)
 	}
 
 	let ( :person2 ) {
 		SnailMail::Person.create!(
 			name: "Neal",
-			username: SnailMail::Person.random_username
+			username: SnailMail::Person.random_username,
 		)
 	}
 
@@ -67,7 +67,7 @@ describe app do
 
 			before do
 				@username = SnailMail::Person.random_username
-				data = '{"username": "' + @username + '", "name":"Kasabian"}'
+				data = '{"username": "' + @username + '", "name":"Kasabian", "password": "password"}'
 				post '/person/new', data
 			end
 

@@ -2,6 +2,9 @@ require_relative '../../spec_helper'
 
 describe SnailMail::Person do
 
+	@salt = SecureRandom.hex(64)
+	@hashed_password = Digest::SHA256.bubblebabble ("password" + @salt)
+
 	let ( :person1 ) {
 		person1_username = SnailMail::Person.random_username
 		SnailMail::Person.create!(
@@ -10,7 +13,9 @@ describe SnailMail::Person do
 			address1: "121 W 3rd St",
 			city: "New York",
 			state: "NY",
-			zip: "10012"
+			zip: "10012",
+			salt: @salt,
+			hashed_password: @hashed_password
 		)		
 	}
 
@@ -52,6 +57,14 @@ describe SnailMail::Person do
 				person1.zip.must_equal '10012'
 			end
 
+			it 'must store the salt' do
+				person1.salt.must_equal @salt
+			end
+
+			it 'must store the hashed password' do
+				person1.hashed_password.must_equal @hashed_password
+			end
+
 		end
 
 		describe 'ensure username is unique' do
@@ -64,6 +77,64 @@ describe SnailMail::Person do
 						address1: "44 Prichard Street"
 					)
 				}
+			end
+
+		end
+
+	end
+
+	## To do: Move these tests into a specific file for the person service?
+	describe 'register person as user with salt and hashed password' do
+
+		describe 'create a random salt string' do
+
+			it 'must generate a hex string' do
+				SnailMail::PersonService.salt.must_be_instance_of String
+			end
+
+			it 'must generate a hex string that is 128 characters long' do
+				SnailMail::PersonService.salt.length.must_equal 128
+			end
+
+		end
+
+		describe 'create a hash with the password and salt' do
+
+			it 'must have a method that appends two strings together' do
+				SnailMail::PersonService.append_salt("password", "salt").must_equal "passwordsalt"
+			end
+
+			it 'must have a method that creates a secure hash from a string' do
+				SnailMail::PersonService.hash_string("passwordsalt").must_equal Digest::SHA256.bubblebabble("passwordsalt")
+			end
+
+			it 'must create a secure hash from a password and a randomly generated salt string' do
+				password = "password"
+				salt = SnailMail::PersonService.salt
+				hashed_password = Digest::SHA256.bubblebabble(password + salt)
+				SnailMail::PersonService.hash_password(password, salt).must_equal hashed_password
+			end
+
+		end
+
+		describe 'create a person with salt and a hashed password' do
+
+			before do
+				username = SnailMail::Person.random_username
+				data = JSON.parse '{"username": "' + username + '", "name":"Kasabian", "password": "password"}'
+				@person = SnailMail::PersonService.create_person data
+			end
+
+			it 'must create a person' do
+				@person.must_be_instance_of SnailMail::Person
+			end
+
+			it 'must have a string stored as the salt for the person' do
+				@person.salt.must_be_instance_of String
+			end
+
+			it 'must have a string stored as the hashed password for the person' do
+				@person.hashed_password.must_be_instance_of String
 			end
 
 		end
