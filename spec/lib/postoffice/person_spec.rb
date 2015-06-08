@@ -2,11 +2,10 @@ require_relative '../../spec_helper'
 
 describe SnailMail::Person do
 
-	@salt = SecureRandom.hex(64)
-	@hashed_password = Digest::SHA256.bubblebabble ("password" + @salt)
-
 	let ( :person1 ) {
 		person1_username = SnailMail::Person.random_username
+		salt = SecureRandom.hex(64)
+		hashed_password = Digest::SHA256.bubblebabble ("password" + salt)
 		SnailMail::Person.create!(
 			name: "Evan",
 			username: "#{person1_username}",
@@ -14,8 +13,8 @@ describe SnailMail::Person do
 			city: "New York",
 			state: "NY",
 			zip: "10012",
-			salt: @salt,
-			hashed_password: @hashed_password
+			salt: salt,
+			hashed_password: hashed_password
 		)		
 	}
 
@@ -57,12 +56,12 @@ describe SnailMail::Person do
 				person1.zip.must_equal '10012'
 			end
 
-			it 'must store the salt' do
-				person1.salt.must_equal @salt
+			it 'must store the salt as a String' do
+				person1.salt.must_be_instance_of String
 			end
 
-			it 'must store the hashed password' do
-				person1.hashed_password.must_equal @hashed_password
+			it 'must store the hashed password as a String' do
+				person1.hashed_password.must_be_instance_of String
 			end
 
 		end
@@ -135,6 +134,27 @@ describe SnailMail::Person do
 
 			it 'must have a string stored as the hashed password for the person' do
 				@person.hashed_password.must_be_instance_of String
+			end
+
+		end
+
+		describe 'check a login' do
+
+			it 'must find the person record' do
+				person_found = SnailMail::PersonService.get_person_for_username person1.username
+				person_found.must_be_instance_of SnailMail::Person
+			end
+
+			it 'must return true if the correct password is submitted' do
+				data = JSON.parse '{"username": "' + person1.username + '", "password": "password"}'
+				result = SnailMail::PersonService.check_login data
+				result.must_equal true
+			end
+
+			it 'must return false if an incorrect password is submitted' do
+				data = JSON.parse '{"username": "' + person1.username + '", "password": "wrong_password"}'
+				result = SnailMail::PersonService.check_login data
+				result.must_equal false
 			end
 
 		end

@@ -25,6 +25,11 @@ describe app do
 		)
 	}
 
+	let ( :person3 ) {
+		data = JSON.parse '{"username": "' + SnailMail::Person.random_username + '", "name":"Kasabian", "password": "password"}'
+		SnailMail::PersonService.create_person data
+	}
+
 	let ( :mail1 ) {
 		SnailMail::Mail.create!(
 			from: "#{person1.username}",
@@ -121,6 +126,49 @@ describe app do
 
 			it 'must return an empty response body if the person is not found' do
 				last_response.body.must_equal ""
+			end
+
+		end
+
+	end
+
+	describe '/person/login' do
+
+		describe 'successful login' do
+
+			before do
+				data = '{"username": "' + person3.username + '", "password": "password"}'
+				post "/person/login", data
+			end
+
+			it 'must return a 200 status code for a successful login' do
+				last_response.status.must_equal 200
+			end
+
+		end
+
+		describe 'incorrect password' do
+
+			before do
+				data = '{"username": "' + person3.username + '", "password": "wrong_password"}'
+				post "/person/login", data
+			end
+
+			it 'must return a 401 status code for an incorrect password' do
+				last_response.status.must_equal 401
+			end
+
+		end
+
+		describe 'unrecognized username' do
+
+			before do
+				data = '{"username": "unrecognized_username", "password": "wrong_password"}'
+				post "/person/login", data
+			end
+
+			it 'must return a 401 status code for an unrecognized username' do
+				last_response.status.must_equal 401
 			end
 
 		end

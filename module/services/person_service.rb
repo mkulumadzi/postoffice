@@ -41,7 +41,7 @@ module SnailMail
 		end
 
 		def self.append_salt string, salt
-			string.concat(salt)
+			string + salt
 		end
 
 		def self.hash_string string
@@ -49,8 +49,35 @@ module SnailMail
 		end
 
 		def self.hash_password password, salt
-			appended = self.append_salt password, salt
-			self.hash_string appended
+			self.hash_string self.append_salt(password, salt)
+		end
+
+		def self.get_person_for_username username
+
+			returned_person = nil
+
+			SnailMail::Person.where(username: username).each do |person|
+				returned_person = person
+			end
+
+			returned_person
+
+		end
+
+		def self.check_login data
+
+			@person_match = self.get_person_for_username data["username"]
+
+			if @person_match
+				if @person_match.hashed_password == self.hash_password(data["password"], @person_match.salt)
+					return true
+				else
+					return false
+				end
+			else
+				return false
+			end
+
 		end
 
 	end

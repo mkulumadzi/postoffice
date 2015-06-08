@@ -25,6 +25,25 @@ post '/person/new' do
 
 end
 
+post '/person/login' do
+
+  data = JSON.parse request.body.read
+
+  begin
+    successful_login = SnailMail::PersonService.check_login data
+    if successful_login
+      status = 200
+    else
+      status = 401
+    end
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 401
+  end
+
+  [status, nil]
+
+end
+
 # Retrieve a single person record
 get '/person/id/:id' do
   content_type :json
