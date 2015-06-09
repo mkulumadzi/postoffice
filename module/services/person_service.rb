@@ -1,4 +1,4 @@
-require 'SecureRandom'
+require 'securerandom'
 require 'digest'
 require 'digest/bubblebabble'
 

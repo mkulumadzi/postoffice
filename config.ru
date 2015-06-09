@@ -4,7 +4,7 @@ require "rubygems"
 require "bundler/setup"
 require "sinatra"
 require "mongoid"
-require "SecureRandom"
+require "securerandom"
 require "digest"
 require "digest/bubblebabble"
 require File.dirname(__FILE__) + '/app.rb'
