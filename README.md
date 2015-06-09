@@ -13,3 +13,5 @@ The SnailMail Server
 ** bundle exec rake setup_demo_data
 * Set environment variable SNAILMAIL_BASE_URL to application root, ie 'http://localhost:9292'
 * Start app with 'rackup'
+
+## API
