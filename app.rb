@@ -25,7 +25,7 @@ post '/person/new' do
 
 end
 
-post '/person/login' do
+post '/login' do
 
   data = JSON.parse request.body.read
 

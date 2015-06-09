@@ -132,13 +132,13 @@ describe app do
 
 	end
 
-	describe '/person/login' do
+	describe '/login' do
 
 		describe 'successful login' do
 
 			before do
 				data = '{"username": "' + person3.username + '", "password": "password"}'
-				post "/person/login", data
+				post "/login", data
 			end
 
 			it 'must return a 200 status code for a successful login' do
@@ -151,7 +151,7 @@ describe app do
 
 			before do
 				data = '{"username": "' + person3.username + '", "password": "wrong_password"}'
-				post "/person/login", data
+				post "/login", data
 			end
 
 			it 'must return a 401 status code for an incorrect password' do
@@ -164,7 +164,7 @@ describe app do
 
 			before do
 				data = '{"username": "unrecognized_username", "password": "wrong_password"}'
-				post "/person/login", data
+				post "/login", data
 			end
 
 			it 'must return a 401 status code for an unrecognized username' do
