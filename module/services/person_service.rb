@@ -53,21 +53,15 @@ module SnailMail
 		end
 
 		def self.get_person_for_username username
-
 			returned_person = nil
-
 			SnailMail::Person.where(username: username).each do |person|
 				returned_person = person
 			end
-
 			returned_person
-
 		end
 
 		def self.check_login data
-
 			@person_match = self.get_person_for_username data["username"]
-
 			if @person_match
 				if @person_match.hashed_password == self.hash_password(data["password"], @person_match.salt)
 					return true
@@ -77,6 +71,22 @@ module SnailMail
 			else
 				return false
 			end
+		end
+
+		def self.update_person person_id, data
+			person = SnailMail::Person.find(person_id)
+
+			if data["username"]
+				raise ArgumentError
+			end
+
+			person.update_attributes!(
+		      name: data["name"],
+		      address1: data["address1"],
+		      city: data["city"],
+		      state: data["state"],
+		      zip: data["zip"]
+			)
 
 		end
 

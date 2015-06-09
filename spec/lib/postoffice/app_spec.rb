@@ -138,6 +138,34 @@ describe app do
 
 		end
 
+		describe 'post /person/id/:id' do
+
+			before do
+				data = '{"city": "New York", "state": "NY"}'
+				post "person/id/#{person1.id}", data
+			end
+
+			it 'must return a 201 status code' do
+				last_response.status.must_equal 201
+			end
+
+			it 'must update the person record' do
+				person = SnailMail::Person.find(person1.id)
+				person.city.must_equal "New York"
+			end
+
+		end
+
+		describe 'prevent invalid updates' do
+
+			it 'must raise a 403 error if the username is attempted to be updated' do
+				data = '{"username": "new_username"}'
+				post "person/id/#{person1.id}", data
+				last_response.status.must_equal 403
+			end
+
+		end
+
 	end
 
 	describe '/login' do

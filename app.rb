@@ -59,6 +59,27 @@ get '/person/id/:id' do
   [status, response_body]
 end
 
+# Update a person record
+post '/person/id/:id' do
+
+  data = JSON.parse request.body.read
+
+  begin
+    SnailMail::PersonService.update_person params[:id], data
+    status = 201
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+  rescue Moped::Errors::OperationFailure
+    status = 403
+  rescue ArgumentError
+    status = 403
+  end
+
+  [status, nil]
+
+
+end
+
 # View records for all people in the database.
 # Filtering implemented, for example: /people?username=bigedubs
 get '/people' do
