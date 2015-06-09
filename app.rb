@@ -50,7 +50,7 @@ get '/person/id/:id' do
   begin
     person = SnailMail::Person.find(params[:id])
     status = 200
-    response_body = person.as_document.to_json
+    response_body = person.as_document.to_json( :except => ["salt", "hashed_password"] )
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
     response_body = nil
@@ -63,7 +63,7 @@ end
 # Filtering implemented, for example: /people?username=bigedubs
 get '/people' do
   content_type :json
-  response_body = SnailMail::PersonService.get_people(params).to_json
+  response_body = SnailMail::PersonService.get_people(params).to_json( :except => ["salt", "hashed_password"] )
   [200, response_body]
 end
 

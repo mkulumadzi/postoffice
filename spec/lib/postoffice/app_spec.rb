@@ -12,17 +12,13 @@ describe app do
 
 # Set up data for testing
 	let ( :person1 ) {
-		SnailMail::Person.create!(
-			name: "Evan",
-			username: SnailMail::Person.random_username,
-		)
+		data = JSON.parse '{"username": "' + SnailMail::Person.random_username + '", "name":"Evan", "password": "password"}'
+		SnailMail::PersonService.create_person data
 	}
 
 	let ( :person2 ) {
-		SnailMail::Person.create!(
-			name: "Neal",
-			username: SnailMail::Person.random_username,
-		)
+		data = JSON.parse '{"username": "' + SnailMail::Person.random_username + '", "name":"Neal", "password": "password"}'
+		SnailMail::PersonService.create_person data
 	}
 
 	let ( :person3 ) {
@@ -112,6 +108,18 @@ describe app do
 				last_response.body.must_include person1.username
 			end
 
+			it 'must not return the salt' do
+				get "/person/id/#{person1.id}"
+				response = JSON.parse(last_response.body)
+				response["salt"].must_equal nil
+			end
+
+			it 'must not return the hashed password' do
+				get "/person/id/#{person1.id}"
+				response = JSON.parse(last_response.body)
+				response["hashed_password"].must_equal nil
+			end
+
 		end
 
 		describe 'resource not found' do
@@ -182,19 +190,42 @@ describe app do
 			last_response.status.must_equal 200
 		end
 
-		# To do: improve these tests...
-		# It kind of duplicates the test for People.find_all - maybe just test that this method is called?
-		it 'must return a collection with all of the people if no paremters are entered' do
+		it 'must return a collection with all of the people if no parameters are entered' do
 			get '/people'
-			last_response.body.must_include "_id"
+			collection = JSON.parse(last_response.body)
+			num_people = SnailMail::Person.count
+			collection.length.must_equal num_people
+		end
+
+		it 'must not return the salt for any of the records' do
+			get '/people'
+			collection = JSON.parse(last_response.body)
+			i = 0
+			collection.each do |record|
+				if record["salt"] != nil
+					i += 1
+				end
+			end
+			i.must_equal 0
+		end
+
+		it 'must not return the hashed_password for any of the records' do
+			get '/people'
+			collection = JSON.parse(last_response.body)
+			i = 0
+			collection.each do |record|
+				if record["hashed_password"] != nil
+					i += 1
+				end
+			end
+			i.must_equal 0
 		end
 
 		it 'must return a filtered collection if parameters are given' do
-			username = SnailMail::Person.random_username
-			data = '{"username": "' + username + '", "name":"Kasabian"}'
-			post '/person/new', data
-			get "/people?username=#{username}"
-			last_response.body.must_include "_id"
+			get "/people?name=Evan"
+			expected_number = SnailMail::Person.where(name: "Evan").count
+			actual_number = JSON.parse(last_response.body).count
+			actual_number.must_equal expected_number
 		end
 
 	end
