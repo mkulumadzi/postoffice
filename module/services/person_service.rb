@@ -80,13 +80,7 @@ module SnailMail
 				raise ArgumentError
 			end
 
-			person.update_attributes!(
-		      name: data["name"],
-		      address1: data["address1"],
-		      city: data["city"],
-		      state: data["state"],
-		      zip: data["zip"]
-			)
+			person.update_attributes!(data)
 
 		end
 

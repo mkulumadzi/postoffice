@@ -154,6 +154,11 @@ describe app do
 				person.city.must_equal "New York"
 			end
 
+			it 'must not void fields that are not included in the update' do
+				person = SnailMail::Person.find(person1.id)
+				person.name.must_equal "Evan"
+			end
+
 		end
 
 		describe 'prevent invalid updates' do
