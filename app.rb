@@ -66,7 +66,7 @@ post '/person/id/:id' do
 
   begin
     SnailMail::PersonService.update_person params[:id], data
-    status = 201
+    status = 204
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
   rescue Moped::Errors::OperationFailure

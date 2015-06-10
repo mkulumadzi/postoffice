@@ -145,8 +145,8 @@ describe app do
 				post "person/id/#{person1.id}", data
 			end
 
-			it 'must return a 201 status code' do
-				last_response.status.must_equal 201
+			it 'must return a 204 status code' do
+				last_response.status.must_equal 204
 			end
 
 			it 'must update the person record' do
