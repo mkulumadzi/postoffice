@@ -6,6 +6,7 @@ module SnailMail
 		field :from, type: String
 		field :to, type: String
 		field :content, type: String
+		field :image, type: String
 		field :status, type: String, default: "DRAFT"
 		field :scheduled_to_arrive, type: DateTime
 

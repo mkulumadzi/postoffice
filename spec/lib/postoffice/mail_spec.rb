@@ -22,7 +22,8 @@ describe SnailMail::Mail do
 		SnailMail::Mail.create!(
 			from: "#{person1.username}",
 			to: "#{person2.username}",
-			content: "What up"
+			content: "What up",
+			image: "SnailMail at the Beach.png"
 		)	
 	}
 
@@ -30,7 +31,8 @@ describe SnailMail::Mail do
 		SnailMail::Mail.create!(
 			from: "#{person1.username}",
 			to: "#{person2.username}",
-			content: "Hey"
+			content: "Hey how is it going?",
+			image: "Default Card.png"
 		)	
 	}
 
@@ -52,8 +54,25 @@ describe SnailMail::Mail do
 			mail1.content.must_equal 'What up'
 		end
 
+		it 'must store the image name' do
+			mail1.image.must_equal 'SnailMail at the Beach.png'
+		end
+
 		it 'must have a default status of "DRAFT"' do
 			mail1.status.must_equal 'DRAFT'
+		end
+
+	end
+
+	describe 'use mail service to create mail' do
+
+		before do
+			data = JSON.parse '{"to": "' + person2.username + '", "content":"Hey how are you", "image": "Default Card.png"}'
+			@mail = SnailMail::MailService.create_mail person1.id, data
+		end
+
+		it 'must create the mail' do
+			@mail.must_be_instance_of SnailMail::Mail
 		end
 
 	end

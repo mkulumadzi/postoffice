@@ -30,7 +30,8 @@ describe app do
 		SnailMail::Mail.create!(
 			from: "#{person1.username}",
 			to: "#{person2.username}",
-			content: "What up"
+			content: "What up",
+			image: "SnailMail at the Beach.png"
 		)	
 	}
 
@@ -38,7 +39,8 @@ describe app do
 		SnailMail::Mail.create!(
 			from: "#{person1.username}",
 			to: "#{person2.username}",
-			content: "Hey"
+			content: "Hey",
+			image: "Default Card.png"
 		)	
 	}
 
