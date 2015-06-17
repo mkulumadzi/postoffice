@@ -16,6 +16,7 @@ module SnailMail
 		def self.get_mail params = {}
 			mails = []
 			SnailMail::Mail.where(params).each do |mail|
+				mail.update_delivery_status
 				mails << mail.as_document
 			end
 			mails
@@ -26,6 +27,7 @@ module SnailMail
 			mails = []
 
 			SnailMail::Mail.where({to: username, scheduled_to_arrive: { "$lte" => Time.now } }).each do |mail|
+				mail.update_delivery_status
 				mails << mail.as_document
 			end
 
@@ -37,6 +39,7 @@ module SnailMail
 			mails = []
 
 			SnailMail::Mail.where({from: username}).each do |mail|
+				mail.update_delivery_status
 				mails << mail.as_document
 			end
 
