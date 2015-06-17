@@ -213,3 +213,19 @@ get '/person/id/:id/mailbox' do
   [status, response_body]
 
 end
+
+# View sent mail
+get '/person/id/:id/outbox' do
+  content_type :json
+
+  begin
+    response_body = SnailMail::MailService.outbox(params).to_json
+    status = 200
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+    response_body = nil
+  end
+
+  [status, response_body]
+
+end

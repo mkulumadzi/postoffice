@@ -32,6 +32,18 @@ module SnailMail
 			mails
 		end
 
+		def self.outbox params
+			username = SnailMail::Person.find(params[:id]).username
+			mails = []
+
+			SnailMail::Mail.where({from: username}).each do |mail|
+				mails << mail.as_document
+			end
+
+			mails
+
+		end
+
 	end
 
 end

@@ -186,4 +186,27 @@ describe SnailMail::Mail do
 
 	end
 
+	describe 'outbox' do
+
+		before do
+
+			mail1.mail_it
+
+			@params1 = Hash.new
+			@params2 = Hash.new
+
+			@params1[:id] = person1.id
+			@params2[:id] = person2.id
+		end
+
+		it 'must get mail that has been sent by the user' do
+			SnailMail::MailService.outbox(@params1).to_s.must_include mail1.id.to_s
+		end
+
+		it 'must not get mail that has been sent by another user' do
+			SnailMail::MailService.outbox(@params2).to_s.match(/#{mail1.id.to_s}/).must_equal nil
+		end
+
+	end
+
 end

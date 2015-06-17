@@ -531,4 +531,23 @@ describe app do
 		end
 
 	end
+
+	describe '/person/id/:id/outbox' do
+
+		before do
+			mail1.mail_it
+		end
+
+		it 'must return a collection of mail that has been sent by the user' do
+			get "/person/id/#{person1.id}/outbox"
+			last_response.body.must_include mail1.id
+		end
+
+		it 'must not include mail that was sent by someone else' do
+			get "/person/id/#{person2.id}/outbox"
+			last_response.body.match(/#{mail1.id}/).must_equal nil
+		end
+
+	end
+
 end
