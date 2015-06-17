@@ -139,6 +139,7 @@ get '/mail/id/:id' do
 
   begin
     mail = SnailMail::Mail.find(params[:id])
+    mail.update_delivery_status
     status = 200
     response_body = mail.as_document.to_json
   rescue Mongoid::Errors::DocumentNotFound

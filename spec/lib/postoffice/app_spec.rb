@@ -351,6 +351,13 @@ describe app do
 				last_response.body.must_include "What up"
 			end
 
+			it 'must update the delivery status of the mail' do
+				mail1.mail_it
+				mail1.deliver_now
+				get "/mail/id/#{mail1.id}"
+				SnailMail::Mail.find(mail1.id).status.must_equal "DELIVERED"
+			end
+
 		end
 
 		describe 'resource not found' do
