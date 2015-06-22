@@ -11,7 +11,7 @@ module SnailMail
 		field :scheduled_to_arrive, type: DateTime
 
 		def days_to_arrive
-			(3..5).to_a.sample
+			(2..3).to_a.sample
 		end
 
 		def arrive_when

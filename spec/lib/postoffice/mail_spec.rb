@@ -84,21 +84,21 @@ describe SnailMail::Mail do
 		end
 
 		it 'must calculate the number of days to arrive as 3 or more' do
-			assert_operator mail1.days_to_arrive, :>=, 3 
+			assert_operator mail1.days_to_arrive, :>=, 2 
 		end
 
 		it 'must calculate the number of days to arrive as 5 or less' do
-			assert_operator mail1.days_to_arrive, :<=, 5
+			assert_operator mail1.days_to_arrive, :<=, 3
 		end
 
 		it 'must generate an arrival date that is three or more days in the future' do
 			diff = (mail1.arrive_when - Time.now).round
-			assert_operator diff, :>=, 3 * 86400
+			assert_operator diff, :>=, 2 * 86400
 		end
 
 		it 'must generate an arrival date that is less than 5 days away' do
 			diff = (mail1.arrive_when - Time.now).round
-			assert_operator diff, :<=, 5 * 86400
+			assert_operator diff, :<=, 3 * 86400
 		end
 
 		it 'must have status of SENT' do
