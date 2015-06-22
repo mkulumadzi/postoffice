@@ -47,6 +47,21 @@ module SnailMail
 
 		end
 
+		def self.generate_welcome_message person
+			text = File.open("templates/Welcome Message.txt").read
+
+			mail = SnailMail::Mail.create!({
+				from: "snailmail.kuyenda@gmail.com",
+				to: person.username,
+				content: text,
+				image: "SnailMail Postman.png"
+			})
+
+			mail.mail_it
+			mail.deliver_now
+
+		end
+
 	end
 
 end

@@ -12,6 +12,7 @@ post '/person/new' do
 
   begin
     person = SnailMail::PersonService.create_person data
+    SnailMail::MailService.generate_welcome_message person
 
     person_link = "#{ENV['SNAILMAIL_BASE_URL']}/person/id/#{person.id}"
     headers = { "location" => person_link }

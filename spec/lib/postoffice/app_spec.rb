@@ -92,6 +92,35 @@ describe app do
 				last_response.status.must_equal 403
 			end
 
+			describe 'generate welcome message' do
+
+				before do
+					mailArray = []
+					SnailMail::Mail.where(to: @username).each do |mail|
+						mailArray << mail
+					end
+					@mail = mailArray[0]
+				end
+
+				it 'must generate a welcome message from the SnailMail Postman' do
+					@mail.from.must_equal "snailmail.kuyenda@gmail.com"
+				end
+
+				it 'must set the image to be the SnailMail Postman' do
+					@mail.image.must_equal "SnailMail Postman.png"
+				end
+
+				it 'must deliver the mail' do
+					assert_operator @mail.scheduled_to_arrive, :<=, Time.now
+				end
+
+				it 'must include standard welcome text in the mail content' do
+					text = File.open("templates/Welcome Message.txt").read
+					@mail.content.must_equal text
+				end
+
+			end
+
 		end
 
 	end
