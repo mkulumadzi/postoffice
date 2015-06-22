@@ -3,7 +3,7 @@ postoffice
 
 The SnailMail Server
 
-## Setup
+## Initial Setup
 
 * Install Mongo DB locally
 * bundle install
