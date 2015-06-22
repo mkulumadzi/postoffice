@@ -18,7 +18,7 @@ The SnailMail Server
 
 ### People
 
-Create a person:
+Create a person (note that this also generates a welcome message automatically):
 
 ''
 POST /person/new
