@@ -1,11 +1,11 @@
-Welcome to Cheeriyo!
+Welcome to SnailMail!
 
-Cheeriyo is a new kind of messaging service designed for meaningful, modern communication.
+SnailMail is a new kind of messaging service designed for meaningful, modern communication.
 
-To send a new Cheeriyo, simply press the center "Compose" button and begin creating your message. Cheeryios are delivered 2 to 3 days after they are sent.
+To send a new SnailMail, simply press the center "Compose" button and begin creating your message. Messages are delivered 2 to 3 days after they are sent.
 
 Enjoy!
 
-Cheeriyo Postman
+SnailMail Postman
 
 PS: Feedback is always welcome at snailmail.kuyenda@gmail.com
