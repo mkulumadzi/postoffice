@@ -11,6 +11,7 @@ module SnailMail
 		field :city, type: String
 		field :state, type: String
 		field :zip, type: String
+		field :device_token, type: String
 
 		index({ username: 1 }, { unique: true })
 

@@ -187,4 +187,16 @@ describe SnailMail::Person do
 
 	end
 
+	describe 'set the device token' do
+
+		before do
+			person1.device_token = "abc123"
+		end
+
+		it 'must store the device token' do
+			person1.device_token.must_equal "abc123"
+		end
+
+	end
+
 end

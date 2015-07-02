@@ -32,7 +32,8 @@ module SnailMail
 		      state: data["state"],
 		      zip: data["zip"],
 		      salt: salt,
-		      hashed_password: hashed_password
+		      hashed_password: hashed_password,
+		      device_token: data["device_token"]
 		    })
 		end
 

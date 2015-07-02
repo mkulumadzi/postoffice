@@ -12,7 +12,7 @@ describe app do
 
 # Set up data for testing
 	let ( :person1 ) {
-		data = JSON.parse '{"username": "' + SnailMail::Person.random_username + '", "name":"Evan", "password": "password"}'
+		data = JSON.parse '{"username": "' + SnailMail::Person.random_username + '", "name":"Evan", "password": "password", "device_token": "abc123"}'
 		SnailMail::PersonService.create_person data
 	}
 
@@ -151,6 +151,12 @@ describe app do
 				response["hashed_password"].must_equal nil
 			end
 
+			it 'must not return the device token' do
+				get "person/id/#{person1.id}"
+				response = JSON.parse(last_response.body)
+				response["device_token"].must_equal nil
+			end
+
 		end
 
 		describe 'resource not found' do
@@ -279,6 +285,18 @@ describe app do
 			i = 0
 			collection.each do |record|
 				if record["hashed_password"] != nil
+					i += 1
+				end
+			end
+			i.must_equal 0
+		end
+
+		it 'must not return the device token for any of the records' do
+			get '/people'
+			collection = JSON.parse(last_response.body)
+			i = 0
+			collection.each do |record|
+				if record["device_token"] != nil
 					i += 1
 				end
 			end
