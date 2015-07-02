@@ -16,6 +16,7 @@ gem 'tilt', '~> 1.4.1'
 gem 'iconv', '~> 1.0.3'
 gem 'rack-test'
 gem 'multi_json'
+gem 'apns'
 
 group :test do
 	gem 'webmock'

@@ -12,6 +12,7 @@ GEM
       tzinfo (~> 1.1)
     addressable (2.3.8)
     ansi (1.5.0)
+    apns (1.0.0)
     bson (2.3.0)
     bson_ext (1.5.1)
     builder (3.2.2)
@@ -97,6 +98,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  apns
   bson_ext
   httparty
   iconv (~> 1.0.3)
