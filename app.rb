@@ -231,3 +231,25 @@ get '/person/id/:id/outbox' do
   [status, response_body]
 
 end
+
+# Send a notification
+### Hacking here - need to test this
+post '/person/id/:id/notify' do
+
+  data = JSON.parse request.body.read
+
+  begin
+    person = SnailMail::Person.find(params[:id])
+    SnailMail::NotificationService.send_notification person, "Hello world"
+    status = 204
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+  rescue Moped::Errors::OperationFailure
+    status = 403
+  rescue ArgumentError
+    status = 403
+  end
+
+  [status, nil]
+
+end
