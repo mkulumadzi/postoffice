@@ -12,31 +12,32 @@ describe APNS do
 			APNS.host.must_equal 'gateway.sandbox.push.apple.com'
 		end
 
-		it 'must set the path to the pem file' do
-			APNS.pem.must_equal 'certificates/snailtail.production.pem'
+		it 'must point to a pem file' do
+			File.exist?(APNS.pem).must_equal true
 		end
 
 	end
 
 	describe SnailMail::NotificationService do
 
-		let ( :person1 ) {
-			person1_username = SnailMail::Person.random_username
-			salt = SecureRandom.hex(64)
-			hashed_password = Digest::SHA256.bubblebabble ("password" + salt)
-			SnailMail::Person.create!(
-				name: "Evan",
-				username: "#{person1_username}",
-				address1: "121 W 3rd St",
-				city: "New York",
-				state: "NY",
-				zip: "10012",
-				device_token: "4144e129b885dbf301deacdb0b427ad02f052a39cb7e5c0443d6188a483fa166"
-			)		
-		}
+	## Possible To Do: Test that a notification was actually sent
+		# let ( :person1 ) {
+		# 	person1_username = SnailMail::Person.random_username
+		# 	salt = SecureRandom.hex(64)
+		# 	hashed_password = Digest::SHA256.bubblebabble ("password" + salt)
+		# 	SnailMail::Person.create!(
+		# 		name: "Evan",
+		# 		username: "#{person1_username}",
+		# 		address1: "121 W 3rd St",
+		# 		city: "New York",
+		# 		state: "NY",
+		# 		zip: "10012",
+		# 		device_token: "4144e129b885dbf301deacdb0b427ad02f052a39cb7e5c0443d6188a483fa166"
+		# 	)		
+		# }
 
 		# it 'must send the notification' do
-		# 	SnailMail::NotificationService.send_notification person1, "Hello!"
+		# 	SnailMail::NotificationService.send_notification person1, "Hello my friend"
 		# 	last_response.must_equal "foo"
 		# end
 

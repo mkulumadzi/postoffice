@@ -159,15 +159,6 @@ describe SnailMail::Mail do
 			mail.length.must_equal num_mail
 		end
 
-		it 'must update the stutus of mail that has arrived' do
-			mail1.mail_it
-			mail1.deliver_now
-			params = Hash.new
-			params[:from] = "#{person1.username}"
-			mails = SnailMail::MailService.get_mail params
-			SnailMail::Mail.find(mail1.id).status.must_equal "DELIVERED"
-		end
-
 	end
 
 	describe 'mailbox' do
@@ -223,10 +214,6 @@ describe SnailMail::Mail do
 
 		it 'must not get mail that has been sent by another user' do
 			SnailMail::MailService.outbox(@params2).to_s.match(/#{mail1.id.to_s}/).must_equal nil
-		end
-
-		it 'must have updated the delivery status of the mail' do
-			SnailMail::Mail.find(mail1.id).status.must_equal "DELIVERED"
 		end
 
 	end

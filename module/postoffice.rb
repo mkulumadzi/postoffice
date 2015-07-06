@@ -18,5 +18,5 @@ end
 ##Configuring APNS for push notifications
 ## 2195 is the default port for Apple
 APNS.host = 'gateway.sandbox.push.apple.com' 
-APNS.pem  = 'certificates/snailtail.production.pem'
+APNS.pem  = 'certificates/snailtale_development.pem'
 APNS.port = 2195
