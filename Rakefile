@@ -1,4 +1,4 @@
-ENV['RACK_ENV'] = 'development'
+# ENV['RACK_ENV'] = 'development'
 
 require 'rake/testtask'
 require 'bundler/setup'
