@@ -20,6 +20,47 @@ describe APNS do
 
 	describe SnailMail::NotificationService do
 
+		let ( :person1 ) {
+			SnailMail::Person.create!(
+				name: "Evan",
+				username: SnailMail::Person.random_username
+			)
+		}
+
+		let ( :person2 ) {
+			SnailMail::Person.create!(
+				name: "Neal",
+				username: SnailMail::Person.random_username
+			)
+		}
+
+		describe 'create notification for people' do
+
+			before do
+				person1.device_token = "abc123"
+				people = [person1, person2]
+
+				@notifications = SnailMail::NotificationService.create_notification_for_people people, "Hello"
+			end
+
+			it 'must return an array of APNS notifications' do
+				@notifications[0].must_be_instance_of APNS::Notification
+			end
+
+			it 'must only generate notification if a person has a device token' do
+				@notifications.length.must_equal 1
+			end
+
+			it 'must include the device token in the notification' do
+				@notifications[0].device_token.must_equal "abc123"
+			end
+
+			it 'must include the message in the notification' do
+				@notifications[0].alert.must_equal "Hello"
+			end
+
+		end
+
 	## Possible To Do: Test that a notification was actually sent
 		# let ( :person1 ) {
 		# 	person1_username = SnailMail::Person.random_username

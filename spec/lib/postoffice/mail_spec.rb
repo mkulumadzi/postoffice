@@ -242,4 +242,98 @@ describe SnailMail::Mail do
 
 	end
 
+	describe 'find mail to deliver' do
+
+		before do
+
+			mail1.mail_it
+			mail1.deliver_now
+			mail2.mail_it
+
+			@mail_to_deliver = SnailMail::MailService.find_mail_to_deliver
+		end
+
+		it 'must return mail that is scheduled to arrive in the past' do
+			assert_operator @mail_to_deliver[0].scheduled_to_arrive, :<=, Time.now
+		end
+
+		it 'must return mail with status of SENT' do
+			@mail_to_deliver[0].status.must_equal "SENT"
+		end
+
+		it 'must not return any mail that is not scheduled to arrive in the past' do
+			not_scheduled_to_arrive_yet = @mail_to_deliver.select{|mail| mail.scheduled_to_arrive >= Time.now}
+			not_scheduled_to_arrive_yet.length.must_equal 0
+		end
+
+		it 'must not return any mail with status other than SENT' do
+			wrong_status = @mail_to_deliver.select{|mail| mail.status != "SENT"}
+			wrong_status.length.must_equal 0
+		end
+
+	end
+
+	describe 'deliver mail' do
+
+		before do
+
+			mail1.mail_it
+			mail1.deliver_now
+			mail2.mail_it
+
+			@mail_to_deliver = SnailMail::MailService.find_mail_to_deliver
+
+			SnailMail::MailService.deliver_mail @mail_to_deliver
+
+		end
+
+		it 'must update the status of the mail to DELIVERED' do
+			@mail_to_deliver[0].status.must_equal "DELIVERED"
+		end
+
+		it 'must not leave any mail in status of SENT' do
+			undelivered_mail = @mail_to_deliver.select{|mail| mail.status != "DELIVERED"}
+			undelivered_mail.length.must_equal 0
+		end
+
+	end
+
+	describe 'find people to notify' do
+
+		before do
+			mails = [mail1, mail2]
+			@people_to_notify = SnailMail::MailService.people_to_notify mails
+		end
+
+		it 'must return people that are receiving the mail' do
+			assert_operator @people_to_notify.select{|person| person.username = person2.username}.length, :>=, 1
+		end
+
+		it 'must return only one instance of each person' do
+			@people_to_notify.select{|person| person.username = person2.username}.length.must_equal 1
+		end
+
+	end
+
+	## Don't have this working yet.
+	# describe 'deliver mail and notify the recipients' do
+
+	# 	# before do
+	# 	# 	@mail_to_deliver = SnailMail::MailService.find_mail_to_deliver
+	# 	# 	@people_to_notify = SnailMail::MailService.people_to_notify @mail_to_deliver
+
+	# 	# 	@obj = MiniTest::Mock.new
+	# 	# 	SnailMail::MailService.deliver_mail_and_notify_recipients
+	# 	# end
+
+	# 	# it 'should deliver the mail' do
+	# 	# 	@obj.expect :SnailMail::MailService.deliver_mail, nil, [SnailMail::Mail]
+	# 	# end
+
+	# 	# it 'should get the people to notify' do
+	# 	# 	@obj.expect SnailMail::MailService.people_to_notify @mail_to_deliver
+	# 	# end
+
+	# end
+
 end

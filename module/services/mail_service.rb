@@ -60,6 +60,50 @@ module SnailMail
 
 		end
 
+		def self.find_mail_to_deliver
+			mails = []
+
+			SnailMail::Mail.where({status: "SENT", scheduled_to_arrive: { "$lte" => Time.now } }).each do |mail|
+				mails << mail
+			end
+
+			mails
+
+		end
+
+		def self.deliver_mail mails
+			mails.each do |mail|
+				mail.update_delivery_status
+			end
+
+		end
+
+		def self.people_to_notify mails
+			people = []
+
+			mails.each do |mail|
+				person = SnailMail::Person.where({username: mail.to})[0]
+				people << person
+			end
+
+			people.uniq
+		end
+
+		#To Do: Write automated tests for this method (it is working based on manual tests)
+		def self.deliver_mail_and_notify_recipients
+
+			mails = self.find_mail_to_deliver
+
+			self.deliver_mail mails
+
+			people = self.people_to_notify mails
+
+			notifications = SnailMail::NotificationService.create_notification_for_people people, "You've received new mail!"
+
+			APNS.send_notifications(notifications)
+
+		end
+
 	end
 
 end

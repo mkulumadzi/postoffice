@@ -17,7 +17,6 @@ gem 'iconv', '~> 1.0.3'
 gem 'rack-test'
 gem 'multi_json'
 gem 'apns'
-gem 'houston'
 
 group :test do
 	gem 'webmock'
