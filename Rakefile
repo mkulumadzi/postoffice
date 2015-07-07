@@ -81,4 +81,8 @@ task :setup_demo_data do
 
     mail3.mail_it
 
-end 
+end
+
+task :notify_recipients do
+  SnailMail::MailService.deliver_mail_and_notify_recipients
+end
