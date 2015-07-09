@@ -84,5 +84,6 @@ task :setup_demo_data do
 end
 
 task :notify_recipients do
+  puts "Notifying recipients for #{ENV['RACK_ENV']} environment"
   SnailMail::MailService.deliver_mail_and_notify_recipients
 end
