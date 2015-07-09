@@ -100,6 +100,8 @@ module SnailMail
 
 			notifications = SnailMail::NotificationService.create_notification_for_people people, "You've received new mail!"
 
+			puts "Sending notifications: #{notifications}"
+
 			APNS.send_notifications(notifications)
 
 		end
