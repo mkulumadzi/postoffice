@@ -19,12 +19,12 @@ end
 ## 2195 is the default port for Apple
 APNS.host = 'gateway.sandbox.push.apple.com'
 
-if ENV['RACK_ENV'] == 'staging'
+if ENV['RACK_ENV'] == 'staging' || ENV['RACK_ENV'] == 'production'
 	APNS.pem  = 'certificates/snailtale_production.pem'
-elsif ENV['RACK_ENV'] == 'production'
-	APNS.pem = 'certificates/snailtale_production.pem'
+	APNS.host = 'gateway.push.apple.com'
 else
 	APNS.pem  = 'certificates/snailtale_development.pem'
+	APNS.host = 'gateway.sandbox.push.apple.com'
 end
 
 APNS.port = 2195
