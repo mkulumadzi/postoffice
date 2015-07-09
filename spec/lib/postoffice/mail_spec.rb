@@ -240,6 +240,14 @@ describe SnailMail::Mail do
 			mail2.status.must_equal "SENT"
 		end
 
+		it 'must not change mail that has been read back to delivered' do
+			mail2.deliver_now
+			mail2.update_delivery_status
+			mail2.read
+			mail2.update_delivery_status
+			mail2.status.must_equal "READ"
+		end
+
 	end
 
 	describe 'find mail to deliver' do

@@ -32,7 +32,7 @@ module SnailMail
 		end
 
 		def update_delivery_status
-			if self.scheduled_to_arrive && self.scheduled_to_arrive <= Time.now
+			if self.scheduled_to_arrive && self.scheduled_to_arrive <= Time.now &&self.status == "SENT"
 				self.status = "DELIVERED"
 				self.save
 			end
