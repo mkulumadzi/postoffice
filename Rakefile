@@ -28,17 +28,12 @@ task :setup_demo_data do
 	SnailMail::Mail.delete_all
 	SnailMail::Person.delete_all
 
-	SnailMail::Person.create!({
-      username: "bigedubs",
-      name: "Evan Waters",
-      address1: "121 W 3rd St",
-      city: "New York",
-      state: "NY",
-      zip: "10012"
-    })
+  data = "{'username': 'evan.waters@gmail.com', 'password': 'password', 'name': 'Evan Waters'"
+  SnailMail::PersonService.create_person data
+
 
 	SnailMail::Person.create!({
-      username: "nwaters",
+      username: "nwaters4@gmail.com",
       name: "Neal Waters",
       address1: "44 Prichard St",
       city: "Somerville",
@@ -47,7 +42,7 @@ task :setup_demo_data do
     })
 
 	SnailMail::Person.create!({
-      username: "kulwelling",
+      username: "kulwelling@gmail.com",
       name: "Kristen Ulwelling",
       address1: "121 W 3rd St",
       city: "New York",
@@ -56,27 +51,32 @@ task :setup_demo_data do
     })
 
     mail1 = SnailMail::Mail.create!({
-    	from: "nwaters",
-    	to: "bigedubs",
+    	from: "nwaters4@gmail.com",
+    	to: "evan.waters@gmail.com",
     	content: "Hey bro, how's it going? Would you like to watch the game?"
     })
 
     mail1.mail_it
     mail1.deliver_now
+    mail1.update_delivery_status
+    mail1.read
 
     mail2 = SnailMail::Mail.create!({
-    	from: "kulwelling",
-    	to: "bigedubs",
-    	content: "Greetings from NOLA!"
+    	from: "kulwelling@gmail.com",
+    	to: "evan.waters@gmail.com",
+    	content: "Greetings from NOLA!",
+      image: "Fireworks.jpg"
     })
 
     mail2.mail_it
     mail2.deliver_now
+    mail1.update_delivery_status
 
     mail3 = SnailMail::Mail.create!({
-    	from: "nwaters",
-    	to: "bigedubs",
-    	content: "Go U of A!"
+    	from: "nwaters4@gmail.com",
+    	to: "evan.waters@gmail.com",
+    	content: "Go U of A!",
+      image: "Dhow.jpg"
     })
 
     mail3.mail_it
