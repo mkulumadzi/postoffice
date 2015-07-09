@@ -4,7 +4,7 @@ lib_path = File.expand_path('../', __FILE__)
 
 Bundler.require(:default)
 
-ENV['RACK_ENV'] = 'development'
+# ENV['RACK_ENV'] = 'development'
 Mongoid.load!('config/mongoid.yml')
 
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each do |file|
@@ -19,12 +19,12 @@ end
 ## 2195 is the default port for Apple
 APNS.host = 'gateway.sandbox.push.apple.com'
 
-if ENV['RACK_ENV'] == 'development'
-	APNS.pem  = 'certificates/snailtale_development.pem'
-elsif ENV['RACK_ENV'] == 'staging'
+if ENV['RACK_ENV'] == 'staging'
 	APNS.pem  = 'certificates/snailtale_production.pem'
 elsif ENV['RACK_ENV'] == 'production'
 	APNS.pem = 'certificates/snailtale_production.pem'
+else
+	APNS.pem  = 'certificates/snailtale_development.pem'
 end
 
 APNS.port = 2195
