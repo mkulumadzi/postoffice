@@ -604,4 +604,44 @@ describe app do
 
 	end
 
+	describe '/mail/id/:id/read' do
+
+		before do
+			mail1.mail_it
+			mail1.deliver_now
+			mail1.update_delivery_status
+
+			post "/mail/id/#{mail1.id}/read"
+		end
+
+		it 'must mark the mail as read' do
+			mail = SnailMail::Mail.find(mail1.id)
+			mail.status.must_equal "READ"
+		end
+
+
+		it 'must return a 204 status code' do
+			last_response.status.must_equal 204
+		end
+
+		it 'must return an empty response body' do
+			last_response.body.must_equal ""
+		end
+
+		describe 'error cases' do
+
+			it 'must return a 403 status code if mail does not have DELIVERED status' do
+				post "mail/id/#{mail2.id}/read"
+				last_response.status.must_equal 403
+			end
+
+			it 'must return a 404 status code if the mail cannot be found' do
+				post "mail/id/abc/read"
+				last_response.status.must_equal 404
+			end
+
+		end
+
+	end
+
 end

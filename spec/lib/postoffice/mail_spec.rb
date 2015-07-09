@@ -336,4 +336,27 @@ describe SnailMail::Mail do
 
 	# end
 
+	describe 'read mail' do
+
+		before do
+			mail1.mail_it
+			mail1.deliver_now
+			mail1.update_delivery_status
+
+			mail2.mail_it
+		end
+
+		it 'must mark status of READ' do
+			mail1.read
+			mail1.status.must_equal "READ"
+		end
+
+		it 'must throw an error if mail does not have status of DELIVERED' do
+			assert_raises(ArgumentError) {
+				mail2.read
+			}
+		end
+
+	end
+
 end

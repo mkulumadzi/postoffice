@@ -38,6 +38,12 @@ module SnailMail
 			end
 		end
 
+		def read
+			raise ArgumentError, "Mail must be in DELIVERED state to read" unless self.status == "DELIVERED"
+			self.status = "READ"
+			self.save
+		end
+
 	end
 
 end

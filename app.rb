@@ -200,6 +200,26 @@ post '/mail/id/:id/deliver' do
 
 end
 
+# Mark a piece of mail as read
+post '/mail/id/:id/read' do
+
+  begin
+    mail = SnailMail::Mail.find(params[:id])
+    mail.read
+    status = 204
+    response_body = nil
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+    response_body = nil
+  rescue ArgumentError
+    status = 403  
+    response_body = nil
+  end
+
+  [status, response_body]
+
+end
+
 # View delivered mail for a person
 get '/person/id/:id/mailbox' do
   content_type :json
