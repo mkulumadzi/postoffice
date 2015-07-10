@@ -103,7 +103,7 @@ end
 task :test_notification do
   puts "Sending test notification for #{ENV['RACK_ENV']} environment"
   people = SnailMail::Person.where(:device_token.exists => true, :device_token.ne => "abc123")
-  notifications = SnailMail::NotificationService.create_notification_for_people people, "Test notification"
+  notifications = SnailMail::NotificationService.create_notification_for_people people, "Test notification", "Test"
   puts "Sending notifications: #{notifications}"
   APNS.send_notifications(notifications)
 end

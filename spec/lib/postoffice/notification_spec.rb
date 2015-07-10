@@ -74,7 +74,7 @@ describe APNS do
 					person2.device_token = "abc123"
 					people = [person1, person2]
 
-					@notifications = SnailMail::NotificationService.create_notification_for_people people, "Hello"
+					@notifications = SnailMail::NotificationService.create_notification_for_people people, "Hello", "New Mail"
 				end
 
 				it 'must return an array of APNS notifications' do
@@ -95,6 +95,10 @@ describe APNS do
 
 				it 'must include the badge in the notification' do
 					@notifications[0].badge.must_equal 1
+				end
+
+				it 'must include the type as "New Mail"' do
+					@notifications[0].other[:type].must_equal "New Mail"
 				end
 
 			end
