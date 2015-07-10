@@ -29,7 +29,8 @@ task :setup_demo_data do
 	SnailMail::Person.delete_all
 
   data = JSON.parse '{"username": "evan.waters@gmail.com", "password": "password", "name": "Evan Waters"}'
-  SnailMail::PersonService.create_person data
+  
+  person = SnailMail::PersonService.create_person data
 
 	SnailMail::Person.create!({
       username: "nwaters4@gmail.com",
@@ -39,6 +40,18 @@ task :setup_demo_data do
       state: "MA",
       zip: "02132"
     })
+
+  SnailMail::MailService.generate_welcome_message person
+
+  SnailMail::Person.create!({
+      username: "snailmail.kuyenda@gmail.com",
+      name: "Snailtale Postman",
+      address1: nil,
+      city: nil,
+      state: nil,
+      zip: nil
+    })
+
 
 	SnailMail::Person.create!({
       username: "kulwelling@gmail.com",
