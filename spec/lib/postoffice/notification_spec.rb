@@ -34,29 +34,69 @@ describe APNS do
 			)
 		}
 
-		describe 'create notification for people' do
+		let ( :mail1) {
+			SnailMail::Mail.create!(
+				from: person1.username,
+				to: person2.username,
+				content: "Hey"
+			)
+		}
+
+		let ( :mail2) {
+			SnailMail::Mail.create!(
+				from: person1.username,
+				to: person2.username,
+				content: "Hey"
+			)
+		}
+
+		describe 'create notifications' do
 
 			before do
-				person1.device_token = "abc123"
-				people = [person1, person2]
+				mail1.mail_it
+				mail1.deliver_now
+				mail1.update_delivery_status
+				mail1.read
 
-				@notifications = SnailMail::NotificationService.create_notification_for_people people, "Hello"
+				mail2.mail_it
+				mail2.deliver_now
+				mail2.update_delivery_status
 			end
 
-			it 'must return an array of APNS notifications' do
-				@notifications[0].must_be_instance_of APNS::Notification
+			it 'must return the number of mail that is delivered to a person' do
+				num_unread = SnailMail::NotificationService.count_unread_mail person2
+				num_unread.must_equal 1
 			end
 
-			it 'must only generate notification if a person has a device token' do
-				@notifications.length.must_equal 1
-			end
+			describe 'create notification for people' do
 
-			it 'must include the device token in the notification' do
-				@notifications[0].device_token.must_equal "abc123"
-			end
+				before do
+					person2.device_token = "abc123"
+					people = [person1, person2]
 
-			it 'must include the message in the notification' do
-				@notifications[0].alert.must_equal "Hello"
+					@notifications = SnailMail::NotificationService.create_notification_for_people people, "Hello"
+				end
+
+				it 'must return an array of APNS notifications' do
+					@notifications[0].must_be_instance_of APNS::Notification
+				end
+
+				it 'must only generate notification if a person has a device token' do
+					@notifications.length.must_equal 1
+				end
+
+				it 'must include the device token in the notification' do
+					@notifications[0].device_token.must_equal "abc123"
+				end
+
+				it 'must include the message in the notification' do
+					@notifications[0].alert.must_equal "Hello"
+				end
+
+				it 'must include the badge in the notification' do
+					@notifications[0].badge.must_equal 1
+				end
+
 			end
 
 		end

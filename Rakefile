@@ -28,9 +28,8 @@ task :setup_demo_data do
 	SnailMail::Mail.delete_all
 	SnailMail::Person.delete_all
 
-  data = "{'username': 'evan.waters@gmail.com', 'password': 'password', 'name': 'Evan Waters'"
+  data = JSON.parse '{"username": "evan.waters@gmail.com", "password": "password", "name": "Evan Waters"}'
   SnailMail::PersonService.create_person data
-
 
 	SnailMail::Person.create!({
       username: "nwaters4@gmail.com",

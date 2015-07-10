@@ -8,11 +8,16 @@ module SnailMail
 			notifications = []
 
 			people_with_device_tokens.each do |person|
-				notifications << APNS::Notification.new(person.device_token, alert)
+				badge = self.count_unread_mail person
+				notifications << APNS::Notification.new(person.device_token, :alert => alert, :badge => badge)
 			end
 
 			notifications
 
+		end
+
+		def self.count_unread_mail person
+			SnailMail::Mail.where({to: person.username, status: "DELIVERED"}).count
 		end
 
 	end
