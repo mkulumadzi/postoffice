@@ -138,9 +138,23 @@ describe SnailMail::PersonService do
 
 		describe 'check a login' do
 
-			it 'must find the person record' do
-				person_found = SnailMail::PersonService.get_person_for_username person1.username
-				person_found.must_be_instance_of SnailMail::Person
+			describe 'get the person record' do
+
+				it 'must get the person record if the username is submitted' do
+					person = SnailMail::PersonService.find_person_record_from_login person1.username
+					person.must_be_instance_of SnailMail::Person
+				end
+
+				it 'must get the person record if an email is submitted' do
+					person = SnailMail::PersonService.find_person_record_from_login person1.email
+					person.must_be_instance_of SnailMail::Person
+				end
+
+				it 'must return nil if a person record is not found' do
+					person = SnailMail::PersonService.find_person_record_from_login "wrong_username"
+					person.must_equal nil
+				end
+
 			end
 
 			it 'must return true if the correct password is submitted' do

@@ -64,22 +64,27 @@ module SnailMail
 			self.hash_string self.append_salt(password, salt)
 		end
 
-		def self.get_person_for_username username
-			returned_person = nil
-			SnailMail::Person.where(username: username).each do |person|
-				returned_person = person
+		# Currently letting user log in with username or email and sending this to the server as "username". This function looks in both username and email to find a match.
+		def self.find_person_record_from_login username_or_email
+			begin
+				person = SnailMail::Person.find_by(username: username_or_email)
+				return person
+			rescue Mongoid::Errors::DocumentNotFound
 			end
-			returned_person
+
+			begin
+				person = SnailMail::Person.find_by(email: username_or_email)
+				return person
+			rescue Mongoid::Errors::DocumentNotFound
+				return nil
+			end
+
 		end
 
 		def self.check_login data
-			@person_match = self.get_person_for_username data["username"]
-			if @person_match
-				if @person_match.hashed_password == self.hash_password(data["password"], @person_match.salt)
-					return true
-				else
-					return false
-				end
+			person = self.find_person_record_from_login data["username"]
+			if person && person.hashed_password == self.hash_password(data["password"], person.salt)
+				return true
 			else
 				return false
 			end

@@ -103,7 +103,7 @@ describe app do
 				end
 
 				it 'must generate a welcome message from the SnailMail Postman' do
-					@mail.from.must_equal "snailmail.kuyenda@gmail.com"
+					@mail.from.must_equal "snailmail.kuyenda"
 				end
 
 				it 'must set the image to be the SnailMail Postman' do
