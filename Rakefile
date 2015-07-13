@@ -3,6 +3,7 @@
 require 'rake/testtask'
 require 'bundler/setup'
 require 'mongoid'
+
 require_relative 'module/postoffice.rb'
 
 Rake::TestTask.new do |t|
@@ -106,4 +107,8 @@ task :test_notification do
   notifications = SnailMail::NotificationService.create_notification_for_people people, "Test notification", "Test"
   puts "Sending notifications: #{notifications}"
   APNS.send_notifications(notifications)
+end
+
+task :migrate_data do
+  require_relative 'db/migrate.rb'
 end
