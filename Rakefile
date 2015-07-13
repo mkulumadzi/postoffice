@@ -29,13 +29,15 @@ task :setup_demo_data do
 	SnailMail::Mail.delete_all
 	SnailMail::Person.delete_all
 
-  data = JSON.parse '{"username": "evan.waters@gmail.com", "password": "password", "name": "Evan Waters"}'
+  data =  JSON.parse '{"name": "Evan", "username": "evan.waters", "email": "evan@test.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
   
   person = SnailMail::PersonService.create_person data
 
 	SnailMail::Person.create!({
-      username: "nwaters4@gmail.com",
+      username: "nwaters4",
       name: "Neal Waters",
+      email: "nwaters4@gmail.com",
+      phone: "5554441234",
       address1: "44 Prichard St",
       city: "Somerville",
       state: "MA",
@@ -55,8 +57,9 @@ task :setup_demo_data do
 
 
 	SnailMail::Person.create!({
-      username: "kulwelling@gmail.com",
+      username: "kulwelling",
       name: "Kristen Ulwelling",
+      email: "kulwelling@gmail.com",
       address1: "121 W 3rd St",
       city: "New York",
       state: "NY",
@@ -64,8 +67,8 @@ task :setup_demo_data do
     })
 
     mail1 = SnailMail::Mail.create!({
-    	from: "nwaters4@gmail.com",
-    	to: "evan.waters@gmail.com",
+    	from: "nwaters4",
+    	to: "evan.waters",
     	content: "Hey bro, how's it going? Would you like to watch the game?"
     })
 
@@ -75,8 +78,8 @@ task :setup_demo_data do
     mail1.read
 
     mail2 = SnailMail::Mail.create!({
-    	from: "kulwelling@gmail.com",
-    	to: "evan.waters@gmail.com",
+    	from: "kulwelling",
+    	to: "evan.waters",
     	content: "Greetings from NOLA!",
       image: "Fireworks.jpg"
     })
@@ -86,8 +89,8 @@ task :setup_demo_data do
     mail1.update_delivery_status
 
     mail3 = SnailMail::Mail.create!({
-    	from: "nwaters4@gmail.com",
-    	to: "evan.waters@gmail.com",
+    	from: "nwaters4",
+    	to: "evan.waters",
     	content: "Go U of A!",
       image: "Dhow.jpg"
     })
