@@ -47,7 +47,8 @@ task :setup_demo_data do
   SnailMail::MailService.generate_welcome_message person
 
   SnailMail::Person.create!({
-      username: "snailmail.kuyenda@gmail.com",
+      username: "snailmail.kuyenda",
+      email: "snailmail.kuyenda@gmail.com",
       name: "Snailtale Postman",
       address1: nil,
       city: nil,

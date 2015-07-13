@@ -49,7 +49,7 @@ module SnailMail
 			text = File.open("templates/Welcome Message.txt").read
 
 			mail = SnailMail::Mail.create!({
-				from: "snailmail.kuyenda@gmail.com",
+				from: "snailmail.kuyenda",
 				to: person.username,
 				content: text,
 				image: "SnailMail Postman.png"
