@@ -27,6 +27,8 @@ module SnailMail
 			SnailMail::Person.create!({
 		      username: data["username"],
 		      name: data["name"],
+		      email: data["email"],
+		      phone: data["phone"],
 		      address1: data["address1"],
 		      city: data["city"],
 		      state: data["state"],

@@ -5,6 +5,8 @@ module SnailMail
 
 		field :username, type: String
 		field :name, type: String
+		field :email, type: String
+		field :phone, type: String
 		field :hashed_password, type: String
 		field :salt, type: String
 		field :address1, type: String
