@@ -12,7 +12,7 @@ describe app do
 
 # Set up data for testing
 	let ( :person1 ) {
-		data = JSON.parse '{"username": "' + SnailMail::Person.random_username + '", "name":"Evan", "password": "password", "device_token": "abc123"}'
+		data =  JSON.parse '{"name": "Evan", "username": "' + SnailMail::Person.random_username + '", "email": "evan@test.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
 		SnailMail::PersonService.create_person data
 	}
 
@@ -129,32 +129,57 @@ describe app do
 
 		describe 'get /person/id/:id' do
 
-			it 'must return a 200 status code' do
+			before do
 				get "/person/id/#{person1.id}"
+				@response = JSON.parse(last_response.body)
+			end
+
+			it 'must return a 200 status code' do
 				last_response.status.must_equal 200
 			end
 
-			it 'must return a JSON document as a hash in the response body with the username' do
-				get "/person/id/#{person1.id}"
-				last_response.body.must_include person1.username
+			it 'must return the name of the person' do
+				@response["name"].must_equal "Evan"
+			end
+
+			it 'must return the username' do
+				@response["username"].must_be_instance_of String
+			end
+
+			it 'must return the email' do
+				@response["email"].must_equal "evan@test.com"
+			end
+
+			it 'must return the phone number' do
+				@response["phone"].must_equal "5554441324"
+			end
+
+			it 'must return the address1' do
+				@response["address1"].must_equal "121 W 3rd St"
+			end
+
+			it 'must return the city' do
+				@response["city"].must_equal "New York"
+			end
+
+			it 'must return the state' do
+				@response["state"].must_equal "NY"
+			end
+
+			it 'must return the zip' do
+				@response["zip"].must_equal "10012"
 			end
 
 			it 'must not return the salt' do
-				get "/person/id/#{person1.id}"
-				response = JSON.parse(last_response.body)
-				response["salt"].must_equal nil
+				@response["salt"].must_equal nil
 			end
 
 			it 'must not return the hashed password' do
-				get "/person/id/#{person1.id}"
-				response = JSON.parse(last_response.body)
-				response["hashed_password"].must_equal nil
+				@response["hashed_password"].must_equal nil
 			end
 
 			it 'must not return the device token' do
-				get "person/id/#{person1.id}"
-				response = JSON.parse(last_response.body)
-				response["device_token"].must_equal nil
+				@response["device_token"].must_equal nil
 			end
 
 		end
@@ -267,47 +292,22 @@ describe app do
 			collection.length.must_equal num_people
 		end
 
-		it 'must not return the salt for any of the records' do
-			get '/people'
-			collection = JSON.parse(last_response.body)
-			i = 0
-			collection.each do |record|
-				if record["salt"] != nil
-					i += 1
-				end
-			end
-			i.must_equal 0
-		end
-
-		it 'must not return the hashed_password for any of the records' do
-			get '/people'
-			collection = JSON.parse(last_response.body)
-			i = 0
-			collection.each do |record|
-				if record["hashed_password"] != nil
-					i += 1
-				end
-			end
-			i.must_equal 0
-		end
-
-		it 'must not return the device token for any of the records' do
-			get '/people'
-			collection = JSON.parse(last_response.body)
-			i = 0
-			collection.each do |record|
-				if record["device_token"] != nil
-					i += 1
-				end
-			end
-			i.must_equal 0
-		end
-
 		it 'must return a filtered collection if parameters are given' do
 			get "/people?name=Evan"
 			expected_number = SnailMail::Person.where(name: "Evan").count
 			actual_number = JSON.parse(last_response.body).count
 			actual_number.must_equal expected_number
+		end
+
+		# This test may be brittle if the fields are not returned in the same order...
+		it 'must return the same information that person/id/id endpoint returns' do
+			get "/people?id=#{person1.id}"
+			people_response = JSON.parse(last_response.body)
+
+			get "/person/id/#{person1.id}"
+			person_response = JSON.parse(last_response.body)
+
+			people_response[0].must_equal person_response
 		end
 
 	end
