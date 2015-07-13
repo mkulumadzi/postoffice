@@ -29,7 +29,7 @@ task :setup_demo_data do
 	SnailMail::Mail.delete_all
 	SnailMail::Person.delete_all
 
-  data =  JSON.parse '{"name": "Evan", "username": "evan.waters", "email": "evan@test.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
+  data =  JSON.parse '{"name": "Evan", "username": "evan.waters", "email": "evan.waters@gmail.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
   
   person = SnailMail::PersonService.create_person data
 
@@ -96,7 +96,13 @@ task :setup_demo_data do
       image: "Dhow.jpg"
     })
 
-    mail3.mail_it
+
+    mail4 = SnailMail::Mail.create!({
+      from: "kulwelling@gmail.com",
+      to: "evan.waters@gmail.com",
+      content: "Greetings from NOLA!",
+      image: "Fireworks.jpg"
+    })
 
 end
 
