@@ -6,7 +6,7 @@ describe SnailMail::PersonService do
 	Mongoid.load!('config/mongoid.yml')
 
 	let ( :person1 ) {
-		data =  JSON.parse '{"name": "Evan", "username": "' + SnailMail::Person.random_username + '", "email": "evan@test.com", "phone": "555-444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'	
+		data =  JSON.parse '{"name": "Evan", "username": "' + SnailMail::Person.random_username + '", "email": "evan@test.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'	
 
 		SnailMail::PersonService.create_person data
 	}
@@ -26,8 +26,27 @@ describe SnailMail::PersonService do
 			person1.email.must_equal 'evan@test.com'
 		end
 
-		it 'must store the phone' do
-			person1.phone.must_equal '555-444-1324'
+		describe 'store the phone number' do
+
+			it 'must remove spaces from the phone number' do
+				phone = SnailMail::PersonService.format_phone_number '555 444 3333'
+				phone.must_equal '5554443333'
+			end
+
+			it 'must remove special characters from the phone number' do
+				phone = SnailMail::PersonService.format_phone_number '(555)444-3333'
+				phone.must_equal '5554443333'
+			end
+
+			it 'must remove letters from the phone number' do
+				phone = SnailMail::PersonService.format_phone_number 'aB5554443333'
+				phone.must_equal '5554443333'
+			end
+
+			it 'msut store the phone number as a string of numeric digits' do
+				person1.phone.must_equal '5554441324'
+			end
+
 		end
 
 		it 'should create a random username' do

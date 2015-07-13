@@ -24,11 +24,16 @@ module SnailMail
 				hashed_password = self.hash_password data["password"], salt 
 			end
 
+			phone = nil
+			if data["phone"]
+				phone = self.format_phone_number data["phone"]
+			end
+
 			SnailMail::Person.create!({
 		      username: data["username"],
 		      name: data["name"],
 		      email: data["email"],
-		      phone: data["phone"],
+		      phone: phone,
 		      address1: data["address1"],
 		      city: data["city"],
 		      state: data["state"],
@@ -37,6 +42,10 @@ module SnailMail
 		      hashed_password: hashed_password,
 		      device_token: data["device_token"]
 		    })
+		end
+
+		def self.format_phone_number phone
+			phone.tr('^0-9', '')
 		end
 
 		def self.salt
