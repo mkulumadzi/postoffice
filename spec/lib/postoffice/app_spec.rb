@@ -706,4 +706,50 @@ describe app do
 
 	end
 
+	describe '/people/search' do
+
+		before do
+
+			@rando_name = SnailMail::Person.random_username
+
+			@person1 = SnailMail::Person.create!(
+				name: @rando_name,
+				username: SnailMail::Person.random_username
+			)
+
+			@person2 = SnailMail::Person.create!(
+				name: @rando_name,
+				username: SnailMail::Person.random_username
+			)
+
+			@person3 = SnailMail::Person.create!(
+				name: @rando_name,
+				username: SnailMail::Person.random_username
+			)
+
+			get "/people/search?term=#{@rando_name}&limit=2"
+			@response = JSON.parse(last_response.body)
+
+		end
+
+		it 'must return a 200 status code' do
+			last_response.status.must_equal 200
+		end
+
+		it 'must limit the number of records returned based on the limit parameter' do
+			assert_operator @response.count, :<=, 2
+		end
+
+		it 'must return the same keys that are returned by the get /person/id/:id endpoint' do
+			first_person_returned = @response[0]
+			first_person_id = first_person_returned["_id"]["$oid"]
+
+			get "/person/id/#{first_person_id}"
+			person_returned = JSON.parse(last_response.body)
+
+			first_person_returned.keys.sort.must_equal person_returned.keys.sort
+		end
+
+	end
+
 end

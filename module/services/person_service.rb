@@ -14,6 +14,23 @@ module SnailMail
 			people
 		end
 
+		def self.search_people params
+			people = []
+			search_term = params["term"]
+
+			if params["limit"]
+				search_limit = params["limit"]
+			else
+				search_limit = 25
+			end
+
+			SnailMail::Person.or({name: /#{search_term}/}, {username: /#{search_term}/}).limit(search_limit).each do |person|
+				people << person
+			end
+
+			people
+		end
+
 		def self.create_person data
 
 			salt = nil

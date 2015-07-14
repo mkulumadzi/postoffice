@@ -91,6 +91,28 @@ get '/people' do
   [200, response_body]
 end
 
+get '/people/search' do
+
+  content_type :json
+
+  begin
+    people_returned = SnailMail::PersonService.search_people params
+
+    people_bson = []
+    people_returned.each do |person|
+      people_bson << person.as_document
+    end
+
+    response_body = people_bson.to_json( :except => ["salt", "hashed_password", "device_token"] )
+    status = 200
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+  end
+
+  [status, response_body]
+
+end
+
 # Creae a new piece of mail
 # Mail from field is interpreted by the ID in the URI
 post '/person/id/:id/mail/new' do

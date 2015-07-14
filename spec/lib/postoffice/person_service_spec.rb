@@ -79,8 +79,6 @@ describe SnailMail::PersonService do
 
 	end
 
-
-
 	describe 'register person as user with salt and hashed password' do
 
 		describe 'create a random salt string' do
@@ -195,6 +193,104 @@ describe SnailMail::PersonService do
 			params[:name] = "Evan"
 			people = SnailMail::PersonService.get_people params
 			people.length.must_equal num_people
+		end
+
+	end
+
+	describe 'search people' do
+
+		before do
+
+			@person1 = SnailMail::Person.create!(
+				name: "Evan Waters",
+				username: "bigedubs" + SnailMail::Person.random_username,
+				email: "evanw@test.com"
+			)
+
+			@person2 = SnailMail::Person.create!(
+				name: "Evan Rachel Wood",
+				username: "erach" + SnailMail::Person.random_username,
+				email: "evanrw@test.com"
+			)
+
+			@person3 = SnailMail::Person.create!(
+				name: "Evan Spiegel",
+				username: "espiegs" + SnailMail::Person.random_username,
+				email: "espiegs2013@test.com"
+			)
+
+			@rando_name = SnailMail::Person.random_username
+
+			@person4 = SnailMail::Person.create!(
+				name: "Neal #{@rando_name}",
+				username: "Woodsman" + SnailMail::Person.random_username,
+				email: "nwat4@test.com"
+			)
+
+			@person5 = SnailMail::Person.create!(
+				name: "Neal Waters",
+				username: @rando_name + SnailMail::Person.random_username,
+				email: "nwat4@test.com"
+			)
+
+
+
+			parameters = Hash.new()
+			parameters["term"] = "Evan"
+			parameters["limit"] = 2
+			
+			@people_returned = SnailMail::PersonService.search_people parameters
+
+		end
+
+		it 'must return an array of people' do
+			@people_returned[0].must_be_instance_of SnailMail::Person
+		end
+
+		it 'must return only people whose name or username matches the search string' do
+			num_not_match = 0
+			@people_returned.each do |person|
+				if person.name.match(/Evan/) == nil && person.username.match(/Evan/) == nil
+					num_not_match += 1
+				end
+			end
+
+			num_not_match.must_equal 0
+		end
+
+		it 'must limit the number of records returned by the "limit" parameter' do
+			assert_operator @people_returned.count, :<=, 2
+		end
+
+		describe 'some additional search cases' do
+
+			it 'limit the number of records returned to 25 by default, if no limit parameter is given' do
+				parameters = Hash.new()
+				parameters["term"] = "Evan"
+				people_returned = SnailMail::PersonService.search_people parameters
+
+				assert_operator people_returned.count, :<=, 25
+
+			end
+
+			describe 'search term is valid for a username record and a name record' do
+
+				before do
+					parameters = Hash.new()
+					parameters["term"] = @rando_name
+					@people_returned = SnailMail::PersonService.search_people parameters
+				end
+
+				it 'must return matches for the username' do
+					@people_returned.must_include @person4
+				end
+
+				it 'must return matches for the name' do
+					@people_returned.must_include @person5
+				end
+
+			end
+
 		end
 
 	end
