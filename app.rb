@@ -27,6 +27,7 @@ post '/person/new' do
 end
 
 post '/login' do
+  content_type :json
 
   data = JSON.parse request.body.read
 
@@ -242,6 +243,23 @@ get '/person/id/:id/outbox' do
 
   begin
     response_body = SnailMail::MailService.outbox(params).to_json
+    status = 200
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+    response_body = nil
+  end
+
+  [status, response_body]
+
+end
+
+# Get a list of people a person has sent mail to or received mail from
+get '/person/id/:id/contacts' do
+  content_type :json
+
+  begin
+    person = SnailMail::Person.find(params["id"])
+    response_body = SnailMail::MailService.get_contacts(person.username).to_json( :except => ["salt", "hashed_password", "device_token"] )
     status = 200
   rescue Mongoid::Errors::DocumentNotFound
     status = 404

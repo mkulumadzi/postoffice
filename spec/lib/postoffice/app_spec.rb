@@ -44,6 +44,16 @@ describe app do
 		)	
 	}
 
+	let ( :mail3 ) {
+		SnailMail::Mail.create!(
+			from: "#{person3.username}",
+			to: "#{person1.username}",
+			content: "Hey",
+			image: "Default Card.png"
+		)	
+	}
+
+
 	let ( :mail_data ) {
 		'{"to": "' + person2.username + '", "content": "Hey"}'
 	}
@@ -643,6 +653,62 @@ describe app do
 
 			it 'must return a 404 status code if the mail cannot be found' do
 				post "mail/id/abc/read"
+				last_response.status.must_equal 404
+			end
+
+		end
+
+	end
+
+	describe '/person/id/:id/contacts' do
+
+		before do
+			#touching mail to create mail records
+			mail1.mail_it
+			mail2.mail_it
+			mail3.mail_it
+
+			#touching peopl to create their records
+			SnailMail::Person.find(person1.id)
+			SnailMail::Person.find(person2.id)
+			SnailMail::Person.find(person3.id)
+
+			get "/person/id/#{person1.id}/contacts"
+			@response = JSON.parse(last_response.body)
+		end
+
+		it 'must return a 200 status code' do
+			last_response.status.must_equal 200
+		end
+
+		it 'must return a unique list of the users who have sent or received mail to this user' do
+			contacts = SnailMail::MailService.get_contacts person1.username
+
+			contacts_usernames = []
+			contacts.each do |person|
+				contacts_usernames << person.username
+			end
+
+			response_usernames = []
+			@response.each do |entry|
+				response_usernames << entry["username"]
+			end
+
+			response_usernames.sort.must_equal contacts_usernames.sort
+		end
+
+		it 'must return the same information that is returned from the get /person/id/:id endpoint' do
+			first_contact = @response[0]
+			get "/person/id/#{person1.id}"
+			get_person_record = JSON.parse(last_response.body)
+
+			first_contact.keys.sort.must_equal get_person_record.keys.sort
+		end
+
+		describe 'document not found' do
+
+			it 'must return a 404 status code' do
+				get '/person/id/abc123/contacts'
 				last_response.status.must_equal 404
 			end
 

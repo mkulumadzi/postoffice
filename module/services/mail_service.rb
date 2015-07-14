@@ -106,6 +106,36 @@ module SnailMail
 
 		end
 
+		# Get people who have sent or received mail to the person
+		def self.get_people_who_received_mail_from username
+			list_of_people = []
+
+			SnailMail::Mail.where(from: username).each do |mail|
+				list_of_people << SnailMail::Person.find_by(username: mail.to)
+			end
+
+			list_of_people
+		end
+
+		def self.get_people_who_sent_mail_to username
+			list_of_people = []
+
+			SnailMail::Mail.where(to: username).each do |mail|
+				list_of_people << SnailMail::Person.find_by(username: mail.from)
+			end
+
+			list_of_people
+
+		end
+
+		def self.get_contacts username
+
+			recipients = self.get_people_who_received_mail_from username
+			senders = self.get_people_who_sent_mail_to username
+
+			recipients.concat(senders).uniq
+		end
+
 	end
 
 end
