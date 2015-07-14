@@ -286,14 +286,31 @@ describe SnailMail::MailService do
 
 		end
 
+		it 'must return an array of bson documents' do
+			contacts = SnailMail::MailService.get_contacts person1.username
+			contacts[0].must_be_instance_of BSON::Document
+		end
+
 		it 'must create a unique list of all senders and recipients' do
 
 			senders = SnailMail::MailService.get_people_who_sent_mail_to person1.username
 			recipients = SnailMail::MailService.get_people_who_received_mail_from person1.username
 
+			comparison_group = []
+			senders.concat(recipients).uniq.each do |person|
+				comparison_group << person.as_document
+			end
+
 			contacts = SnailMail::MailService.get_contacts person1.username
 
-			contacts.sort.must_equal senders.concat(recipients).uniq.sort
+			not_in = 0
+			comparison_group.each do |doc|
+				if contacts.include? doc == false
+					not_in += 1
+				end
+			end
+
+			not_in.must_equal 0
 		end
 
 	end

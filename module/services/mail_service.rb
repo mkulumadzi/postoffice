@@ -133,7 +133,12 @@ module SnailMail
 			recipients = self.get_people_who_received_mail_from username
 			senders = self.get_people_who_sent_mail_to username
 
-			recipients.concat(senders).uniq
+			contacts = []
+			recipients.concat(senders).uniq.each do |person|
+				contacts << person.as_document
+			end
+
+			contacts
 		end
 
 	end
