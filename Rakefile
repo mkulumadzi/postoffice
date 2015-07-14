@@ -96,14 +96,6 @@ task :setup_demo_data do
       image: "Dhow.jpg"
     })
 
-
-    mail4 = SnailMail::Mail.create!({
-      from: "kulwelling@gmail.com",
-      to: "evan.waters@gmail.com",
-      content: "Greetings from NOLA!",
-      image: "Fireworks.jpg"
-    })
-
 end
 
 task :notify_recipients do

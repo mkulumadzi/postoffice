@@ -13,6 +13,24 @@ email_as_username.each do |doc|
 
 end
 
+#Ading empty records for email to any person records who do not have this field
+no_email_field = SnailMail::Person.where(email: nil)
+
+puts "\nFound #{no_email_field.count} person records where email is nil or missing"
+
+no_email_field.each do |doc|
+	doc.save! rescue puts "Could not modiy doc #{doc.id}/#{doc.username}"
+end
+
+#Ading empty records for phone to any person records who do not have this field
+no_phone_field = SnailMail::Person.where(phone: nil)
+
+puts "\nFound #{no_phone_field.count} person records where phone is nil or missing"
+
+no_phone_field.each do |doc|
+	doc.save! rescue puts "Could not modiy doc #{doc.id}/#{doc.username}"
+end
+
 #Fix mail with 'to' person orphaned by migrating usernames to email field
 email_as_to = SnailMail::Mail.where(:to => /@/)
 
