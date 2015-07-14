@@ -242,10 +242,23 @@ describe app do
 			before do
 				data = '{"username": "' + person3.username + '", "password": "password"}'
 				post "/login", data
+				@person_json = JSON.parse(last_response.body)
 			end
 
-			it 'must return a 200 status code for a successful login' do
+			it 'must return a 200 status code' do
 				last_response.status.must_equal 200
+			end
+
+			it 'must include the person id in the response body' do
+				BSON::ObjectId.from_string(@person_json["_id"]["$oid"]).must_equal person3.id
+			end
+
+			it 'must include the username in the response body' do
+				@person_json["username"].must_equal person3.username
+			end
+
+			it 'must include the name in the response body' do
+				@person_json["name"].must_equal person3.name
 			end
 
 		end

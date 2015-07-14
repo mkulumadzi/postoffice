@@ -31,9 +31,10 @@ post '/login' do
   data = JSON.parse request.body.read
 
   begin
-    successful_login = SnailMail::PersonService.check_login data
-    if successful_login
+    person = SnailMail::PersonService.check_login data
+    if person
       status = 200
+      response_body = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
     else
       status = 401
     end
@@ -41,7 +42,7 @@ post '/login' do
     status = 401
   end
 
-  [status, nil]
+  [status, response_body]
 
 end
 

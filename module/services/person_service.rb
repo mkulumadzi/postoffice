@@ -84,9 +84,9 @@ module SnailMail
 		def self.check_login data
 			person = self.find_person_record_from_login data["username"]
 			if person && person.hashed_password == self.hash_password(data["password"], person.salt)
-				return true
+				return person
 			else
-				return false
+				return nil
 			end
 		end
 

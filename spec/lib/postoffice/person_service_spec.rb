@@ -157,16 +157,16 @@ describe SnailMail::PersonService do
 
 			end
 
-			it 'must return true if the correct password is submitted' do
+			it 'must return a person if the correct password is submitted' do
 				data = JSON.parse '{"username": "' + person1.username + '", "password": "password"}'
 				result = SnailMail::PersonService.check_login data
-				result.must_equal true
+				result.must_be_instance_of SnailMail::Person
 			end
 
-			it 'must return false if an incorrect password is submitted' do
+			it 'must return nil if an incorrect password is submitted' do
 				data = JSON.parse '{"username": "' + person1.username + '", "password": "wrong_password"}'
 				result = SnailMail::PersonService.check_login data
-				result.must_equal false
+				result.must_equal nil
 			end
 
 		end
