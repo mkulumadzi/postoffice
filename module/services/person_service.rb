@@ -34,6 +34,8 @@ module SnailMail
 		#Search array is expected to contain JSON objects with a reference to the name of the person, and an array for emails and phone numbers
 		def self.bulk_search search_term_array
 
+			println("Started bulk search at #{Time.now}")
+
 			people = []
 
 			search_hash = self.flatten_bulk_contact_hash search_term_array
@@ -57,6 +59,8 @@ module SnailMail
 			self.get_people_from_phone_array(search_hash["phoneNumbers"]).each do |person|
 				people << person
 			end
+
+			println("Ended bulk search at #{Time.now}")
 
 			people.uniq
 
