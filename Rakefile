@@ -26,7 +26,6 @@ task :remove_indexes do
 
   Mongoid.load!("config/mongoid.yml")
   SnailMail::Person.remove_indexes
-end
   
 end
 
