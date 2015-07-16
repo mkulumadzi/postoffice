@@ -34,7 +34,7 @@ module SnailMail
 		#Search array is expected to contain JSON objects with a reference to the name of the person, and an array for emails and phone numbers
 		def self.bulk_search search_term_array
 
-			println("Started bulk search at #{Time.now}")
+			puts("Started bulk search at #{Time.now}")
 
 			people = []
 
@@ -60,7 +60,7 @@ module SnailMail
 				people << person
 			end
 
-			println("Ended bulk search at #{Time.now}")
+			puts("Ended bulk search at #{Time.now}")
 
 			people.uniq
 
