@@ -36,20 +36,49 @@ module SnailMail
 
 			people = []
 
-			search_term_array.each do |entry|
+			search_hash = self.flatten_bulk_contact_hash search_term_array
 
-				self.get_people_from_email_array(entry["emails"]).each do |person|
-					people << person
-				end
+			# search_term_array.each do |entry|
 
-				self.get_people_from_phone_array(entry["phoneNumbers"]).each do |person|
-					people << person
-				end
+			# 	self.get_people_from_email_array(entry["emails"]).each do |person|
+			# 		people << person
+			# 	end
 
+			# 	self.get_people_from_phone_array(entry["phoneNumbers"]).each do |person|
+			# 		people << person
+			# 	end
+
+			# end
+
+			self.get_people_from_email_array(search_hash["emails"]).each do |person|
+				people << person
+			end
+
+			self.get_people_from_phone_array(search_hash["phoneNumbers"]).each do |person|
+				people << person
 			end
 
 			people.uniq
 
+		end
+
+		def self.flatten_bulk_contact_hash search_term_array
+			search_hash = Hash.new
+
+			search_hash["emails"] = []
+			search_hash["phoneNumbers"] = []
+
+			search_term_array.each do |entry|
+				entry["emails"].each do |email|
+					search_hash["emails"] << email
+				end
+
+				entry["phoneNumbers"].each do |phone|
+					search_hash["phoneNumbers"] << phone
+				end
+			end
+
+			search_hash
 		end
 
 		def self.get_people_from_email_array email_array
