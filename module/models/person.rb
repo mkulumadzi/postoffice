@@ -15,7 +15,7 @@ module SnailMail
 		field :zip, type: String
 		field :device_token, type: String
 
-		index({ username: 1 }, { unique: true })
+		index({ username: 1, email: 1, phone: 1}, { unique: true})
 
 		#Generate a random username as a hack to get around the unique index
 		def self.random_username
