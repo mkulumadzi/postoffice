@@ -752,4 +752,51 @@ describe app do
 
 	end
 
+	describe '/people/bulk_search' do
+
+		before do
+
+			@rando_name = SnailMail::Person.random_username
+
+			@person1 = SnailMail::Person.create!(
+				name: @rando_name,
+				username: SnailMail::Person.random_username,
+				email: "testbulk@test.com",
+				phone: "5554443333"
+			)
+
+			@person2 = SnailMail::Person.create!(
+				name: @rando_name,
+				username: SnailMail::Person.random_username,
+				email: "test2@test.com",
+				phone: "5556667777"
+			)
+
+			data = '[{"emails": ["testbulk@test.com"], "phoneNumbers": ["5554443333"]}, {"emails": ["test2@test.com"], "phoneNumbers": []}, {"emails": [], "phoneNumbers": ["55667"]}]'
+
+			post "/people/bulk_search", data
+
+			@response = JSON.parse(last_response.body)
+		end
+
+		it 'must generate a 200 status code' do
+			last_response.status.must_equal 200
+		end
+
+		it 'must return a JSON document with the relevant people records' do
+			not_in = 0
+			expected_ids = [@person1.id, @person2.id]
+
+			expected_ids.each do |id|
+				if @response.include? id == false
+					not_in += 1
+				end
+			end
+
+			not_in.must_equal 0
+		end
+
+		
+	end
+
 end

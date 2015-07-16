@@ -295,4 +295,122 @@ describe SnailMail::PersonService do
 
 	end
 
+	describe 'bulk search of people' do
+
+		before do
+
+			@person1 = SnailMail::Person.create!(
+				name: "Evan Waters",
+				username: "bigedubs" + SnailMail::Person.random_username,
+				email: "evanw@test.com",
+				phone: "5554443321"
+			)
+
+			@person2 = SnailMail::Person.create!(
+				name: "Evan Rachel Wood",
+				username: "erach" + SnailMail::Person.random_username,
+				email: "evanrw@test.com"
+			)
+
+			@person3 = SnailMail::Person.create!(
+				name: "Evan Spiegel",
+				username: "espiegs" + SnailMail::Person.random_username,
+				email: "espiegs2013@test.com"
+			)
+
+			@rando_name = SnailMail::Person.random_username
+
+			@person4 = SnailMail::Person.create!(
+				name: "Neal #{@rando_name}",
+				username: "Woodsman" + SnailMail::Person.random_username,
+				email: "nwat4@test.com",
+				phone: "5554446621"
+			)
+
+			@person5 = SnailMail::Person.create!(
+				name: "Neal Waters",
+				username: @rando_name + SnailMail::Person.random_username,
+				email: "nwat4@test.com",
+				phone: "5555553321"
+			)
+
+		end
+
+		describe 'get people from email array' do
+
+			before do
+				@email_array = ["evanw@test.com", "espiegs2013@test.com", "not_in_the_database@test.com"]
+				@people = SnailMail::PersonService.get_people_from_email_array @email_array
+			end
+
+			it 'must return an array of people do' do
+				@people[0].must_be_instance_of SnailMail::Person
+			end
+
+			it 'must return person records who match the search terms' do 
+				@people[0].email.must_equal "evanw@test.com" || "espiegs2013@test.com"
+				
+			end
+
+			it 'must return a person record for each successful search result' do
+				num_expected = SnailMail::Person.or({email: "evanw@test.com"}, {email: "espiegs2013@test.com"}).count
+				@people.count.must_equal num_expected
+			end
+
+		end
+
+		describe 'get people from phone array' do
+
+			before do
+				@phone_array = ["5554446621", "5555553321", "1234"]
+				@people = SnailMail::PersonService.get_people_from_phone_array @phone_array
+			end
+
+			it 'must return an array of people do' do
+				@people[0].must_be_instance_of SnailMail::Person
+			end
+
+			it 'must return person records who match the search terms' do 
+				@people[0].phone.must_equal "5554446621" || "5555553321"
+			end
+
+			it 'must return a person record for each successful search result' do
+				num_expected = SnailMail::Person.or({phone: "5554446621"}, {phone: "5555553321"}).count
+				@people.count.must_equal num_expected
+			end
+
+			it 'must remove special characters when searching phone strings' do
+				people = SnailMail::PersonService.get_people_from_phone_array ["(555) 555-3321"]
+				people[0].phone.must_equal "5555553321"
+			end
+
+		end
+
+		# Might need to break this down into multiple tests...
+		it 'must return a unique array of all people with matching phone records' do
+			data = []
+
+			entry1 = Hash.new
+			entry1["emails"] = ["evanw@test.com"]
+			entry1["phoneNumbers"] = ["5554443321"]
+
+			entry2 = Hash.new
+			entry2["emails"] = ["espiegs2013@test.com"]
+			entry2["phoneNumbers"] = []
+
+			data.append(entry1)
+			data.append(entry2)
+			
+			people = SnailMail::PersonService.bulk_search data
+
+			expected_people = []
+			SnailMail::Person.or({email: "evanw@test.com"}, {email: "espiegs2013@test.com"}, {phone: "5554443321"}).each do |person|
+				expected_people << person
+			end
+
+			people.sort.must_equal expected_people.uniq.sort
+		end
+
+	end
+
 end

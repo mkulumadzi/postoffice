@@ -113,6 +113,29 @@ get '/people/search' do
 
 end
 
+# Do a bulk search of people (for example, when searching for contacts from a phone who are registered users of the service)
+post '/people/bulk_search' do
+  content_type :json
+  data = JSON.parse request.body.read
+
+  begin
+    people = SnailMail::PersonService.bulk_search data
+
+    people_bson = []
+    people.each do |person|
+      people_bson << person.as_document
+    end
+
+    response_body = people_bson.to_json( :except => ["salt", "hashed_password", "device_token"] )
+    status = 200
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+  end
+
+  [status, response_body]
+
+end
+
 # Creae a new piece of mail
 # Mail from field is interpreted by the ID in the URI
 post '/person/id/:id/mail/new' do
