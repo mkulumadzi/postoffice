@@ -18,9 +18,16 @@ task :default => :test
 task :create_indexes do
 
 	Mongoid.load!("config/mongoid.yml")
-  SnailMail::Person.remove_indexes
 	SnailMail::Person.create_indexes
 
+end
+
+task :remove_indexes do
+
+  Mongoid.load!("config/mongoid.yml")
+  SnailMail::Person.remove_indexes
+end
+  
 end
 
 task :setup_demo_data do
