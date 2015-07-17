@@ -14,4 +14,11 @@ FactoryGirl.define do
     device_token "abc123"
   end
 
+  factory :mail, class: SnailMail::Mail do
+    from "a_user"
+    to "a_different_user"
+    content "I love this app"
+    image "Default card.png"
+  end
+  
 end

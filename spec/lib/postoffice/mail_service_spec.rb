@@ -4,66 +4,49 @@ describe SnailMail::MailService do
 
 	Mongoid.load!('config/mongoid.yml')
 
-	let ( :person1 ) {
-		SnailMail::Person.create!(
-			name: "Evan",
-			username: SnailMail::Person.random_username
-		)
-	}
+	before do
 
-	let ( :person2 ) {
-		SnailMail::Person.create!(
-			name: "Neal",
-			username: SnailMail::Person.random_username
-		)
-	}
+		@person1 = create(:person, username: SnailMail::Person.random_username)
+		@person2 = create(:person, username: SnailMail::Person.random_username)
+		@person3 = create(:person, username: SnailMail::Person.random_username)
 
-	let ( :person3 ) {
-		SnailMail::Person.create!(
-			name: "Kristen",
-			username: SnailMail::Person.random_username
-		)
-	}
+		@mail1 = create(:mail, from: @person1.username, to: @person2.username)
+		@mail2 = create(:mail, from: @person1.username, to: @person2.username)
+		@mail3 = create(:mail, from: @person3.username, to: @person1.username)
 
-	let (:mail1) {
-		data = JSON.parse '{"to": "' + person2.username + '", "content": "What up", "image": "SnailMail at the Beach.png"}'
-		SnailMail::MailService.create_mail person1.id, data
-	}
+		@expected_attrs = attributes_for(:mail)
 
-	let (:mail2) {
-		data = JSON.parse '{"to": "' + person2.username + '", "content": "Hey how is it going?", "image": "Default Card.png"}'
-		SnailMail::MailService.create_mail person1.id, data
-	}
-
-	let (:mail3) {
-		data = JSON.parse '{"to": "' + person1.username + '", "content": "Yo yo yo", "image": "Default Card.png"}'
-		SnailMail::MailService.create_mail person3.id, data
-	}
+	end
 
 	describe 'create mail' do
 
+		before do
+			data = Hash["to", @person2.username, "content", @expected_attrs[:content], "image", @expected_attrs[:image]]
+			@mail4 = SnailMail::MailService.create_mail @person1.id, data
+		end
+
 		it 'must create a new piece of mail' do
-			mail1.must_be_instance_of SnailMail::Mail
+			@mail4.must_be_instance_of SnailMail::Mail
 		end
 
 		it 'must store the person it is from' do
-			mail1.from.must_equal "#{person1.username}"
+			@mail4.from.must_equal @person1.username
 		end
 
 		it 'must store person it is to' do
-			mail1.to.must_equal "#{person2.username}"
+			@mail4.to.must_equal @person2.username
 		end
 
 		it 'must store the content' do
-			mail1.content.must_equal 'What up'
+			@mail4.content.must_equal @expected_attrs[:content]
 		end
 
 		it 'must store the image name' do
-			mail1.image.must_equal 'SnailMail at the Beach.png'
+			@mail4.image.must_equal @expected_attrs[:image]
 		end
 
 		it 'must have a default status of "DRAFT"' do
-			mail1.status.must_equal 'DRAFT'
+			@mail4.status.must_equal 'DRAFT'
 		end
 
 	end
@@ -78,18 +61,15 @@ describe SnailMail::MailService do
 		end
 
 		it 'must filter the records by from when it is passed in as a parameter' do
-			num_mail = SnailMail::Mail.where({from: "#{person1.username}"}).count
-			params = Hash.new
-			params[:from] = "#{person1.username}"
+			num_mail = SnailMail::Mail.where({from: @person1.username}).count
+			params = Hash[:from, @person1.username]
 			mail = SnailMail::MailService.get_mail params
 			mail.length.must_equal num_mail
 		end
 
 		it 'must filter the records by username and name when both are passed in as a parameter' do
-			num_mail = SnailMail::Mail.where({from: "#{person1.username}", to: "#{person2.username}"}).count
-			params = Hash.new
-			params[:from] = "#{person1.username}"
-			params[:to] = "#{person2.username}"
+			num_mail = SnailMail::Mail.where({from: @person1.username, to: @person2.username}).count
+			params = Hash[:from, @person1.username, :to, @person2.username]
 			mail = SnailMail::MailService.get_mail params
 			mail.length.must_equal num_mail
 		end
@@ -100,29 +80,28 @@ describe SnailMail::MailService do
 
 		before do
 
-			mail1.mail_it
-			mail1.deliver_now
+			@mail1.mail_it
+			@mail1.deliver_now
 
-			mail2.mail_it
-			mail2.save
+			@mail2.mail_it
+			@mail2.save
 
-			@params = Hash.new
-			@params[:id] = person2.id
+			@params = Hash[:id, @person2.id]
 
 			SnailMail::MailService.mailbox(@params)
 
 		end
 
 		it 'must get mail that has arrived' do
-			SnailMail::MailService.mailbox(@params).to_s.must_include mail1.id.to_s
+			SnailMail::MailService.mailbox(@params).to_s.must_include @mail1.id.to_s
 		end
 
 		it 'must not show mail that has not arrived' do
-			SnailMail::MailService.mailbox(@params).to_s.match(/#{mail2.id.to_s}/).must_equal nil
+			SnailMail::MailService.mailbox(@params).to_s.match(/#{@mail2.id.to_s}/).must_equal nil
 		end
 
 		it 'must have updated the delivery status if necessary' do
-			SnailMail::Mail.find(mail1.id).status.must_equal "DELIVERED"
+			SnailMail::Mail.find(@mail1.id).status.must_equal "DELIVERED"
 		end
 
 	end
@@ -131,24 +110,21 @@ describe SnailMail::MailService do
 
 		before do
 
-			mail1.mail_it
+			@mail1.mail_it
 
-			@params1 = Hash.new
-			@params2 = Hash.new
+			@params1 = Hash[:id, @person1.id]
+			@params2 = Hash[:id, @person2.id]
 
-			@params1[:id] = person1.id
-			@params2[:id] = person2.id
-
-			mail1.deliver_now
+			@mail1.deliver_now
 			SnailMail::MailService.outbox(@params1)
 		end
 
 		it 'must get mail that has been sent by the user' do
-			SnailMail::MailService.outbox(@params1).to_s.must_include mail1.id.to_s
+			SnailMail::MailService.outbox(@params1).to_s.must_include @mail1.id.to_s
 		end
 
 		it 'must not get mail that has been sent by another user' do
-			SnailMail::MailService.outbox(@params2).to_s.match(/#{mail1.id.to_s}/).must_equal nil
+			SnailMail::MailService.outbox(@params2).to_s.match(/#{@mail1.id.to_s}/).must_equal nil
 		end
 
 	end
@@ -157,9 +133,9 @@ describe SnailMail::MailService do
 
 		before do
 
-			mail1.mail_it
-			mail1.deliver_now
-			mail2.mail_it
+			@mail1.mail_it
+			@mail1.deliver_now
+			@mail2.mail_it
 
 			@mail_to_deliver = SnailMail::MailService.find_mail_to_deliver
 		end
@@ -188,9 +164,9 @@ describe SnailMail::MailService do
 
 		before do
 
-			mail1.mail_it
-			mail1.deliver_now
-			mail2.mail_it
+			@mail1.mail_it
+			@mail1.deliver_now
+			@mail2.mail_it
 
 			@mail_to_deliver = SnailMail::MailService.find_mail_to_deliver
 
@@ -212,16 +188,16 @@ describe SnailMail::MailService do
 	describe 'find people to notify' do
 
 		before do
-			mails = [mail1, mail2]
+			mails = [@mail1, @mail2]
 			@people_to_notify = SnailMail::MailService.people_to_notify mails
 		end
 
 		it 'must return people that are receiving the mail' do
-			assert_operator @people_to_notify.select{|person| person.username = person2.username}.length, :>=, 1
+			assert_operator @people_to_notify.select{|person| person.username = @person2.username}.length, :>=, 1
 		end
 
 		it 'must return only one instance of each person' do
-			@people_to_notify.select{|person| person.username = person2.username}.length.must_equal 1
+			@people_to_notify.select{|person| person.username = @person2.username}.length.must_equal 1
 		end
 
 	end
@@ -230,15 +206,15 @@ describe SnailMail::MailService do
 
 		#Touching mail to create associated mail objects in database
 		before do
-			mail1.mail_it
-			mail2.mail_it
-			mail3.mail_it
+			@mail1.mail_it
+			@mail2.mail_it
+			@mail3.mail_it
 		end
 
 		describe 'get users the person has sent mail to' do
 
 			before do
-				@recipients = SnailMail::MailService.get_people_who_received_mail_from person1.username
+				@recipients = SnailMail::MailService.get_people_who_received_mail_from @person1.username
 			end
 
 			it 'must return an array of people' do
@@ -249,7 +225,7 @@ describe SnailMail::MailService do
 
 				not_in = 0
 
-				SnailMail::Mail.where(from: person1.id).each do |mail|
+				SnailMail::Mail.where(from: @person1.id).each do |mail|
 					person = SnailMail::Person.find_by(username: mail.to)
 
 					if @recipients.include? person == false
@@ -266,7 +242,7 @@ describe SnailMail::MailService do
 		describe 'get users the person has received mail from' do
 
 			before do
-				@senders = SnailMail::MailService.get_people_who_sent_mail_to person1.username
+				@senders = SnailMail::MailService.get_people_who_sent_mail_to @person1.username
 			end
 
 			it 'must return an array of people' do
@@ -275,7 +251,7 @@ describe SnailMail::MailService do
 
 			it 'must include every user who has sent mail to this person' do
 				not_in = 0
-				SnailMail::Mail.where(to: person1.id).each do |mail|
+				SnailMail::Mail.where(to: @person1.id).each do |mail|
 					person = SnailMail::Person.find_by(username: mail.from)
 					if @recipients.include? person == false
 						not_in += 1
@@ -287,21 +263,21 @@ describe SnailMail::MailService do
 		end
 
 		it 'must return an array of bson documents' do
-			contacts = SnailMail::MailService.get_contacts person1.username
+			contacts = SnailMail::MailService.get_contacts @person1.username
 			contacts[0].must_be_instance_of BSON::Document
 		end
 
 		it 'must create a unique list of all senders and recipients' do
 
-			senders = SnailMail::MailService.get_people_who_sent_mail_to person1.username
-			recipients = SnailMail::MailService.get_people_who_received_mail_from person1.username
+			senders = SnailMail::MailService.get_people_who_sent_mail_to @person1.username
+			recipients = SnailMail::MailService.get_people_who_received_mail_from @person1.username
 
 			comparison_group = []
 			senders.concat(recipients).uniq.each do |person|
 				comparison_group << person.as_document
 			end
 
-			contacts = SnailMail::MailService.get_contacts person1.username
+			contacts = SnailMail::MailService.get_contacts @person1.username
 
 			not_in = 0
 			comparison_group.each do |doc|
