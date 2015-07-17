@@ -10,53 +10,36 @@ end
 
 describe app do
 
-	# Set up data for testing
-	let ( :person1 ) {
-		data =  JSON.parse '{"name": "Evan", "username": "' + SnailMail::Person.random_username + '", "email": "evan@test.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
-		SnailMail::PersonService.create_person data
-	}
+	before do
 
-	let ( :person2 ) {
-		data = JSON.parse '{"username": "' + SnailMail::Person.random_username + '", "name":"Neal", "password": "password"}'
-		SnailMail::PersonService.create_person data
-	}
+		@person1 = create(:person, username: SnailMail::Person.random_username)
+		@person2 = create(:person, username: SnailMail::Person.random_username)
 
-	let ( :person3 ) {
-		data = JSON.parse '{"username": "' + SnailMail::Person.random_username + '", "name":"Kasabian", "password": "password"}'
-		SnailMail::PersonService.create_person data
-	}
+		@person_attrs = attributes_for(:person)
 
-	let ( :mail1 ) {
-		SnailMail::Mail.create!(
-			from: "#{person1.username}",
-			to: "#{person2.username}",
-			content: "What up",
-			image: "SnailMail at the Beach.png"
-		)	
-	}
+		# Creating a person with a password to test login
+		data = Hash["username", SnailMail::Person.random_username, "name", @person_attrs[:name], "email", @person_attrs[:email], "phone", @person_attrs[:phone], "password", "password"]
+		@person3 = SnailMail::PersonService.create_person data	
 
-	let ( :mail2 ) {
-		SnailMail::Mail.create!(
-			from: "#{person1.username}",
-			to: "#{person2.username}",
-			content: "Hey",
-			image: "Default Card.png"
-		)	
-	}
+		# Creating a person record that is not saved to the database
+		@person4 = build(:person, username: SnailMail::Person.random_username)	
 
-	let ( :mail3 ) {
-		SnailMail::Mail.create!(
-			from: "#{person3.username}",
-			to: "#{person1.username}",
-			content: "Hey",
-			image: "Default Card.png"
-		)	
-	}
+		@mail1 = create(:mail, from: @person1.username, to: @person2.username)
+		@mail2 = create(:mail, from: @person1.username, to: @person2.username)
+		@mail3 = create(:mail, from: @person3.username, to: @person1.username)
 
+		@mail4 = build(:mail, from: @person1.username, to: @person2.username)
 
-	let ( :mail_data ) {
-		'{"to": "' + person2.username + '", "content": "Hey"}'
-	}
+	end
+
+	# Convenience methods for converting person amd mail objects into JSON objects that can be posted
+	def convert_person_to_json person
+		person.as_document.to_json
+	end
+
+	def convert_mail_to_json mail
+		mail.as_document.to_json
+	end
 
 	describe 'app_root' do
 
@@ -79,9 +62,7 @@ describe app do
 		describe 'post /person/new' do
 
 			before do
-				@username = SnailMail::Person.random_username
-				data = '{"username": "' + @username + '", "name":"Kasabian", "password": "password"}'
-				post '/person/new', data
+				post '/person/new', (convert_person_to_json @person4)
 			end
 
 			it 'must return a 201 status code' do	
@@ -97,36 +78,31 @@ describe app do
 			end
 
 			it 'must return a 403 error if a duplicate username is posted' do
-				data = '{"username": "' + @username + '", "name":"Kasabian"}'
-				post '/person/new', data
+				post '/person/new', (convert_person_to_json @person1)
 				last_response.status.must_equal 403
 			end
 
 			describe 'generate welcome message' do
 
 				before do
-					mailArray = []
-					SnailMail::Mail.where(to: @username).each do |mail|
-						mailArray << mail
-					end
-					@mail = mailArray[0]
+					@welcome_mail = SnailMail::Mail.find_by(to: @person4.username)
 				end
 
 				it 'must generate a welcome message from the SnailMail Postman' do
-					@mail.from.must_equal "snailmail.kuyenda"
+					@welcome_mail.from.must_equal "snailmail.kuyenda"
 				end
 
 				it 'must set the image to be the SnailMail Postman' do
-					@mail.image.must_equal "SnailMail Postman.png"
+					@welcome_mail.image.must_equal "SnailMail Postman.png"
 				end
 
 				it 'must deliver the mail' do
-					assert_operator @mail.scheduled_to_arrive, :<=, Time.now
+					assert_operator @welcome_mail.scheduled_to_arrive, :<=, Time.now
 				end
 
 				it 'must include standard welcome text in the mail content' do
 					text = File.open("templates/Welcome Message.txt").read
-					@mail.content.must_equal text
+					@welcome_mail.content.must_equal text
 				end
 
 			end
@@ -140,7 +116,7 @@ describe app do
 		describe 'get /person/id/:id' do
 
 			before do
-				get "/person/id/#{person1.id}"
+				get "/person/id/#{@person1.id}"
 				@response = JSON.parse(last_response.body)
 			end
 
@@ -149,35 +125,35 @@ describe app do
 			end
 
 			it 'must return the name of the person' do
-				@response["name"].must_equal "Evan"
+				@response["name"].must_equal @person1.name
 			end
 
 			it 'must return the username' do
-				@response["username"].must_be_instance_of String
+				@response["username"].must_equal @person1.username
 			end
 
 			it 'must return the email' do
-				@response["email"].must_equal "evan@test.com"
+				@response["email"].must_equal @person1.email
 			end
 
 			it 'must return the phone number' do
-				@response["phone"].must_equal "5554441324"
+				@response["phone"].must_equal @person1.phone
 			end
 
 			it 'must return the address1' do
-				@response["address1"].must_equal "121 W 3rd St"
+				@response["address1"].must_equal @person1.address1
 			end
 
 			it 'must return the city' do
-				@response["city"].must_equal "New York"
+				@response["city"].must_equal @person1.city
 			end
 
 			it 'must return the state' do
-				@response["state"].must_equal "NY"
+				@response["state"].must_equal @person1.state
 			end
 
 			it 'must return the zip' do
-				@response["zip"].must_equal "10012"
+				@response["zip"].must_equal @person1.zip
 			end
 
 			it 'must not return the salt' do
@@ -214,7 +190,7 @@ describe app do
 
 			before do
 				data = '{"city": "New York", "state": "NY"}'
-				post "person/id/#{person1.id}", data
+				post "person/id/#{@person1.id}", data
 			end
 
 			it 'must return a 204 status code' do
@@ -222,13 +198,13 @@ describe app do
 			end
 
 			it 'must update the person record' do
-				person = SnailMail::Person.find(person1.id)
+				person = SnailMail::Person.find(@person1.id)
 				person.city.must_equal "New York"
 			end
 
 			it 'must not void fields that are not included in the update' do
-				person = SnailMail::Person.find(person1.id)
-				person.name.must_equal "Evan"
+				person = SnailMail::Person.find(@person1.id)
+				person.name.must_equal @person1.name
 			end
 
 		end
@@ -237,7 +213,7 @@ describe app do
 
 			it 'must raise a 403 error if the username is attempted to be updated' do
 				data = '{"username": "new_username"}'
-				post "person/id/#{person1.id}", data
+				post "person/id/#{@person1.id}", data
 				last_response.status.must_equal 403
 			end
 
@@ -250,7 +226,7 @@ describe app do
 		describe 'successful login' do
 
 			before do
-				data = '{"username": "' + person3.username + '", "password": "password"}'
+				data = '{"username": "' + @person3.username + '", "password": "password"}'
 				post "/login", data
 				@person_json = JSON.parse(last_response.body)
 			end
@@ -260,15 +236,15 @@ describe app do
 			end
 
 			it 'must include the person id in the response body' do
-				BSON::ObjectId.from_string(@person_json["_id"]["$oid"]).must_equal person3.id
+				BSON::ObjectId.from_string(@person_json["_id"]["$oid"]).must_equal @person3.id
 			end
 
 			it 'must include the username in the response body' do
-				@person_json["username"].must_equal person3.username
+				@person_json["username"].must_equal @person3.username
 			end
 
 			it 'must include the name in the response body' do
-				@person_json["name"].must_equal person3.name
+				@person_json["name"].must_equal @person3.name
 			end
 
 		end
@@ -276,7 +252,7 @@ describe app do
 		describe 'incorrect password' do
 
 			before do
-				data = '{"username": "' + person3.username + '", "password": "wrong_password"}'
+				data = '{"username": "' + @person3.username + '", "password": "wrong_password"}'
 				post "/login", data
 			end
 
@@ -324,10 +300,10 @@ describe app do
 
 		# This test may be brittle if the fields are not returned in the same order...
 		it 'must return the same information that person/id/id endpoint returns' do
-			get "/people?id=#{person1.id}"
+			get "/people?id=#{@person1.id}"
 			people_response = JSON.parse(last_response.body)
 
-			get "/person/id/#{person1.id}"
+			get "/person/id/#{@person1.id}"
 			person_response = JSON.parse(last_response.body)
 
 			people_response[0].must_equal person_response
@@ -337,10 +313,14 @@ describe app do
 
 	describe '/person/id/:id/mail/new' do
 
+		before do
+			@mail_data = convert_mail_to_json @mail4
+		end
+
 		describe 'post /person/id/:id/mail/new' do
 
 			before do
-				post "/person/id/#{person1.id}/mail/new", mail_data
+				post "/person/id/#{@person1.id}/mail/new", @mail_data
 			end
 
 			it 'must get a status of 201' do
@@ -361,7 +341,7 @@ describe app do
 
 			before do
 				from_id = 'abc'
-				post "/person/id/#{from_id}/mail/new", mail_data
+				post "/person/id/#{from_id}/mail/new", @mail_data
 			end
 
 			it 'should return a 404 status' do
@@ -378,10 +358,14 @@ describe app do
 
 	describe '/person/id/:id/mail/send' do
 
+		before do
+			@mail_data = convert_mail_to_json @mail4
+		end
+
 		describe 'post /person/id/:id/mail/send' do
 
 			before do
-				post "/person/id/#{person1.id}/mail/send", mail_data
+				post "/person/id/#{@person1.id}/mail/send", @mail_data
 			end
 
 			it 'must get a status of 201' do
@@ -411,14 +395,14 @@ describe app do
 		describe 'get /mail/id/:id' do
 
 			it 'must return a 200 status code' do
-				get "/mail/id/#{mail1.id}"
+				get "/mail/id/#{@mail1.id}"
 				last_response.status.must_equal 200
 			end
 
 			# To do: improve this test...
 			it 'must return a JSON document for the mail in the response body' do
-				get "/mail/id/#{mail1.id}"
-				last_response.body.must_include "What up"
+				get "/mail/id/#{@mail1.id}"
+				last_response.body.must_include @mail1.id
 			end
 
 		end
@@ -442,16 +426,16 @@ describe app do
 		describe 'post /mail/id/:id/send' do
 
 			before do
-				post "/mail/id/#{mail1.id}/send"
+				post "/mail/id/#{@mail1.id}/send"
 			end
 
 			it 'must send the mail' do
-				mail = SnailMail::Mail.find(mail1.id)
+				mail = SnailMail::Mail.find(@mail1.id)
 				mail.status.must_equal "SENT"
 			end
 
 			it 'must be scheduled to arrive' do
-				mail = SnailMail::Mail.find(mail1.id)			
+				mail = SnailMail::Mail.find(@mail1.id)			
 				mail.scheduled_to_arrive.must_be_instance_of DateTime
 			end
 
@@ -466,7 +450,7 @@ describe app do
 			describe 'try to send mail that has already been sent' do
 
 				before do
-					post "/mail/id/#{mail1.id}/send"
+					post "/mail/id/#{@mail1.id}/send"
 				end
 
 				it 'must return a 403 status' do
@@ -500,12 +484,12 @@ describe app do
 		describe 'post /mail/id/:id/deliver' do
 
 			before do
-				post "/mail/id/#{mail1.id}/send"
-				post "/mail/id/#{mail1.id}/deliver"
+				post "/mail/id/#{@mail1.id}/send"
+				post "/mail/id/#{@mail1.id}/deliver"
 			end
 
 			it 'must be scheduled to arrive in the past' do
-				mail = SnailMail::Mail.find(mail1.id)			
+				mail = SnailMail::Mail.find(@mail1.id)			
 				assert_operator mail.scheduled_to_arrive, :<=, Time.now
 			end
 
@@ -522,7 +506,7 @@ describe app do
 		describe 'try to deliver mail that has not been sent' do
 
 			before do
-				post "/mail/id/#{mail1.id}/deliver"
+				post "/mail/id/#{@mail1.id}/deliver"
 			end
 
 			it 'must return a 403 status' do
@@ -561,15 +545,15 @@ describe app do
 		end
 
 		it 'must return a collection with all of the mail if no parameters are entered' do
-			mail1
 			get '/mail'
-			last_response.body.must_include "_id"
+			response = JSON.parse(last_response.body)
+			response.count.must_equal SnailMail::Mail.count
 		end
 
 		it 'must return a filtered collection if parameters are given' do
-			mail1
-			get "/mail?from=#{person1.username}"
-			last_response.body.must_include "_id"
+			get "/mail?from=#{@person1.username}"
+			response = JSON.parse(last_response.body)
+			response.count.must_equal SnailMail::Mail.where(from: @person1.username).count
 		end
 
 	end
@@ -578,26 +562,23 @@ describe app do
 
 		before do
 
-			mail1.mail_it
+			@mail1.mail_it
+			@mail1.deliver_now
+			@mail1.save
 
-			# Put the arrival date safely in the past
-			# To do: implement a "deliver now" feature that could be used for these tests
-			mail1.scheduled_to_arrive = mail1.scheduled_to_arrive - 6 * 86400
-			mail1.save
-
-			mail2.mail_it
-			mail2.save
+			@mail2.mail_it
+			@mail2.save
 
 		end
 
 		it 'must return a collection of mail that has arrived' do
-			get "/person/id/#{person2.id}/mailbox"
-			last_response.body.must_include mail1.id
+			get "/person/id/#{@person2.id}/mailbox"
+			last_response.body.must_include @mail1.id
 		end
 
 		it 'must not return any mail that has not yet arrived' do
-			get "/person/id/#{person2.id}/mailbox"
-			last_response.body.match(/#{mail2.id}/).must_equal nil
+			get "/person/id/#{@person2.id}/mailbox"
+			last_response.body.match(/#{@mail2.id}/).must_equal nil
 		end
 
 	end
@@ -605,17 +586,17 @@ describe app do
 	describe '/person/id/:id/outbox' do
 
 		before do
-			mail1.mail_it
+			@mail1.mail_it
 		end
 
 		it 'must return a collection of mail that has been sent by the user' do
-			get "/person/id/#{person1.id}/outbox"
-			last_response.body.must_include mail1.id
+			get "/person/id/#{@person1.id}/outbox"
+			last_response.body.must_include @mail1.id
 		end
 
 		it 'must not include mail that was sent by someone else' do
-			get "/person/id/#{person2.id}/outbox"
-			last_response.body.match(/#{mail1.id}/).must_equal nil
+			get "/person/id/#{@person2.id}/outbox"
+			last_response.body.match(/#{@mail1.id}/).must_equal nil
 		end
 
 	end
@@ -623,15 +604,15 @@ describe app do
 	describe '/mail/id/:id/read' do
 
 		before do
-			mail1.mail_it
-			mail1.deliver_now
-			mail1.update_delivery_status
+			@mail1.mail_it
+			@mail1.deliver_now
+			@mail1.update_delivery_status
 
-			post "/mail/id/#{mail1.id}/read"
+			post "/mail/id/#{@mail1.id}/read"
 		end
 
 		it 'must mark the mail as read' do
-			mail = SnailMail::Mail.find(mail1.id)
+			mail = SnailMail::Mail.find(@mail1.id)
 			mail.status.must_equal "READ"
 		end
 
@@ -647,7 +628,7 @@ describe app do
 		describe 'error cases' do
 
 			it 'must return a 403 status code if mail does not have DELIVERED status' do
-				post "mail/id/#{mail2.id}/read"
+				post "mail/id/#{@mail2.id}/read"
 				last_response.status.must_equal 403
 			end
 
@@ -663,17 +644,7 @@ describe app do
 	describe '/person/id/:id/contacts' do
 
 		before do
-			#touching mail to create mail records
-			mail1.mail_it
-			mail2.mail_it
-			mail3.mail_it
-
-			#touching peopl to create their records
-			SnailMail::Person.find(person1.id)
-			SnailMail::Person.find(person2.id)
-			SnailMail::Person.find(person3.id)
-
-			get "/person/id/#{person1.id}/contacts"
+			get "/person/id/#{@person1.id}/contacts"
 			@response = JSON.parse(last_response.body)
 		end
 
@@ -683,13 +654,13 @@ describe app do
 
 		## This test should be improved...
 		it 'must return all of the users contacts' do
-			contacts = SnailMail::MailService.get_contacts person1.username
+			contacts = SnailMail::MailService.get_contacts @person1.username
 			@response.length.must_equal contacts.length
 		end
 
 		it 'must return the same information that is returned from the get /person/id/:id endpoint' do
 			first_contact = @response[0]
-			get "/person/id/#{person1.id}"
+			get "/person/id/#{@person1.id}"
 			get_person_record = JSON.parse(last_response.body)
 
 			first_contact.keys.sort.must_equal get_person_record.keys.sort
@@ -712,20 +683,9 @@ describe app do
 
 			@rando_name = SnailMail::Person.random_username
 
-			@person1 = SnailMail::Person.create!(
-				name: @rando_name,
-				username: SnailMail::Person.random_username
-			)
-
-			@person2 = SnailMail::Person.create!(
-				name: @rando_name,
-				username: SnailMail::Person.random_username
-			)
-
-			@person3 = SnailMail::Person.create!(
-				name: @rando_name,
-				username: SnailMail::Person.random_username
-			)
+			@person5 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
+			@person6 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
+			@person7 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
 
 			get "/people/search?term=#{@rando_name}&limit=2"
 			@response = JSON.parse(last_response.body)
@@ -758,19 +718,9 @@ describe app do
 
 			@rando_name = SnailMail::Person.random_username
 
-			@person1 = SnailMail::Person.create!(
-				name: @rando_name,
-				username: SnailMail::Person.random_username,
-				email: "testbulk@test.com",
-				phone: "5554443333"
-			)
+			@person5 = create(:person, name: @rando_name, username: SnailMail::Person.random_username, email: "testbulk@test.com", phone: "5554443333")
+			@person6 = create(:person, name: @rando_name, username: SnailMail::Person.random_username, email: "test2@test.com", phone: "5556667777")
 
-			@person2 = SnailMail::Person.create!(
-				name: @rando_name,
-				username: SnailMail::Person.random_username,
-				email: "test2@test.com",
-				phone: "5556667777"
-			)
 
 			data = '[{"emails": ["testbulk@test.com"], "phoneNumbers": ["5554443333"]}, {"emails": ["test2@test.com"], "phoneNumbers": []}, {"emails": [], "phoneNumbers": ["55667"]}]'
 
@@ -785,7 +735,7 @@ describe app do
 
 		it 'must return a JSON document with the relevant people records' do
 			not_in = 0
-			expected_ids = [@person1.id, @person2.id]
+			expected_ids = [@person5.id, @person6.id]
 
 			expected_ids.each do |id|
 				if @response.include? id == false
