@@ -41,6 +41,24 @@ describe app do
 		mail.as_document.to_json
 	end
 
+	def expected_json_fields_for_person person
+		JSON.parse(person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] ))
+	end
+
+	def expected_json_fields_for_mail mail
+		JSON.parse(mail.as_document.to_json)
+	end
+
+	def get_mail_object_from_mail_response mail_response
+		mail_id = mail_response["_id"]["$oid"]
+		mail = SnailMail::Mail.find(mail_id)
+	end
+
+	def get_person_object_from_person_response person_response
+		person_id = person_response["_id"]["$oid"]
+		person = SnailMail::Person.find(person_id)
+	end
+
 	describe 'app_root' do
 
 		describe 'get /' do
@@ -124,48 +142,8 @@ describe app do
 				last_response.status.must_equal 200
 			end
 
-			it 'must return the name of the person' do
-				@response["name"].must_equal @person1.name
-			end
-
-			it 'must return the username' do
-				@response["username"].must_equal @person1.username
-			end
-
-			it 'must return the email' do
-				@response["email"].must_equal @person1.email
-			end
-
-			it 'must return the phone number' do
-				@response["phone"].must_equal @person1.phone
-			end
-
-			it 'must return the address1' do
-				@response["address1"].must_equal @person1.address1
-			end
-
-			it 'must return the city' do
-				@response["city"].must_equal @person1.city
-			end
-
-			it 'must return the state' do
-				@response["state"].must_equal @person1.state
-			end
-
-			it 'must return the zip' do
-				@response["zip"].must_equal @person1.zip
-			end
-
-			it 'must not return the salt' do
-				@response["salt"].must_equal nil
-			end
-
-			it 'must not return the hashed password' do
-				@response["hashed_password"].must_equal nil
-			end
-
-			it 'must not return the device token' do
-				@response["device_token"].must_equal nil
+			it 'must return the expected fields' do
+				@response.must_equal expected_json_fields_for_person(@person1)
 			end
 
 		end
@@ -298,15 +276,11 @@ describe app do
 			actual_number.must_equal expected_number
 		end
 
-		# This test may be brittle if the fields are not returned in the same order...
-		it 'must return the same information that person/id/id endpoint returns' do
+		it 'must return the expected information for a person record' do
 			get "/people?id=#{@person1.id}"
 			people_response = JSON.parse(last_response.body)
 
-			get "/person/id/#{@person1.id}"
-			person_response = JSON.parse(last_response.body)
-
-			people_response[0].must_equal person_response
+			people_response[0].must_equal expected_json_fields_for_person(@person1)
 		end
 
 	end
@@ -399,10 +373,10 @@ describe app do
 				last_response.status.must_equal 200
 			end
 
-			# To do: improve this test...
-			it 'must return a JSON document for the mail in the response body' do
+			it 'must return the expected JSON document for the mail in the response body' do
 				get "/mail/id/#{@mail1.id}"
-				last_response.body.must_include @mail1.id
+				response = JSON.parse(last_response.body)
+				response.must_equal expected_json_fields_for_mail(@mail1)
 			end
 
 		end
@@ -556,6 +530,12 @@ describe app do
 			response.count.must_equal SnailMail::Mail.where(from: @person1.username).count
 		end
 
+		it 'must return the expected fields for the mail' do
+			get "/mail?id=#{@mail1.id}"
+			response = JSON.parse(last_response.body)
+			response[0].must_equal expected_json_fields_for_mail(@mail1)
+		end
+
 	end
 
 	describe '/person/id/:id/mailbox' do
@@ -581,6 +561,14 @@ describe app do
 			last_response.body.match(/#{@mail2.id}/).must_equal nil
 		end
 
+		it 'must return the expected fields for the mail' do
+			get "/person/id/#{@person2.id}/mailbox"
+			response = JSON.parse(last_response.body)
+			mail = get_mail_object_from_mail_response response[0]
+			
+			response[0].must_equal expected_json_fields_for_mail(mail)
+		end
+
 	end
 
 	describe '/person/id/:id/outbox' do
@@ -597,6 +585,14 @@ describe app do
 		it 'must not include mail that was sent by someone else' do
 			get "/person/id/#{@person2.id}/outbox"
 			last_response.body.match(/#{@mail1.id}/).must_equal nil
+		end
+
+		it 'must return the expected fields for the mail' do
+			get "/person/id/#{@person1.id}/outbox"
+			response = JSON.parse(last_response.body)
+			mail = get_mail_object_from_mail_response response[0]
+			
+			response[0].must_equal expected_json_fields_for_mail(mail)
 		end
 
 	end
@@ -658,12 +654,9 @@ describe app do
 			@response.length.must_equal contacts.length
 		end
 
-		it 'must return the same information that is returned from the get /person/id/:id endpoint' do
-			first_contact = @response[0]
-			get "/person/id/#{@person1.id}"
-			get_person_record = JSON.parse(last_response.body)
-
-			first_contact.keys.sort.must_equal get_person_record.keys.sort
+		it 'must return the expected information for a person record' do
+			first_contact = get_person_object_from_person_response @response[0]
+			@response[0].must_equal expected_json_fields_for_person(first_contact)
 		end
 
 		describe 'document not found' do
@@ -700,14 +693,9 @@ describe app do
 			assert_operator @response.count, :<=, 2
 		end
 
-		it 'must return the same keys that are returned by the get /person/id/:id endpoint' do
-			first_person_returned = @response[0]
-			first_person_id = first_person_returned["_id"]["$oid"]
-
-			get "/person/id/#{first_person_id}"
-			person_returned = JSON.parse(last_response.body)
-
-			first_person_returned.keys.sort.must_equal person_returned.keys.sort
+		it 'must return the expected information for a person record' do
+			first_result = get_person_object_from_person_response @response[0]
+			@response[0].must_equal expected_json_fields_for_person(first_result)
 		end
 
 	end
@@ -744,6 +732,11 @@ describe app do
 			end
 
 			not_in.must_equal 0
+		end
+
+		it 'must return the expected information for a person record' do
+			first_result = get_person_object_from_person_response @response[0]
+			@response[0].must_equal expected_json_fields_for_person(first_result)
 		end
 
 		
