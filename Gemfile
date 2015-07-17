@@ -17,6 +17,7 @@ gem 'iconv', '~> 1.0.3'
 gem 'rack-test'
 gem 'multi_json'
 gem 'apns'
+gem 'factory_girl'
 
 group :test do
 	gem 'webmock'

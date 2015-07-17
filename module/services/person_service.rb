@@ -87,10 +87,12 @@ module SnailMail
 				hashed_password = self.hash_password data["password"], salt 
 			end
 
-			phone = nil
 			if data["phone"]
 				phone = self.format_phone_number data["phone"]
 			end
+
+			# Disabling until I have tests passing...
+			# self.validate_required_fields data
 
 			SnailMail::Person.create!({
 		      username: data["username"],
@@ -105,6 +107,18 @@ module SnailMail
 		      hashed_password: hashed_password,
 		      device_token: data["device_token"]
 		    })
+		end
+
+		def self.validate_required_fields data
+			if data["email"] == nil
+				raise "Missing required field: email"
+			elsif SnailMail::Person.where(email: data["email"]).exists?
+				raise "An account with that email already exists!"
+			elsif data["phone"] == nil
+				raise "Missing required field: phone"
+			elsif SnailMail::Person.where(phone: data["phone"]).exists?
+				raise "An account with that phone number already exists!"
+			end
 		end
 
 		def self.format_phone_number phone

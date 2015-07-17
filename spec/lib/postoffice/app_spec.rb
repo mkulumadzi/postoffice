@@ -10,7 +10,7 @@ end
 
 describe app do
 
-# Set up data for testing
+	# Set up data for testing
 	let ( :person1 ) {
 		data =  JSON.parse '{"name": "Evan", "username": "' + SnailMail::Person.random_username + '", "email": "evan@test.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
 		SnailMail::PersonService.create_person data
