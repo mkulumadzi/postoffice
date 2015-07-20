@@ -7,6 +7,7 @@ end
 
 # Create a new person
 post '/person/new' do
+  content_type :json
 
   data = JSON.parse request.body.read
 
@@ -15,17 +16,20 @@ post '/person/new' do
     SnailMail::MailService.generate_welcome_message person
 
     person_link = "#{ENV['SNAILMAIL_BASE_URL']}/person/id/#{person.id}"
-    headers = { "location" => person_link }
+
     status = 201
-  rescue Moped::Errors::OperationFailure
+    headers = { "location" => person_link }
+  rescue Moped::Errors::OperationFailure => error
     status = 403
-    headers = nil
-  rescue RuntimeError
+
+    #To Do: Generate this message dynamically based on the type of violation
+    response_body = Hash["message", "An account with that username already exists!"].to_json
+  rescue RuntimeError => error
     status = 403
-    headers = nil
+    response_body = Hash["message", error.to_s].to_json
   end
 
-  [status, headers, nil]
+  [status, headers, response_body]
 
 end
 

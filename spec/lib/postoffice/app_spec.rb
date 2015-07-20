@@ -98,52 +98,118 @@ describe app do
 			assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/person\/id\/\w{24}/, last_response.header["location"])
 		end
 
-		it 'must return a 403 error if a duplicate username is posted' do
-			person = build(:person, username: @person1.username, phone: random_phone, email: random_email)
-			person_data = convert_person_to_json person
+		describe 'duplicate username' do
 
-			post "/person/new", person_data
-			last_response.status.must_equal 403
+			before do
+				person = build(:person, username: @person1.username, phone: random_phone, email: random_email)
+				person_data = convert_person_to_json person
+				post "/person/new", person_data
+			end
+
+			it 'must return a 403 error' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "An account with that username already exists!"
+			end
+
 		end
 
-		it 'must return a 403 error if a duplicate email is posted' do
-			person = build(:person, username: SnailMail::Person.random_username, phone: random_phone, email: @person1.email)
-			person_data = convert_person_to_json person
+		describe 'duplicate email' do
 
-			post "/person/new", person_data
-			last_response.status.must_equal 403
+			before do
+				person = build(:person, username: SnailMail::Person.random_username, phone: random_phone, email: @person1.email)
+				person_data = convert_person_to_json person
+				post "/person/new", person_data
+			end
+
+			it 'must return a 403 error if a duplicate email is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "An account with that email already exists!"
+			end
+
 		end
 
-		it 'must return a 403 error if a duplicate phone is posted' do
-			person = build(:person, username: SnailMail::Person.random_username, phone: @person1.phone, email: random_email)
-			person_data = convert_person_to_json person
+		describe 'duplicate phone' do
 
-			post "/person/new", person_data
-			last_response.status.must_equal 403
+			before do
+				person = build(:person, username: SnailMail::Person.random_username, phone: @person1.phone, email: random_email)
+				person_data = convert_person_to_json person
+				post "/person/new", person_data
+			end
+
+			it 'must return a 403 error if a duplicate phone is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "An account with that phone number already exists!"
+			end
+
 		end
 
-		it 'must return a 403 error if no username is posted' do
-			person = build(:person, username: nil, phone: random_phone, email: random_email)
-			person_data = convert_person_to_json person
+		describe 'no username' do
 
-			post "/person/new", person_data
-			last_response.status.must_equal 403
+			before do
+				person = build(:person, username: nil, phone: random_phone, email: random_email)
+				person_data = convert_person_to_json person
+				post "/person/new", person_data
+			end
+
+			it 'must return a 403 error if no username is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "Missing required field: username"
+			end
+
 		end
 
-		it 'must return a 403 error if no email is posted' do
-			person = build(:person, username: SnailMail::Person.random_username, phone: random_phone, email: nil)
-			person_data = convert_person_to_json person
+		describe 'no email' do
 
-			post "/person/new", person_data
-			last_response.status.must_equal 403
+			before do
+				person = build(:person, username: SnailMail::Person.random_username, phone: random_phone, email: nil)
+				person_data = convert_person_to_json person
+				post "/person/new", person_data
+			end
+
+			it 'must return a 403 error if no email is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "Missing required field: email"
+			end
+
 		end
 
-		it 'must return a 403 error if no phone is posted' do
-			person = build(:person, username: SnailMail::Person.random_username, phone: nil, email: random_email)
-			person_data = convert_person_to_json person
+		describe 'no phone number' do
 
-			post "/person/new", person_data
-			last_response.status.must_equal 403
+			before do
+				person = build(:person, username: SnailMail::Person.random_username, phone: nil, email: random_email)
+				person_data = convert_person_to_json person
+				post "/person/new", person_data
+			end
+
+			it 'must return a 403 error if no phone is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "Missing required field: phone"
+			end
+
 		end
 
 		describe 'welcome message' do
