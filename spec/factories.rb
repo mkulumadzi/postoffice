@@ -3,8 +3,8 @@ FactoryGirl.define do
   factory :person, class: SnailMail::Person do
     username "testuser"
     name "Test User"
-    email "test@test.com"
-    phone "555 444 1234"
+    email SecureRandom.uuid() + "@test.com"
+    phone SecureRandom.uuid()
     address1 "123 4th Street"
     city "New York"
     state "NY"
@@ -20,5 +20,5 @@ FactoryGirl.define do
     content "I love this app"
     image "Default card.png"
   end
-  
+
 end

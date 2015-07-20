@@ -5,22 +5,25 @@ describe SnailMail::PersonService do
 
 	Mongoid.load!('config/mongoid.yml')
 
-	before do
-		@person1 = build(:person, name: "Evan Waters", username: "bigedubs", email: "evan@test.com", phone: "5554443321")
+	def random_phone
+		number = rand(9999999999)
+		number.to_s
 	end
 
-	# let ( :person1 ) {
-	# 	data =  JSON.parse '{"name": "Evan", "username": "' + SnailMail::Person.random_username + '", "email": "evan@test.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'	
-
-	# 	SnailMail::PersonService.create_person data
-	# }
-
+	def random_email
+		username = (0...8).map { (65 + rand(26)).chr }.join
+		username + "@test.com"
+	end
 
 	describe 'create person' do
 
 		before do
+			#Setting up random values, since these need to be unique
 			@username = SnailMail::Person.random_username
-			data = Hash["name", "Evan", "username", @username, "email", "evan@test.com", "phone", "(555) 444-1324", "address1", "121 W 3rd St", "city", "New York", "state", "NY", "zip", "10012", "password", "password"]
+			@phone = rand(1000000000).to_s
+			@email = SecureRandom.uuid()
+
+			data = Hash["name", "Evan", "username", @username, "email", @email, "phone", @phone, "address1", "121 W 3rd St", "city", "New York", "state", "NY", "zip", "10012", "password", "password"]
 			@person = SnailMail::PersonService.create_person data
 		end
 
@@ -87,7 +90,7 @@ describe SnailMail::PersonService do
 		end
 
 		it 'must store the email' do
-			@person.email.must_equal 'evan@test.com'
+			@person.email.must_equal @email
 		end
 
 		describe 'store the phone number' do
@@ -107,8 +110,8 @@ describe SnailMail::PersonService do
 				phone.must_equal '5554443333'
 			end
 
-			it 'msut store the phone number as a string of numeric digits' do
-				@person.phone.must_equal '5554441324'
+			it 'must store the phone number as a string of numeric digits' do
+				@person.phone.must_equal SnailMail::PersonService.format_phone_number @phone
 			end
 
 		end
@@ -136,10 +139,6 @@ describe SnailMail::PersonService do
 		it 'must store the hashed password as a String' do
 			@person.hashed_password.must_be_instance_of String
 		end
-
-	end
-
-	describe 'register person as user with salt and hashed password' do
 
 		describe 'create a random salt string' do
 
@@ -172,27 +171,9 @@ describe SnailMail::PersonService do
 
 		end
 
-		describe 'create a person with salt and a hashed password and check log in' do
+		describe 'login' do
 
-			before do
-				username = SnailMail::Person.random_username
-				data = JSON.parse '{"username": "' + username + '", "name":"Kasabian", "password": "password"}'
-				@person = SnailMail::PersonService.create_person data
-			end
-
-			it 'must create a person' do
-				@person.must_be_instance_of SnailMail::Person
-			end
-
-			it 'must have a string stored as the salt for the person' do
-				@person.salt.must_be_instance_of String
-			end
-
-			it 'must have a string stored as the hashed password for the person' do
-				@person.hashed_password.must_be_instance_of String
-			end
-
-			describe 'get the person record' do
+			describe 'find record from login' do
 
 				it 'must get the person record if the username is submitted' do
 					person = SnailMail::PersonService.find_person_record_from_login @person.username
@@ -211,16 +192,20 @@ describe SnailMail::PersonService do
 
 			end
 
-			it 'must return a person if the correct password is submitted' do
-				data = JSON.parse '{"username": "' + @person.username + '", "password": "password"}'
-				result = SnailMail::PersonService.check_login data
-				result.must_be_instance_of SnailMail::Person
-			end
+			describe 'check login' do
 
-			it 'must return nil if an incorrect password is submitted' do
-				data = JSON.parse '{"username": "' + @person.username + '", "password": "wrong_password"}'
-				result = SnailMail::PersonService.check_login data
-				result.must_equal nil
+				it 'must return a person if the correct password is submitted' do
+					data = JSON.parse '{"username": "' + @person.username + '", "password": "password"}'
+					result = SnailMail::PersonService.check_login data
+					result.must_be_instance_of SnailMail::Person
+				end
+
+				it 'must return nil if an incorrect password is submitted' do
+					data = JSON.parse '{"username": "' + @person.username + '", "password": "wrong_password"}'
+					result = SnailMail::PersonService.check_login data
+					result.must_equal nil
+				end
+
 			end
 
 		end
@@ -230,7 +215,7 @@ describe SnailMail::PersonService do
 	describe 'get people' do
 
 		before do
-			@person2 = build(:person, name: "Joe Person", username: SnailMail::Person.random_username, email: "evan@test.com", phone: "5554443321")
+			@person = build(:person, name: "Joe Person", username: SnailMail::Person.random_username)
 		end
 
 		it 'must get all of the people if no parameters are given' do
@@ -239,15 +224,15 @@ describe SnailMail::PersonService do
 		end
 
 		it 'must filter the records by username when it is passed in as a parameter' do
-			num_people = SnailMail::Person.where({username: "#{@person2.username}"}).count
-			params = Hash["username", @person2.username]
+			num_people = SnailMail::Person.where({username: "#{@person.username}"}).count
+			params = Hash["username", @person.username]
 			people = SnailMail::PersonService.get_people params
 			people.length.must_equal num_people
 		end
 
 		it 'must filter the records by username and name when both are passed in as a parameter' do
-			num_people = SnailMail::Person.where({username: "#{@person2.username}", name: "Joe Person"}).count
-			params = Hash["username", @person2.username, "name", "Joe Person"]
+			num_people = SnailMail::Person.where({username: "#{@person.username}", name: "Joe Person"}).count
+			params = Hash["username", @person.username, "name", "Joe Person"]
 			people = SnailMail::PersonService.get_people params
 			people.length.must_equal num_people
 		end
@@ -258,15 +243,17 @@ describe SnailMail::PersonService do
 
 		before do
 
-			@person2 = create(:person, name: "Evan Rachel Wood", username: "erach#{SnailMail::Person.random_username}", email: "evanrw@test.com")
+			@person1 = create(:person, username: SnailMail::Person.random_username, phone: random_phone, email: random_email)
 
-			@person3 = create(:person, name: "Evan Spiegel", username: "espiegs#{SnailMail::Person.random_username}", email: "espiegs2013@test.com")
+			@person2 = create(:person, name: "Evan Rachel Wood", username: "erach#{SnailMail::Person.random_username}", phone: random_phone, email: random_email)
+
+			@person3 = create(:person, name: "Evan Spiegel", username: "espiegs#{SnailMail::Person.random_username}", phone: random_phone, email: random_email)
 
 			@rando_name = SnailMail::Person.random_username
 
-			@person4 = create(:person, name: "Neal #{@rando_name}", username: "Woodsman#{SnailMail::Person.random_username}", email: "nwat4@test.com", phone: "5554446621")
+			@person4 = create(:person, name: "Neal #{@rando_name}", username: "Woodsman#{SnailMail::Person.random_username}", phone: random_phone, email: random_email)
 
-			@person5 = create(:person, name: "Neal Waters", username: @rando_name + SnailMail::Person.random_username, email: "nwat4@test.com", phone: "5555553321")
+			@person5 = create(:person, name: "Neal Waters", username: @rando_name + SnailMail::Person.random_username, phone: random_phone, email: random_email)
 
 		end
 
@@ -311,16 +298,15 @@ describe SnailMail::PersonService do
 				describe 'search term is valid for a username record and a name record' do
 
 					before do
-						parameters = Hash.new()
-						parameters["term"] = @rando_name
-						@people_returned = SnailMail::PersonService.search_people parameters
-					end
-
-					it 'must return matches for the username' do
-						@people_returned.must_include @person4
+						@parameters = Hash["term", @rando_name]
+						@people_returned = SnailMail::PersonService.search_people @parameters
 					end
 
 					it 'must return matches for the name' do
+						@people_returned.must_include @person4
+					end
+
+					it 'must return matches for the username' do
 						@people_returned.must_include @person5
 					end
 
@@ -358,7 +344,7 @@ describe SnailMail::PersonService do
 			describe 'get people from phone array' do
 
 				before do
-					@phone_array = ["5554446621", "5555553321", "1234"]
+					@phone_array = [@person1.phone, @person2.phone, "1234"]
 					@people = SnailMail::PersonService.get_people_from_phone_array @phone_array
 				end
 
@@ -367,17 +353,17 @@ describe SnailMail::PersonService do
 				end
 
 				it 'must return person records who match the search terms' do 
-					@people[0].phone.must_equal "5554446621" || "5555553321"
+					@people[0].phone.must_equal @person1.phone || @person2.phone
 				end
 
 				it 'must return a person record for each successful search result' do
-					num_expected = SnailMail::Person.or({phone: "5554446621"}, {phone: "5555553321"}).count
+					num_expected = SnailMail::Person.or({phone: @person1.phone}, {phone: @person2.phone}).count
 					@people.count.must_equal num_expected
 				end
 
 				it 'must remove special characters when searching phone strings' do
-					people = SnailMail::PersonService.get_people_from_phone_array ["(555) 555-3321"]
-					people[0].phone.must_equal "5555553321"
+					people = SnailMail::PersonService.get_people_from_phone_array ["()#{@person2.phone}"]
+					people[0].phone.must_equal @person2.phone
 				end
 
 			end

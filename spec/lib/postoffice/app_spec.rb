@@ -14,15 +14,7 @@ describe app do
 
 		@person1 = create(:person, username: SnailMail::Person.random_username)
 		@person2 = create(:person, username: SnailMail::Person.random_username)
-
-		@person_attrs = attributes_for(:person)
-
-		# Creating a person with a password to test login
-		data = Hash["username", SnailMail::Person.random_username, "name", @person_attrs[:name], "email", @person_attrs[:email], "phone", @person_attrs[:phone], "password", "password"]
-		@person3 = SnailMail::PersonService.create_person data	
-
-		# Creating a person record that is not saved to the database
-		@person4 = build(:person, username: SnailMail::Person.random_username)	
+		@person3 = create(:person, username: SnailMail::Person.random_username)
 
 		@mail1 = create(:mail, from: @person1.username, to: @person2.username)
 		@mail2 = create(:mail, from: @person1.username, to: @person2.username)
@@ -33,6 +25,16 @@ describe app do
 	end
 
 	# Convenience methods for converting person amd mail objects into JSON objects that can be posted
+	def random_phone
+		number = rand(9999999999)
+		number.to_s
+	end
+
+	def random_email
+		username = (0...8).map { (65 + rand(26)).chr }.join
+		username + "@test.com"
+	end
+
 	def convert_person_to_json person
 		person.as_document.to_json
 	end
@@ -75,57 +77,64 @@ describe app do
 		end
 	end
 
-	describe '/person/new' do
+	describe 'post /person/new' do
 
-		describe 'post /person/new' do
+		before do
+			@username = SnailMail::Person.random_username
+			person = build(:person, username: @username, phone: random_phone, email: random_email)
+			person_data = convert_person_to_json person
+			post "/person/new", person_data
+		end
+
+		it 'must return a 201 status code' do	
+			last_response.status.must_equal 201
+		end
+
+		it 'must return an empty body' do
+			last_response.body.must_equal ""
+		end
+
+		it 'must include a link to the person in the header' do
+			assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/person\/id\/\w{24}/, last_response.header["location"])
+		end
+
+		it 'must return a 403 error if a duplicate username is posted' do
+			person = build(:person, username: @person1.username, phone: random_phone, email: random_email)
+			person_data = convert_person_to_json person
+
+			post "/person/new", person_data
+			last_response.status.must_equal 403
+		end
+
+		describe 'welcome message' do
 
 			before do
-				post '/person/new', (convert_person_to_json @person4)
+				@welcome_mail = SnailMail::Mail.find_by(to: @username)
 			end
 
-			it 'must return a 201 status code' do	
-				last_response.status.must_equal 201
+			it 'must generate a welcome message from the SnailMail Postman' do
+				@welcome_mail.from.must_equal "snailmail.kuyenda"
 			end
 
-			it 'must return an empty body' do
-				last_response.body.must_equal ""
+			it 'must set the image to be the SnailMail Postman' do
+				@welcome_mail.image.must_equal "SnailMail Postman.png"
 			end
 
-			it 'must include a link to the person in the header' do
-				assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/person\/id\/\w{24}/, last_response.header["location"])
+			it 'must deliver the mail' do
+				assert_operator @welcome_mail.scheduled_to_arrive, :<=, Time.now
 			end
 
-			it 'must return a 403 error if a duplicate username is posted' do
-				post '/person/new', (convert_person_to_json @person1)
-				last_response.status.must_equal 403
-			end
-
-			describe 'generate welcome message' do
-
-				before do
-					@welcome_mail = SnailMail::Mail.find_by(to: @person4.username)
-				end
-
-				it 'must generate a welcome message from the SnailMail Postman' do
-					@welcome_mail.from.must_equal "snailmail.kuyenda"
-				end
-
-				it 'must set the image to be the SnailMail Postman' do
-					@welcome_mail.image.must_equal "SnailMail Postman.png"
-				end
-
-				it 'must deliver the mail' do
-					assert_operator @welcome_mail.scheduled_to_arrive, :<=, Time.now
-				end
-
-				it 'must include standard welcome text in the mail content' do
-					text = File.open("templates/Welcome Message.txt").read
-					@welcome_mail.content.must_equal text
-				end
-
+			it 'must include standard welcome text in the mail content' do
+				text = File.open("templates/Welcome Message.txt").read
+				@welcome_mail.content.must_equal text
 			end
 
 		end
+
+	end
+
+	describe 'generate welcome message' do
+
 
 	end
 
@@ -204,7 +213,13 @@ describe app do
 		describe 'successful login' do
 
 			before do
-				data = '{"username": "' + @person3.username + '", "password": "password"}'
+
+				# Creating a person with a password to test login
+				person_attrs = attributes_for(:person)
+				data = Hash["username", SnailMail::Person.random_username, "name", person_attrs[:name], "email", random_email, "phone", random_phone, "password", "password"]
+				@user = SnailMail::PersonService.create_person data
+
+				data = '{"username": "' + @user.username + '", "password": "password"}'
 				post "/login", data
 				@person_json = JSON.parse(last_response.body)
 			end
@@ -214,28 +229,25 @@ describe app do
 			end
 
 			it 'must include the person id in the response body' do
-				BSON::ObjectId.from_string(@person_json["_id"]["$oid"]).must_equal @person3.id
+				BSON::ObjectId.from_string(@person_json["_id"]["$oid"]).must_equal @user.id
 			end
 
 			it 'must include the username in the response body' do
-				@person_json["username"].must_equal @person3.username
+				@person_json["username"].must_equal @user.username
 			end
 
 			it 'must include the name in the response body' do
-				@person_json["name"].must_equal @person3.name
+				@person_json["name"].must_equal @user.name
 			end
 
-		end
+			describe 'incorrect password' do
 
-		describe 'incorrect password' do
+				it 'must return a 401 status code for an incorrect password' do
+					data = '{"username": "' + @user.username + '", "password": "wrong_password"}'
+					post "/login", data
+					last_response.status.must_equal 401
+				end
 
-			before do
-				data = '{"username": "' + @person3.username + '", "password": "wrong_password"}'
-				post "/login", data
-			end
-
-			it 'must return a 401 status code for an incorrect password' do
-				last_response.status.must_equal 401
 			end
 
 		end
@@ -706,11 +718,10 @@ describe app do
 
 			@rando_name = SnailMail::Person.random_username
 
-			@person5 = create(:person, name: @rando_name, username: SnailMail::Person.random_username, email: "testbulk@test.com", phone: "5554443333")
-			@person6 = create(:person, name: @rando_name, username: SnailMail::Person.random_username, email: "test2@test.com", phone: "5556667777")
+			@person5 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
+			@person6 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
 
-
-			data = '[{"emails": ["testbulk@test.com"], "phoneNumbers": ["5554443333"]}, {"emails": ["test2@test.com"], "phoneNumbers": []}, {"emails": [], "phoneNumbers": ["55667"]}]'
+			data = '[{"emails": ["'+ @person5.email + '"], "phoneNumbers": ["' + @person5.phone + '"]}, {"emails": ["' + @person6.email + '"], "phoneNumbers": []}, {"emails": [], "phoneNumbers": ["55667"]}]'
 
 			post "/people/bulk_search", data
 
@@ -738,7 +749,6 @@ describe app do
 			first_result = get_person_object_from_person_response @response[0]
 			@response[0].must_equal expected_json_fields_for_person(first_result)
 		end
-
 		
 	end
 

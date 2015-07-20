@@ -91,8 +91,7 @@ module SnailMail
 				phone = self.format_phone_number data["phone"]
 			end
 
-			# Disabling until I have tests passing...
-			# self.validate_required_fields data
+			self.validate_required_fields data
 
 			SnailMail::Person.create!({
 		      username: data["username"],
