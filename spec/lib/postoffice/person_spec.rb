@@ -11,11 +11,6 @@ describe SnailMail::Person do
 
 	describe 'create a person' do
 
-		it 'should have a method that can create a random username' do
-			random_username = SnailMail::Person.random_username
-			assert_match(/[[:upper:]]{8}/, random_username)
-		end
-
 		describe 'store the fields' do
 
 			it 'must create a new person record' do
@@ -27,7 +22,7 @@ describe SnailMail::Person do
 			end
 
 			it 'must thrown an error if a record is submitted with a duplicate username' do
-				person = create(:person, username: SnailMail::Person.random_username)
+				person = create(:person, username: random_username)
 				assert_raises(Moped::Errors::OperationFailure) {
 					SnailMail::Person.create!(
 						username: person.username,

@@ -20,94 +20,66 @@ describe APNS do
 
 	describe SnailMail::NotificationService do
 
-		let ( :person1 ) {
-			SnailMail::Person.create!(
-				name: "Evan",
-				username: SnailMail::Person.random_username
-			)
-		}
+		before do
 
-		let ( :person2 ) {
-			SnailMail::Person.create!(
-				name: "Neal",
-				username: SnailMail::Person.random_username
-			)
-		}
+			@person1 = create(:person, username: random_username, phone: random_phone, email: random_email, device_token: nil)
+			@person2 = create(:person, username: random_username, phone: random_phone, email: random_email, device_token: "abc123")
 
-		let ( :mail1) {
-			SnailMail::Mail.create!(
-				from: person1.username,
-				to: person2.username,
-				content: "Hey"
-			)
-		}
+			@mail1 = create(:mail, from: @person1.username, to: @person2.username)
+			@mail2 = create(:mail, from: @person1.username, to: @person2.username)
 
-		let ( :mail2) {
-			SnailMail::Mail.create!(
-				from: person1.username,
-				to: person2.username,
-				content: "Hey"
-			)
-		}
+			@mail1.mail_it
+			@mail1.deliver_now
+			@mail1.update_delivery_status
+			@mail1.read
 
-		describe 'create notifications' do
+			@mail2.mail_it
+			@mail2.deliver_now
+			@mail2.update_delivery_status
+		end
+
+		it 'must return the number of mail that is delivered to a person' do
+			num_unread = SnailMail::NotificationService.count_unread_mail @person2
+			num_unread.must_equal 1
+		end
+
+		describe 'create notification for people' do
 
 			before do
-				mail1.mail_it
-				mail1.deliver_now
-				mail1.update_delivery_status
-				mail1.read
+				people = [@person1, @person2]
 
-				mail2.mail_it
-				mail2.deliver_now
-				mail2.update_delivery_status
+				@notifications = SnailMail::NotificationService.create_notification_for_people people, "Hello", "New Mail"
 			end
 
-			it 'must return the number of mail that is delivered to a person' do
-				num_unread = SnailMail::NotificationService.count_unread_mail person2
-				num_unread.must_equal 1
+			it 'must return an array of APNS notifications' do
+				@notifications[0].must_be_instance_of APNS::Notification
 			end
 
-			describe 'create notification for people' do
+			it 'must only generate notification if a person has a device token' do
+				@notifications.length.must_equal 1
+			end
 
-				before do
-					person2.device_token = "abc123"
-					people = [person1, person2]
+			it 'must include the device token in the notification' do
+				@notifications[0].device_token.must_equal "abc123"
+			end
 
-					@notifications = SnailMail::NotificationService.create_notification_for_people people, "Hello", "New Mail"
-				end
+			it 'must include the message in the notification' do
+				@notifications[0].alert.must_equal "Hello"
+			end
 
-				it 'must return an array of APNS notifications' do
-					@notifications[0].must_be_instance_of APNS::Notification
-				end
+			it 'must include the badge in the notification' do
+				@notifications[0].badge.must_equal 1
+			end
 
-				it 'must only generate notification if a person has a device token' do
-					@notifications.length.must_equal 1
-				end
-
-				it 'must include the device token in the notification' do
-					@notifications[0].device_token.must_equal "abc123"
-				end
-
-				it 'must include the message in the notification' do
-					@notifications[0].alert.must_equal "Hello"
-				end
-
-				it 'must include the badge in the notification' do
-					@notifications[0].badge.must_equal 1
-				end
-
-				it 'must include the type as "New Mail"' do
-					@notifications[0].other[:type].must_equal "New Mail"
-				end
-
+			it 'must include the type as "New Mail"' do
+				@notifications[0].other[:type].must_equal "New Mail"
 			end
 
 		end
 
 	## Possible To Do: Test that a notification was actually sent
 		# let ( :person1 ) {
-		# 	person1_username = SnailMail::Person.random_username
+		# 	person1_username = random_username
 		# 	salt = SecureRandom.hex(64)
 		# 	hashed_password = Digest::SHA256.bubblebabble ("password" + salt)
 		# 	SnailMail::Person.create!(

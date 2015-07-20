@@ -5,6 +5,9 @@ require_relative '../app'
 # Load Factories (these weren't loading by default)
 require_relative './factories.rb'
 
+# Load convenience methods for testing
+require_relative './convenience_methods.rb'
+
 # Dependencies
 require 'minitest/autorun'
 require 'minitest/reporters'

@@ -5,21 +5,11 @@ describe SnailMail::PersonService do
 
 	Mongoid.load!('config/mongoid.yml')
 
-	def random_phone
-		number = rand(9999999999)
-		number.to_s
-	end
-
-	def random_email
-		username = (0...8).map { (65 + rand(26)).chr }.join
-		username + "@test.com"
-	end
-
 	describe 'create person' do
 
 		before do
 			#Setting up random values, since these need to be unique
-			@username = SnailMail::Person.random_username
+			@username = random_username
 			@phone = rand(1000000000).to_s
 			@email = SecureRandom.uuid()
 
@@ -74,7 +64,7 @@ describe SnailMail::PersonService do
 			end
 
 			it 'must call this function when creating a person' do
-				username = SnailMail::Person.random_username
+				username = random_username
 				phone = rand(1000000)
 				data = Hash["username", username, "email", "#{@person.email}", "phone", phone.to_s]
 
@@ -219,7 +209,7 @@ describe SnailMail::PersonService do
 	describe 'get people' do
 
 		before do
-			@person = build(:person, name: "Joe Person", username: SnailMail::Person.random_username)
+			@person = build(:person, name: "Joe Person", username: random_username)
 		end
 
 		it 'must get all of the people if no parameters are given' do
@@ -247,17 +237,17 @@ describe SnailMail::PersonService do
 
 		before do
 
-			@person1 = create(:person, username: SnailMail::Person.random_username, phone: random_phone, email: random_email)
+			@person1 = create(:person, username: random_username, phone: random_phone, email: random_email)
 
-			@person2 = create(:person, name: "Evan Rachel Wood", username: "erach#{SnailMail::Person.random_username}", phone: random_phone, email: random_email)
+			@person2 = create(:person, name: "Evan Rachel Wood", username: "erach#{random_username}", phone: random_phone, email: random_email)
 
-			@person3 = create(:person, name: "Evan Spiegel", username: "espiegs#{SnailMail::Person.random_username}", phone: random_phone, email: random_email)
+			@person3 = create(:person, name: "Evan Spiegel", username: "espiegs#{random_username}", phone: random_phone, email: random_email)
 
-			@rando_name = SnailMail::Person.random_username
+			@rando_name = random_username
 
-			@person4 = create(:person, name: "Neal #{@rando_name}", username: "Woodsman#{SnailMail::Person.random_username}", phone: random_phone, email: random_email)
+			@person4 = create(:person, name: "Neal #{@rando_name}", username: "Woodsman#{random_username}", phone: random_phone, email: random_email)
 
-			@person5 = create(:person, name: "Neal Waters", username: @rando_name + SnailMail::Person.random_username, phone: random_phone, email: random_email)
+			@person5 = create(:person, name: "Neal Waters", username: @rando_name + random_username, phone: random_phone, email: random_email)
 
 		end
 

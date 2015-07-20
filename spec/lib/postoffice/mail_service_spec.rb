@@ -6,9 +6,9 @@ describe SnailMail::MailService do
 
 	before do
 
-		@person1 = create(:person, username: SnailMail::Person.random_username)
-		@person2 = create(:person, username: SnailMail::Person.random_username)
-		@person3 = create(:person, username: SnailMail::Person.random_username)
+		@person1 = create(:person, username: random_username)
+		@person2 = create(:person, username: random_username)
+		@person3 = create(:person, username: random_username)
 
 		@mail1 = create(:mail, from: @person1.username, to: @person2.username)
 		@mail2 = create(:mail, from: @person1.username, to: @person2.username)

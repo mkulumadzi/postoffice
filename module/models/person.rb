@@ -18,11 +18,6 @@ module SnailMail
 		index({ username: 1 }, { unique: true })
 		index({ email: 1 })
 		index({ phone: 1 })
-
-		#Generate a random username as a hack to get around the unique index
-		def self.random_username
-			(0...8).map { (65 + rand(26)).chr }.join
-		end
 		
 	end
 end

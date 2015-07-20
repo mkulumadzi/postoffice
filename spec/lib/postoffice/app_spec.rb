@@ -12,9 +12,9 @@ describe app do
 
 	before do
 
-		@person1 = create(:person, username: SnailMail::Person.random_username)
-		@person2 = create(:person, username: SnailMail::Person.random_username)
-		@person3 = create(:person, username: SnailMail::Person.random_username)
+		@person1 = create(:person, username: random_username)
+		@person2 = create(:person, username: random_username)
+		@person3 = create(:person, username: random_username)
 
 		@mail1 = create(:mail, from: @person1.username, to: @person2.username)
 		@mail2 = create(:mail, from: @person1.username, to: @person2.username)
@@ -22,43 +22,6 @@ describe app do
 
 		@mail4 = build(:mail, from: @person1.username, to: @person2.username)
 
-	end
-
-	# Convenience methods for converting person amd mail objects into JSON objects that can be posted
-	def random_phone
-		number = rand(9999999999)
-		number.to_s
-	end
-
-	def random_email
-		username = (0...8).map { (65 + rand(26)).chr }.join
-		username + "@test.com"
-	end
-
-	def convert_person_to_json person
-		person.as_document.to_json
-	end
-
-	def convert_mail_to_json mail
-		mail.as_document.to_json
-	end
-
-	def expected_json_fields_for_person person
-		JSON.parse(person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] ))
-	end
-
-	def expected_json_fields_for_mail mail
-		JSON.parse(mail.as_document.to_json)
-	end
-
-	def get_mail_object_from_mail_response mail_response
-		mail_id = mail_response["_id"]["$oid"]
-		mail = SnailMail::Mail.find(mail_id)
-	end
-
-	def get_person_object_from_person_response person_response
-		person_id = person_response["_id"]["$oid"]
-		person = SnailMail::Person.find(person_id)
 	end
 
 	describe 'app_root' do
@@ -80,7 +43,7 @@ describe app do
 	describe 'post /person/new' do
 
 		before do
-			@username = SnailMail::Person.random_username
+			@username = random_username
 			person = build(:person, username: @username, phone: random_phone, email: random_email)
 			person_data = convert_person_to_json person
 			post "/person/new", person_data
@@ -120,7 +83,7 @@ describe app do
 		describe 'duplicate email' do
 
 			before do
-				person = build(:person, username: SnailMail::Person.random_username, phone: random_phone, email: @person1.email)
+				person = build(:person, username: random_username, phone: random_phone, email: @person1.email)
 				person_data = convert_person_to_json person
 				post "/person/new", person_data
 			end
@@ -139,7 +102,7 @@ describe app do
 		describe 'duplicate phone' do
 
 			before do
-				person = build(:person, username: SnailMail::Person.random_username, phone: @person1.phone, email: random_email)
+				person = build(:person, username: random_username, phone: @person1.phone, email: random_email)
 				person_data = convert_person_to_json person
 				post "/person/new", person_data
 			end
@@ -177,7 +140,7 @@ describe app do
 		describe 'no email' do
 
 			before do
-				person = build(:person, username: SnailMail::Person.random_username, phone: random_phone, email: nil)
+				person = build(:person, username: random_username, phone: random_phone, email: nil)
 				person_data = convert_person_to_json person
 				post "/person/new", person_data
 			end
@@ -196,7 +159,7 @@ describe app do
 		describe 'no phone number' do
 
 			before do
-				person = build(:person, username: SnailMail::Person.random_username, phone: nil, email: random_email)
+				person = build(:person, username: random_username, phone: nil, email: random_email)
 				person_data = convert_person_to_json person
 				post "/person/new", person_data
 			end
@@ -322,7 +285,7 @@ describe app do
 
 				# Creating a person with a password to test login
 				person_attrs = attributes_for(:person)
-				data = Hash["username", SnailMail::Person.random_username, "name", person_attrs[:name], "email", random_email, "phone", random_phone, "password", "password"]
+				data = Hash["username", random_username, "name", person_attrs[:name], "email", random_email, "phone", random_phone, "password", "password"]
 				@user = SnailMail::PersonService.create_person data
 
 				data = '{"username": "' + @user.username + '", "password": "password"}'
@@ -792,11 +755,11 @@ describe app do
 
 		before do
 
-			@rando_name = SnailMail::Person.random_username
+			@rando_name = random_username
 
-			@person5 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
-			@person6 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
-			@person7 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
+			@person5 = create(:person, name: @rando_name, username: random_username)
+			@person6 = create(:person, name: @rando_name, username: random_username)
+			@person7 = create(:person, name: @rando_name, username: random_username)
 
 			get "/people/search?term=#{@rando_name}&limit=2"
 			@response = JSON.parse(last_response.body)
@@ -822,10 +785,10 @@ describe app do
 
 		before do
 
-			@rando_name = SnailMail::Person.random_username
+			@rando_name = random_username
 
-			@person5 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
-			@person6 = create(:person, name: @rando_name, username: SnailMail::Person.random_username)
+			@person5 = create(:person, name: @rando_name, username: random_username)
+			@person6 = create(:person, name: @rando_name, username: random_username)
 
 			data = '[{"emails": ["'+ @person5.email + '"], "phoneNumbers": ["' + @person5.phone + '"]}, {"emails": ["' + @person6.email + '"], "phoneNumbers": []}, {"emails": [], "phoneNumbers": ["55667"]}]'
 
