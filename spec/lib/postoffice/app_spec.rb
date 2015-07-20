@@ -44,9 +44,8 @@ describe app do
 
 		before do
 			@username = random_username
-			person = build(:person, username: @username, phone: random_phone, email: random_email)
-			person_data = convert_person_to_json person
-			post "/person/new", person_data
+			data = '{"username": "' + @username + '", "phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
+			post "/person/new", data
 		end
 
 		it 'must return a 201 status code' do	
@@ -59,120 +58,6 @@ describe app do
 
 		it 'must include a link to the person in the header' do
 			assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/person\/id\/\w{24}/, last_response.header["location"])
-		end
-
-		describe 'duplicate username' do
-
-			before do
-				person = build(:person, username: @person1.username, phone: random_phone, email: random_email)
-				person_data = convert_person_to_json person
-				post "/person/new", person_data
-			end
-
-			it 'must return a 403 error' do
-				last_response.status.must_equal 403
-			end
-
-			it 'must return the correct error message' do
-				response = JSON.parse(last_response.body)
-				response["message"].must_equal "An account with that username already exists!"
-			end
-
-		end
-
-		describe 'duplicate email' do
-
-			before do
-				person = build(:person, username: random_username, phone: random_phone, email: @person1.email)
-				person_data = convert_person_to_json person
-				post "/person/new", person_data
-			end
-
-			it 'must return a 403 error if a duplicate email is posted' do
-				last_response.status.must_equal 403
-			end
-
-			it 'must return the correct error message' do
-				response = JSON.parse(last_response.body)
-				response["message"].must_equal "An account with that email already exists!"
-			end
-
-		end
-
-		describe 'duplicate phone' do
-
-			before do
-				person = build(:person, username: random_username, phone: @person1.phone, email: random_email)
-				person_data = convert_person_to_json person
-				post "/person/new", person_data
-			end
-
-			it 'must return a 403 error if a duplicate phone is posted' do
-				last_response.status.must_equal 403
-			end
-
-			it 'must return the correct error message' do
-				response = JSON.parse(last_response.body)
-				response["message"].must_equal "An account with that phone number already exists!"
-			end
-
-		end
-
-		describe 'no username' do
-
-			before do
-				person = build(:person, username: nil, phone: random_phone, email: random_email)
-				person_data = convert_person_to_json person
-				post "/person/new", person_data
-			end
-
-			it 'must return a 403 error if no username is posted' do
-				last_response.status.must_equal 403
-			end
-
-			it 'must return the correct error message' do
-				response = JSON.parse(last_response.body)
-				response["message"].must_equal "Missing required field: username"
-			end
-
-		end
-
-		describe 'no email' do
-
-			before do
-				person = build(:person, username: random_username, phone: random_phone, email: nil)
-				person_data = convert_person_to_json person
-				post "/person/new", person_data
-			end
-
-			it 'must return a 403 error if no email is posted' do
-				last_response.status.must_equal 403
-			end
-
-			it 'must return the correct error message' do
-				response = JSON.parse(last_response.body)
-				response["message"].must_equal "Missing required field: email"
-			end
-
-		end
-
-		describe 'no phone number' do
-
-			before do
-				person = build(:person, username: random_username, phone: nil, email: random_email)
-				person_data = convert_person_to_json person
-				post "/person/new", person_data
-			end
-
-			it 'must return a 403 error if no phone is posted' do
-				last_response.status.must_equal 403
-			end
-
-			it 'must return the correct error message' do
-				response = JSON.parse(last_response.body)
-				response["message"].must_equal "Missing required field: phone"
-			end
-
 		end
 
 		describe 'welcome message' do
@@ -200,10 +85,131 @@ describe app do
 
 		end
 
-	end
+		describe 'duplicate username' do
 
-	describe 'generate welcome message' do
+			before do
+				data = '{"username": "' + @person1.username + '", "phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
+				post "/person/new", data
+			end
 
+			it 'must return a 403 error' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "An account with that username already exists!"
+			end
+
+		end
+
+		describe 'duplicate email' do
+
+			before do
+				data = '{"username": "' + random_username + '", "phone": "' + random_phone + '", "email": "' + @person1.email + '", "password": "password"}'
+				post "/person/new", data
+			end
+
+			it 'must return a 403 error if a duplicate email is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "An account with that email already exists!"
+			end
+
+		end
+
+		describe 'duplicate phone' do
+
+			before do
+				data = '{"username": "' + random_username + '", "phone": "' + @person1.phone + '", "email": "' + random_email + '", "password": "password"}'
+				post "/person/new", data
+			end
+
+			it 'must return a 403 error if a duplicate phone is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "An account with that phone number already exists!"
+			end
+
+		end
+
+		describe 'no username' do
+
+			before do
+				data = '{"phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
+				post "/person/new", data
+			end
+
+			it 'must return a 403 error if no username is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "Missing required field: username"
+			end
+
+		end
+
+		describe 'no email' do
+
+			before do
+				data = '{"username": "' + random_username + '", "phone": "' + random_phone + '", "password": "password"}'
+				post "/person/new", data
+			end
+
+			it 'must return a 403 error if no email is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "Missing required field: email"
+			end
+
+		end
+
+		describe 'no phone number' do
+
+			before do
+				data = '{"username": "' + random_username + '", "email": "' + random_email + '", "password": "password"}'
+				post "/person/new", data
+			end
+
+			it 'must return a 403 error if no phone is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "Missing required field: phone"
+			end
+
+		end
+
+		describe 'no password' do
+
+			before do
+				data = '{"username": "' + random_username + '", "email": "' + random_email + '", "phone": "' + random_phone + '", "password": ""}'
+				post "/person/new", data
+			end
+
+			it 'must return a 403 error if no password is posted' do
+				last_response.status.must_equal 403
+			end
+
+			it 'must return the correct error message' do
+				response = JSON.parse(last_response.body)
+				response["message"].must_equal "Missing required field: password"
+			end
+
+		end
 
 	end
 

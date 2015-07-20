@@ -119,6 +119,8 @@ module SnailMail
 				raise "Missing required field: phone"
 			elsif SnailMail::Person.where(phone: data["phone"]).exists?
 				raise "An account with that phone number already exists!"
+			elsif data["password"] == nil || data["password"] == ""
+				raise "Missing required field: password"
 			end
 		end
 

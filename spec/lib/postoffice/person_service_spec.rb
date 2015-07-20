@@ -32,65 +32,72 @@ describe SnailMail::PersonService do
 		describe 'validate required fields' do
 
 			it 'must throw an exception if username is missing' do
-				data = Hash["email", "testemail", "phone", "685714571"]
+				data = Hash["email", "testemail", "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception is username is empty' do
-				data = Hash["username", "", "email", "testemail", "phone", "685714571"]
+				data = Hash["username", "", "email", "testemail", "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 			
 			it 'must throw an exception if email is missing' do
-				data = Hash["username", "test", "phone", "685714571"]
+				data = Hash["username", "test", "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception is email is empty' do
-				data = Hash["username", "test", "email", "", "phone", "685714571"]
+				data = Hash["username", "test", "email", "", "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception if email is duplicate' do
-				data = Hash["username", "test", "email", @person.email, "phone", "685714571"]
+				data = Hash["username", "test", "email", @person.email, "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception if phone is missing' do
-				data = Hash["username", "test", "email", "wha@test.co"]
+				data = Hash["username", "test", "email", "wha@test.co", "password", "password"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception is phone is empty' do
-				data = Hash["username", "test", "email", "test", "phone", ""]
+				data = Hash["username", "test", "email", "test", "phone", "", "password", "password"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end			
 
 			it 'must throw an exception if phone is duplicate' do
-				data = Hash["username", "test", "email", "wha@test.co", "phone", @person.phone]
+				data = Hash["username", "test", "email", "wha@test.co", "phone", @person.phone, "password", "password"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 
+			it 'must throw an exception is password is empty' do
+				data = Hash["username", "test", "email", "test", "phone", "5556665555", "password", ""]
+				assert_raises RuntimeError do
+					SnailMail::PersonService.validate_required_fields data
+				end
+			end	
+
 			it 'must call this function when creating a person' do
 				username = random_username
 				phone = rand(1000000)
-				data = Hash["username", username, "email", "#{@person.email}", "phone", phone.to_s]
+				data = Hash["username", username, "email", "#{@person.email}", "phone", phone.to_s, "password", "password"]
 
 				# To Do: Figure out how to use mocked methods here
 				# mocked_method = MiniTest::Mock.new
