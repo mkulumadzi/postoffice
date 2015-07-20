@@ -109,7 +109,9 @@ module SnailMail
 		end
 
 		def self.validate_required_fields data
-			if data["email"] == nil
+			if data["username"] == nil
+				raise "Missing required field: username"
+			elsif data["email"] == nil
 				raise "Missing required field: email"
 			elsif SnailMail::Person.where(email: data["email"]).exists?
 				raise "An account with that email already exists!"

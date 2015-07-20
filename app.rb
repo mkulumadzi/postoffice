@@ -20,6 +20,9 @@ post '/person/new' do
   rescue Moped::Errors::OperationFailure
     status = 403
     headers = nil
+  rescue RuntimeError
+    status = 403
+    headers = nil
   end
 
   [status, headers, nil]

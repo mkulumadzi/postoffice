@@ -106,6 +106,46 @@ describe app do
 			last_response.status.must_equal 403
 		end
 
+		it 'must return a 403 error if a duplicate email is posted' do
+			person = build(:person, username: SnailMail::Person.random_username, phone: random_phone, email: @person1.email)
+			person_data = convert_person_to_json person
+
+			post "/person/new", person_data
+			last_response.status.must_equal 403
+		end
+
+		it 'must return a 403 error if a duplicate phone is posted' do
+			person = build(:person, username: SnailMail::Person.random_username, phone: @person1.phone, email: random_email)
+			person_data = convert_person_to_json person
+
+			post "/person/new", person_data
+			last_response.status.must_equal 403
+		end
+
+		it 'must return a 403 error if no username is posted' do
+			person = build(:person, username: nil, phone: random_phone, email: random_email)
+			person_data = convert_person_to_json person
+
+			post "/person/new", person_data
+			last_response.status.must_equal 403
+		end
+
+		it 'must return a 403 error if no email is posted' do
+			person = build(:person, username: SnailMail::Person.random_username, phone: random_phone, email: nil)
+			person_data = convert_person_to_json person
+
+			post "/person/new", person_data
+			last_response.status.must_equal 403
+		end
+
+		it 'must return a 403 error if no phone is posted' do
+			person = build(:person, username: SnailMail::Person.random_username, phone: nil, email: random_email)
+			person_data = convert_person_to_json person
+
+			post "/person/new", person_data
+			last_response.status.must_equal 403
+		end
+
 		describe 'welcome message' do
 
 			before do

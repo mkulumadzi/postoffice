@@ -40,30 +40,34 @@ describe SnailMail::PersonService do
 		end
 
 		describe 'validate required fields' do
+
+			it 'must throw an exception if username is missling' do
+				data = Hash["email", "testemail", "phone", "685714571"]
+			end
 			
 			it 'must throw an exception if email is missing' do
-				data = Hash["phone", "685714571"]
+				data = Hash["username", "test", "phone", "685714571"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception if email is duplicate' do
-				data = Hash["email", @person.email, "phone", "685714571"]
+				data = Hash["username", "test", "email", @person.email, "phone", "685714571"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception if phone is missing' do
-				data = Hash["email", "wha@test.co"]
+				data = Hash["username", "test", "email", "wha@test.co"]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception if email is duplicate' do
-				data = Hash["email", "wha@test.co", "phone", @person.phone]
+				data = Hash["username", "test", "email", "wha@test.co", "phone", @person.phone]
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
