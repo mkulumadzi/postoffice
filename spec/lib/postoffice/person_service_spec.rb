@@ -287,7 +287,6 @@ describe SnailMail::PersonService do
 			before do
 				parameters = Hash["term", "Evan", "limit", 2]
 				@people_returned = SnailMail::PersonService.search_people parameters
-
 			end
 
 			it 'must return an array of people' do
@@ -311,13 +310,23 @@ describe SnailMail::PersonService do
 
 			describe 'some additional search cases' do
 
-				it 'limit the number of records returned to 25 by default, if no limit parameter is given' do
-					parameters = Hash.new()
-					parameters["term"] = "Evan"
+				it 'must limit the number of records returned to 25 by default, if no limit parameter is given' do
+					parameters = Hash["term", "Evan"]
 					people_returned = SnailMail::PersonService.search_people parameters
 
 					assert_operator people_returned.count, :<=, 25
 
+				end
+
+				it 'must replace instances of + with a space' do
+					SnailMail::PersonService.format_search_term("A+term").must_equal "A term"
+				end
+
+				it 'must format the search string and return correct results' do
+					parameters = Hash["term", "Evan+Rachel"]
+					people_returned = SnailMail::PersonService.search_people parameters
+
+					assert_operator people_returned.count, :>=, 1
 				end
 
 				describe 'search term is valid for a username record and a name record' do

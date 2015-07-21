@@ -16,7 +16,7 @@ module SnailMail
 
 		def self.search_people params
 			people = []
-			search_term = params["term"]
+			search_term = self.format_search_term(params["term"])
 
 			if params["limit"]
 				search_limit = params["limit"]
@@ -29,6 +29,10 @@ module SnailMail
 			end
 
 			people
+		end
+
+		def self.format_search_term term
+			term.gsub("+", " ")
 		end
 
 		#Search array is expected to contain JSON objects with a reference to the name of the person, and an array for emails and phone numbers
