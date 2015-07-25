@@ -39,7 +39,7 @@ post '/login' do
   data = JSON.parse request.body.read
 
   begin
-    person = SnailMail::PersonService.check_login data
+    person = SnailMail::LoginService.check_login data
     if person
       status = 200
       response_body = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
@@ -76,6 +76,24 @@ post '/person/id/:id' do
 
   begin
     SnailMail::PersonService.update_person params[:id], data
+    status = 204
+  rescue Mongoid::Errors::DocumentNotFound
+    status = 404
+  rescue Moped::Errors::OperationFailure
+    status = 403
+  rescue ArgumentError
+    status = 403
+  end
+
+  [status, nil]
+
+end
+
+post '/person/id/:id/reset_password' do
+  content_type :json
+
+  begin
+    SnailMail::LoginService.reset_password params[:id], data
     status = 204
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
