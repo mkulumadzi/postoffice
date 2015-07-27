@@ -87,6 +87,51 @@ describe SnailMail::LoginService do
 
 		end
 
+		describe 'reset password' do
+
+			it 'must store the new hashed password and salt if the correct old password is submitted' do
+				data = Hash["old_password", "password", "new_password", "password123"]
+				SnailMail::LoginService.reset_password @person.id, data
+
+				person = SnailMail::Person.find(@person.id)
+				person.hashed_password.must_equal SnailMail::LoginService.hash_password "password123", person.salt
+			end
+
+			it 'must raise a Runtime Error if an incorrect password is submitted' do
+				data = Hash["old_password", "wrongpassword", "new_password", "password123"]
+
+				assert_raises RuntimeError do
+					SnailMail::LoginService.reset_password @person.id, data
+				end
+			end
+
+			it 'must raise a Runtime Error if an empty password is submitted' do
+				data = Hash["old_password", "password", "new_password", ""]
+
+				assert_raises RuntimeError do
+					SnailMail::LoginService.reset_password @person.id, data
+				end
+			end
+
+			it 'must raise a Runtime Error if no new password is submitted' do
+				data = Hash["old_password", "password"]
+
+				assert_raises RuntimeError do
+					SnailMail::LoginService.reset_password @person.id, data
+				end
+			end
+
+			it 'must raise a Runtime Error if the new password matches the old password' do
+				data = Hash["old_password", "password", "new_password", ""]
+
+				assert_raises RuntimeError do
+					SnailMail::LoginService.reset_password @person.id, data
+				end
+			end
+
+
+		end
+
 	end
 
 end

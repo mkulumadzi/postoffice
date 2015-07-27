@@ -91,20 +91,19 @@ end
 
 post '/person/id/:id/reset_password' do
   content_type :json
+  data = JSON.parse request.body.read
 
   begin
     SnailMail::LoginService.reset_password params[:id], data
     status = 204
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
-  rescue Moped::Errors::OperationFailure
+  rescue RuntimeError => error
     status = 403
-  rescue ArgumentError
-    status = 403
+    response_body = Hash["message", error.to_s].to_json
   end
 
-  [status, nil]
-
+  [status, nil, response_body]
 
 end
 

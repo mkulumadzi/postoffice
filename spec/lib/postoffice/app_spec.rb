@@ -342,6 +342,68 @@ describe app do
 
 	end
 
+	describe '/person/id/:id/reset_password' do
+
+		before do
+			person_attrs = attributes_for(:person)
+			data = Hash["username", random_username, "name", person_attrs[:name], "email", random_email, "phone", random_phone, "password", "password"]
+			@person = SnailMail::PersonService.create_person data
+		end
+
+		describe 'submit the correct old password and a valid new password' do
+
+			before do
+				data = '{"old_password": "password", "new_password": "password123"}'
+				post "/person/id/#{@person.id.to_s}/reset_password", data
+			end
+
+			it 'must return a 204 status code' do
+				last_response.status.must_equal 204
+			end
+
+			it 'must reset the password' do
+				person_record = SnailMail::Person.find(@person.id)
+				person_record.hashed_password.must_equal SnailMail::LoginService.hash_password "password123", person_record.salt
+			end
+
+			it 'must return an empty response body' do
+				last_response.body.must_equal ""
+			end
+
+		end
+
+		describe 'error conditions' do
+
+			it 'must return a 404 error if the person record cannot be found' do
+				data = '{"old_password": "password", "new_password": "password123"}'
+				post "/person/id/abc123/reset_password", data
+
+				last_response.status.must_equal 404
+			end
+
+			describe 'Runtime errors' do
+
+				before do
+					#Example case: Submit wrong password
+					data = '{"old_password": "wrongpassword", "new_password": "password123"}'
+					post "/person/id/#{@person.id.to_s}/reset_password", data
+				end
+
+				it 'must return a 403 error' do
+					last_response.status.must_equal 403
+				end
+
+				it 'must return a message indicating why the operation could not be completed' do
+					response_body = JSON.parse(last_response.body)
+					response_body["message"].must_equal "Existing password is incorrect"
+				end
+
+			end
+
+		end
+
+	end
+
 	describe '/people' do
 
 		it 'must return a 200 status code' do
