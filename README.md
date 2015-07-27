@@ -9,8 +9,10 @@ The SnailMail Server
 * bundle install
 * Ensure 'mongod' is running
 * Set up database indexes and demo data
-** bundle exec rake create_indexes
-** bundle exec rake setup_demo_data
+```
+bundle exec rake create_indexes
+bundle exec rake setup_demo_data
+```
 * Set environment variable SNAILMAIL_BASE_URL to application root, ie 'http://localhost:9292'
 * Start app with 'rackup'
 
@@ -26,6 +28,8 @@ POST /person/new
 {
 	"name": "Person Name",
 	"username": "username",
+	"email": "person@test.com",
+	"phone": "555-444-1234",
 	"password": "password",
 	"address1": "Street Address",
 	"city": "City",
@@ -91,6 +95,19 @@ POST /person/id/{person_id}
 Status: 204
 ```
 
+Reset a person's password:
+
+```
+POST /person/id/{person_id}/reset_password
+
+{
+	"old_password": "password",
+	"new_password": "password123"
+}
+
+Status: 204
+```
+
 Get a collection of people:
 
 ```
@@ -113,13 +130,96 @@ Response body:
 		zip: "11111",
 		updated_at: "2015-06-17T20:36:39.024Z"
 		created_at: "2015-06-17T20:36:39.009Z"
+	}
+]
+```
+
+Search people:
+* Search terms are case-sensitive
+* Terms are used to search both name and username records
+* If no limit to the number of results is set, the default limit is 25
+
+```
+GET /people/search?term=Evan&limit=3
+
+Status: 200
+
+Response body:
+[
+	{
+		_id: {
+			$oid: "uuid"
+		},
+		name: "Evan 1",
+		username: "username1",
+		address1: "Street Address",
+		city: "City",
+		state: "ST",
+		zip: "11111",
+		updated_at: "2015-06-17T20:36:39.024Z"
+		created_at: "2015-06-17T20:36:39.009Z"
 	},
 	{
 		_id: {
 			$oid: "uuid"
 		},
-		name: "Person Name",
-		username: "username",
+		name: "Evan 2",
+		username: "username2",
+		address1: "Street Address",
+		city: "City",
+		state: "ST",
+		zip: "11111",
+		updated_at: "2015-06-17T20:36:39.024Z"
+		created_at: "2015-06-17T20:36:39.009Z"
+	}
+]
+
+```
+
+Perform a bulk search of people using emails and phone numbers:
+* The iOS app searches a person's contacts and passes in an array of these contacts, including email and phone numbers for each contact
+* The postoffice server returns a unique list of any people who match the contact records
+
+```
+
+POST /people/bulk_search
+
+[
+	{
+		"emails": ["person1@test.com", "person1@gmail.com"],
+		"phoneNumbers": ["5554441243"]
+	},
+	{
+		"emails": ["person2@test.com"],
+		"phoneNumbers": ["5553332222"]
+	}
+]
+
+Status: 200
+
+Reponse body:
+[
+	{
+		_id: {
+			$oid: "uuid"
+		},
+		name: "Evan 1",
+		username: "username1",
+		email: "person1@test.com",
+		address1: "Street Address",
+		city: "City",
+		state: "ST",
+		zip: "11111",
+		updated_at: "2015-06-17T20:36:39.024Z"
+		created_at: "2015-06-17T20:36:39.009Z"
+	},
+	{
+		_id: {
+			$oid: "uuid"
+		},
+		name: "Evan 2",
+		username: "username2",
+		emails: "person2@test.com",
 		address1: "Street Address",
 		city: "City",
 		state: "ST",
@@ -273,7 +373,7 @@ Status: 200
 Get mail that has been created by a user (any mail in SENT state that arrived in the past will be updated to DELIVERED state):
 
 ```
-GET /person/id/{person_id}/mailbox
+GET /person/id/{person_id}/outbox
 
 Status: 200
 
@@ -294,10 +394,42 @@ Status: 200
 ]
 ```
 
+Get contacts for a user (any person who has sent mail to, or received mail from, the user):
 
+```
+GET /person/id/{person_id}/contacts
 
+Status: 200
 
+[
+	{
+		_id: {
+			$oid: "uuid"
+		},
+		name: "Evan 1",
+		username: "username1",
+		email: "person1@test.com",
+		address1: "Street Address",
+		city: "City",
+		state: "ST",
+		zip: "11111",
+		updated_at: "2015-06-17T20:36:39.024Z"
+		created_at: "2015-06-17T20:36:39.009Z"
+	},
+	{
+		_id: {
+			$oid: "uuid"
+		},
+		name: "Evan 2",
+		username: "username2",
+		emails: "person2@test.com",
+		address1: "Street Address",
+		city: "City",
+		state: "ST",
+		zip: "11111",
+		updated_at: "2015-06-17T20:36:39.024Z"
+		created_at: "2015-06-17T20:36:39.009Z"
+	}
+]
 
-
-
-
+```
