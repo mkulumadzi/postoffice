@@ -1,0 +1,69 @@
+# Logfile created on 2015-07-28 11:04:18 -0700 by logger.rb/44203
+W, [2015-07-28T11:04:18.424336 #34603]  WARN -- : DRAGONFLY: uid /postcards/0001539_0001539-R1-E010.jpg not found
+I, [2015-07-28T11:04:18.424471 #34603]  INFO -- : DRAGONFLY: GET  404
+W, [2015-07-28T11:06:02.475619 #34611]  WARN -- : DRAGONFLY: uid http://kuyenda-slowpost-development.s3.amazonaws.com//postcards/0001539_0001539-R1-E010.jpg not found
+I, [2015-07-28T11:06:02.475781 #34611]  INFO -- : DRAGONFLY: GET  404
+W, [2015-07-28T11:07:16.373254 #34614]  WARN -- : DRAGONFLY: uid http://kuyenda-slowpost-development.s3.amazonaws.com//postcards/0001539_0001539-R1-E010.jpg not found
+I, [2015-07-28T11:07:16.373396 #34614]  INFO -- : DRAGONFLY: GET  404
+W, [2015-07-28T11:08:09.030154 #34618]  WARN -- : DRAGONFLY: uid http://kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg not found
+I, [2015-07-28T11:08:09.030340 #34618]  INFO -- : DRAGONFLY: GET  404
+W, [2015-07-28T11:09:56.613544 #34624]  WARN -- : DRAGONFLY: uid http://kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg not found
+I, [2015-07-28T11:09:56.621258 #34624]  INFO -- : DRAGONFLY: GET  404
+W, [2015-07-28T11:10:11.631814 #34624]  WARN -- : DRAGONFLY: uid http://kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg not found
+I, [2015-07-28T11:10:11.631946 #34624]  INFO -- : DRAGONFLY: GET  404
+W, [2015-07-28T11:11:14.051332 #34624]  WARN -- : DRAGONFLY: uid http://kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg not found
+I, [2015-07-28T11:11:14.051864 #34624]  INFO -- : DRAGONFLY: GET  404
+W, [2015-07-28T11:11:18.227455 #34624]  WARN -- : DRAGONFLY: uid http://kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg not found
+I, [2015-07-28T11:11:18.227545 #34624]  INFO -- : DRAGONFLY: GET  404
+D, [2015-07-28T11:21:18.668546 #34695] DEBUG -- : DRAGONFLY: shell command: 'convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34695-bso39a.jpg'
+W, [2015-07-28T11:21:18.725579 #34695]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34695-bso39a.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T11:21:18.725744 #34695]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T11:22:16.414340 #34699] DEBUG -- : DRAGONFLY: shell command: 'convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34699-lk9zzx.jpg'
+W, [2015-07-28T11:22:16.437446 #34699]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34699-lk9zzx.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T11:22:16.437579 #34699]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T11:23:36.614031 #34709] DEBUG -- : DRAGONFLY: shell command: 'convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34709-vins2q.jpg'
+W, [2015-07-28T11:23:36.647347 #34709]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34709-vins2q.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T11:23:36.648167 #34709]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T11:24:01.882845 #34714] DEBUG -- : DRAGONFLY: shell command: 'convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34714-1yg4t.jpg'
+W, [2015-07-28T11:24:01.906344 #34714]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34714-1yg4t.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T11:24:01.906503 #34714]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T11:27:20.030379 #34721] DEBUG -- : DRAGONFLY: shell command: 'convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34721-1jr1tla.jpg'
+W, [2015-07-28T11:27:20.062604 #34721]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34721-1jr1tla.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T11:27:20.062759 #34721]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T11:28:31.821365 #34725] DEBUG -- : DRAGONFLY: shell command: 'convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34725-go6tkb.jpg'
+W, [2015-07-28T11:28:31.857255 #34725]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34725-go6tkb.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T11:28:31.857874 #34725]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T11:30:00.631744 #34725] DEBUG -- : DRAGONFLY: shell command: 'convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34725-15wkf9m.jpg'
+W, [2015-07-28T11:30:00.637278 #34725]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34725-15wkf9m.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T11:30:00.637457 #34725]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T11:30:32.144085 #34725] DEBUG -- : DRAGONFLY: shell command: 'convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34725-x0zf8m.jpg'
+W, [2015-07-28T11:30:32.187145 #34725]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34725-x0zf8m.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T11:30:32.187310 #34725]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T11:33:28.780238 #34732] DEBUG -- : DRAGONFLY: shell command: 'convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34732-muw3sz.jpg'
+W, [2015-07-28T11:33:28.818334 #34732]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/Users/bigedubs/Documents/postoffice/http:/kuyenda-slowpost-development.s3.amazonaws.com/postcards/0001539_0001539-R1-E010.jpg' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-34732-muw3sz.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T11:33:28.818524 #34732]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T12:19:10.663816 #35179] DEBUG -- : DRAGONFLY: shell command: 'identify' '-ping' '-format' '%m %w %h' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35179-1ge1c5f'
+D, [2015-07-28T12:40:59.729046 #35296] DEBUG -- : DRAGONFLY: shell command: 'identify' '-ping' '-format' '%m %w %h' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35296-hicftb'
+D, [2015-07-28T12:41:32.931026 #35296] DEBUG -- : DRAGONFLY: shell command: 'identify' '-ping' '-format' '%m %w %h' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35296-hicftb'
+I, [2015-07-28T12:50:44.996687 #35352]  INFO -- : DRAGONFLY: GET  200
+I, [2015-07-28T12:58:46.047130 #35439]  INFO -- : DRAGONFLY: GET  200
+D, [2015-07-28T12:59:29.619973 #35443] DEBUG -- : DRAGONFLY: shell command: 'convert' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35443-1rssd6w' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35443-1ev1laa.jpg'
+W, [2015-07-28T12:59:29.667003 #35443]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35443-1rssd6w' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35443-1ev1laa.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T12:59:29.667273 #35443]  INFO -- : DRAGONFLY: GET  500
+D, [2015-07-28T12:59:32.962165 #35443] DEBUG -- : DRAGONFLY: shell command: 'convert' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35443-172a1ii' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35443-1jntnd8.jpg'
+W, [2015-07-28T12:59:32.970365 #35443]  WARN -- : DRAGONFLY: caught error - Command failed ('convert' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35443-172a1ii' '-resize' '40x40' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150728-35443-1jntnd8.jpg') with exit status 127 and stderr sh: convert: command not found
+
+I, [2015-07-28T12:59:32.970559 #35443]  INFO -- : DRAGONFLY: GET  500
+I, [2015-07-28T13:00:21.735976 #35449]  INFO -- : DRAGONFLY: GET  200
+I, [2015-07-28T13:03:07.521772 #35449]  INFO -- : DRAGONFLY: GET  200
+I, [2015-07-28T13:03:56.619270 #35449]  INFO -- : DRAGONFLY: GET  200

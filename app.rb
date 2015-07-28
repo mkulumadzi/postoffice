@@ -282,7 +282,7 @@ post '/mail/id/:id/read' do
     status = 404
     response_body = nil
   rescue ArgumentError
-    status = 403  
+    status = 403
     response_body = nil
   end
 
@@ -337,4 +337,28 @@ get '/person/id/:id/contacts' do
 
   [status, response_body]
 
+end
+
+post '/postcard/new' do
+
+  begin
+    bucket = 'kuyenda-slowpost-development'
+    AWS::S3::Base.establish_connection!(
+      :access_key_id     => 'AKIAJQ4UCOE3I4MJBNBQ',
+      :secret_access_key => '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'
+    )
+    AWS::S3::S3Object.store(
+      params["filename"],
+      open(params["fileURL"]),
+      bucket
+    )
+  end
+
+  [200, nil]
+
+end
+
+get '/postcard/:uuid' do
+  image_url = Dragonfly.app.remote_url_for("postcards/#{params["uuid"]}")
+  Dragonfly.app.fetch_url(image_url).to_response
 end

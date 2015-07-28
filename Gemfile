@@ -18,6 +18,9 @@ gem 'rack-test'
 gem 'multi_json'
 gem 'apns'
 gem 'factory_girl'
+gem 'dragonfly'
+gem 'dragonfly-s3_data_store'
+gem 'aws-sdk', '~> 2'
 
 group :test do
 	gem 'webmock'
@@ -25,4 +28,5 @@ group :test do
 	gem 'rake'
 	gem 'minitest-reporters'
 	gem 'mocha'
+	gem 'm'
 end

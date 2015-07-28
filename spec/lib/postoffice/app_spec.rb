@@ -31,7 +31,7 @@ describe app do
 				get '/'
 				last_response.body.must_include "Hello World"
 			end
-		end 
+		end
 
 		describe 'SNAILMAIL_BASE_URL' do
 			it 'must have a value for SNAILMAIL BASE URL' do
@@ -48,7 +48,7 @@ describe app do
 			post "/person/new", data
 		end
 
-		it 'must return a 201 status code' do	
+		it 'must return a 201 status code' do
 			last_response.status.must_equal 201
 		end
 
@@ -558,7 +558,7 @@ describe app do
 			end
 
 			it 'must be scheduled to arrive' do
-				mail = SnailMail::Mail.find(@mail1.id)			
+				mail = SnailMail::Mail.find(@mail1.id)
 				mail.scheduled_to_arrive.must_be_instance_of DateTime
 			end
 
@@ -612,7 +612,7 @@ describe app do
 			end
 
 			it 'must be scheduled to arrive in the past' do
-				mail = SnailMail::Mail.find(@mail1.id)			
+				mail = SnailMail::Mail.find(@mail1.id)
 				assert_operator mail.scheduled_to_arrive, :<=, Time.now
 			end
 
@@ -714,7 +714,7 @@ describe app do
 			get "/person/id/#{@person2.id}/mailbox"
 			response = JSON.parse(last_response.body)
 			mail = get_mail_object_from_mail_response response[0]
-			
+
 			response[0].must_equal expected_json_fields_for_mail(mail)
 		end
 
@@ -740,7 +740,7 @@ describe app do
 			get "/person/id/#{@person1.id}/outbox"
 			response = JSON.parse(last_response.body)
 			mail = get_mail_object_from_mail_response response[0]
-			
+
 			response[0].must_equal expected_json_fields_for_mail(mail)
 		end
 
@@ -886,7 +886,25 @@ describe app do
 			first_result = get_person_object_from_person_response @response[0]
 			@response[0].must_equal expected_json_fields_for_person(first_result)
 		end
-		
+
 	end
+
+  # describe '/postcard/new' do
+  #
+  #   before do
+  #     @file = File.open('resources/image1.jpg')
+  #     @data = '{"filename": "testfile.jpg", "fileURL": "resources/image1.jpg"}'
+  #     post "/postcard/new", @data
+  #   end
+  #
+  #   it 'must return a 200 status code when the file is uploaded' do
+  #     last_response.status.must_equal 200
+  #   end
+  #
+  #   it 'must return an empty response body' do
+  #     last_response.body.must_equal ""
+  #   end
+  #
+  # end
 
 end

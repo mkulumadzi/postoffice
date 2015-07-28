@@ -28,3 +28,23 @@ else
 end
 
 APNS.port = 2195
+
+## Configuring Dragonfly for accessing images
+Dragonfly.app.configure do
+
+	plugin :imagemagick
+
+	secret 'I miss my Sony camera'
+
+  datastore :s3,
+    bucket_name: 'kuyenda-slowpost-development',
+    access_key_id: ENV['AWS_ACCESS_KEY_ID'],
+    secret_access_key: ENV['AWS_SECRET_ACCESS_KEY_ID']
+end
+
+## Configuring AWS for storign images
+## To Do: Use Dragonfly for storing as well?
+Aws.config.update({
+  region: ENV['AWS_REGION'],
+  credentials: Aws::Credentials.new(ENV['AWS_ACCESS_KEY_ID'], ENV['AWS_SECRET_ACCESS_KEY_ID'])
+})
