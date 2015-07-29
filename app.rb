@@ -353,7 +353,7 @@ put '/upload' do
     response_body = Hash["message", error.to_s].to_json
   rescue RuntimeError => error
     status = 403
-    response_body = Hash["message", error.to_s].to_json
+    response_body = Hash["message", params.to_s].to_json
   end
 
   [status, headers, response_body]
