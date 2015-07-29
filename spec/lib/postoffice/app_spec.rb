@@ -895,7 +895,7 @@ describe app do
 
       before do
           @file = File.open("resources/image2.jpg")
-          put "/upload", :file => @file.read, :filename => "image2.jpg"
+          put "/upload", "file" => @file.read, "filename" => "image2.jpg"
       end
 
       it 'must return a 204 status code if a file is successfuly updated' do

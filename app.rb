@@ -341,8 +341,8 @@ end
 
 put '/upload' do
 
-  file = params[:file]
-  filename = params[:filename]
+  file = params["file"]
+  filename = params["filename"]
 
   begin
     key = SnailMail::FileService.put_file file, filename
