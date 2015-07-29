@@ -889,15 +889,38 @@ describe app do
 
 	end
 
-  describe '/postcard/new' do
+  # describe '/postcard/new' do
+  #
+  #   before do
+  #     @key = "postcards/" + SecureRandom.uuid() + ".jpg"
+  #     @data = '{"key": "' + @key + '", "fileURL": "resources/image1.jpg"}'
+  #     post "/postcard/new", @data
+  #   end
+  #
+  #   it 'must return a 200 status code when the file is uploaded' do
+  #     last_response.status.must_equal 200
+  #   end
+  #
+  #   it 'must return an empty response body' do
+  #     last_response.body.must_equal ""
+  #   end
+  #
+  #   it 'must upload the file to the AWS S3 store' do
+  #     s3 = Aws::S3::Resource.new
+  #     obj = s3.bucket('kuyenda-slowpost-development').object(@key)
+  #     obj.exists?.must_equal true
+  #   end
+  #
+  # end
+
+  describe '/upload' do
 
     before do
-      @key = "postcards/" + SecureRandom.uuid() + ".jpg"
-      @data = '{"key": "' + @key + '", "fileURL": "resources/image1.jpg"}'
-      post "/postcard/new", @data
+        @file = File.open("resources/image2.jpg")
+        put "/upload", :file => @file.read
     end
 
-    it 'must return a 200 status code when the file is uploaded' do
+    it 'must return a 200 status code if a file is successfuly updated' do
       last_response.status.must_equal 200
     end
 
@@ -905,11 +928,26 @@ describe app do
       last_response.body.must_equal ""
     end
 
-    it 'must upload the file to the AWS S3 store' do
+    it 'must include the key in the header' do
+      last_response.headers["key"].must_be_instance_of String
+    end
+
+    it 'must upload the object to the AWS S3 store' do
+      key = last_response.headers["key"]
       s3 = Aws::S3::Resource.new
-      obj = s3.bucket('kuyenda-slowpost-development').object(@key)
+      obj = s3.bucket('kuyenda-slowpost-development').object(key)
       obj.exists?.must_equal true
     end
+
+    # Not working yet
+    # it 'must upload the file as the AWS object' do
+    #   key = last_response.headers["key"]
+    #   s3 = Aws::S3::Resource.new
+    #   obj = s3.bucket('kuyenda-slowpost-development').object(key)
+    #
+    #   binding.pry
+    #   obj.exists?.must_equal true
+    # end
 
   end
 

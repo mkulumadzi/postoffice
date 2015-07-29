@@ -339,17 +339,33 @@ get '/person/id/:id/contacts' do
 
 end
 
-post '/postcard/new' do
+# post '/postcard/new' do
+#
+#   data = JSON.parse(request.body.read)
+#
+#   begin
+#     s3 = Aws::S3::Resource.new
+#     obj = s3.bucket('kuyenda-slowpost-development').object(data["key"])
+#     obj.upload_file(data["fileURL"])
+#   end
+#
+#   [200, nil]
+#
+# end
 
-  data = JSON.parse(request.body.read)
+put '/upload' do
+
+  file = params[:file]
+  key = "postcards/" + SecureRandom.uuid() + ".jpg"
 
   begin
     s3 = Aws::S3::Resource.new
-    obj = s3.bucket('kuyenda-slowpost-development').object(data["key"])
-    obj.upload_file(data["fileURL"])
+    obj = s3.bucket('kuyenda-slowpost-development').object(key)
+    obj.put(body: file)
+    headers = { "key" => key }
   end
 
-  [200, nil]
+  [200, headers, nil]
 
 end
 
