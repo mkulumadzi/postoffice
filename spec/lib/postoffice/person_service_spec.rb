@@ -1,4 +1,3 @@
-
 require_relative '../../spec_helper'
 
 describe SnailMail::PersonService do
@@ -44,7 +43,7 @@ describe SnailMail::PersonService do
 					SnailMail::PersonService.validate_required_fields data
 				end
 			end
-			
+
 			it 'must throw an exception if email is missing' do
 				data = Hash["username", "test", "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
@@ -78,7 +77,7 @@ describe SnailMail::PersonService do
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
-			end			
+			end
 
 			it 'must throw an exception if phone is duplicate' do
 				data = Hash["username", "test", "email", "wha@test.co", "phone", @person.phone, "password", "password"]
@@ -92,7 +91,7 @@ describe SnailMail::PersonService do
 				assert_raises RuntimeError do
 					SnailMail::PersonService.validate_required_fields data
 				end
-			end	
+			end
 
 			it 'must call this function when creating a person' do
 				username = random_username
@@ -293,9 +292,9 @@ describe SnailMail::PersonService do
 					@people[0].must_be_instance_of SnailMail::Person
 				end
 
-				it 'must return person records who match the search terms' do 
+				it 'must return person records who match the search terms' do
 					@people[0].email.must_equal @person1.email || @person2.email
-					
+
 				end
 
 				it 'must return a person record for each successful search result' do
@@ -316,7 +315,7 @@ describe SnailMail::PersonService do
 					@people[0].must_be_instance_of SnailMail::Person
 				end
 
-				it 'must return person records who match the search terms' do 
+				it 'must return person records who match the search terms' do
 					@people[0].phone.must_equal @person1.phone || @person2.phone
 				end
 
@@ -346,7 +345,7 @@ describe SnailMail::PersonService do
 
 				data.append(entry1)
 				data.append(entry2)
-				
+
 				people = SnailMail::PersonService.bulk_search data
 
 				expected_people = []

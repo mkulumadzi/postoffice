@@ -11,7 +11,6 @@ require_relative './convenience_methods.rb'
 # Dependencies
 require 'minitest/autorun'
 require 'minitest/reporters'
-# require 'webmock/minitest'
 require 'rack/test'
 require 'bundler/setup'
 require 'rubygems'

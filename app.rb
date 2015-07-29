@@ -339,34 +339,20 @@ get '/person/id/:id/contacts' do
 
 end
 
-# post '/postcard/new' do
-#
-#   data = JSON.parse(request.body.read)
-#
-#   begin
-#     s3 = Aws::S3::Resource.new
-#     obj = s3.bucket('kuyenda-slowpost-development').object(data["key"])
-#     obj.upload_file(data["fileURL"])
-#   end
-#
-#   [200, nil]
-#
-# end
-
 put '/upload' do
 
   file = params[:file]
-  key = "postcards/" + SecureRandom.uuid() + ".jpg"
+  filename = params[:filename]
 
   begin
-    s3 = Aws::S3::Resource.new
-    obj = s3.bucket('kuyenda-slowpost-development').object(key)
-    obj.put(body: file)
+    key = SnailMail::FileService.put_file file, filename
     headers = { "key" => key }
+    status = 204
+  rescue ArgumentError
+    status = 403
   end
 
-  [200, headers, nil]
-
+  [status, headers, nil]
 end
 
 get '/postcard/:uuid' do

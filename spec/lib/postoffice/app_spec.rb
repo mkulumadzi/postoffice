@@ -889,65 +889,38 @@ describe app do
 
 	end
 
-  # describe '/postcard/new' do
-  #
-  #   before do
-  #     @key = "postcards/" + SecureRandom.uuid() + ".jpg"
-  #     @data = '{"key": "' + @key + '", "fileURL": "resources/image1.jpg"}'
-  #     post "/postcard/new", @data
-  #   end
-  #
-  #   it 'must return a 200 status code when the file is uploaded' do
-  #     last_response.status.must_equal 200
-  #   end
-  #
-  #   it 'must return an empty response body' do
-  #     last_response.body.must_equal ""
-  #   end
-  #
-  #   it 'must upload the file to the AWS S3 store' do
-  #     s3 = Aws::S3::Resource.new
-  #     obj = s3.bucket('kuyenda-slowpost-development').object(@key)
-  #     obj.exists?.must_equal true
-  #   end
-  #
-  # end
-
   describe '/upload' do
 
-    before do
-        @file = File.open("resources/image2.jpg")
-        put "/upload", :file => @file.read
-    end
+    describe 'upload a file' do
 
-    it 'must return a 200 status code if a file is successfuly updated' do
-      last_response.status.must_equal 200
-    end
+      before do
+          @file = File.open("resources/image2.jpg")
+          put "/upload", :file => @file.read, :filename => "image2.jpg"
+      end
 
-    it 'must return an empty response body' do
-      last_response.body.must_equal ""
-    end
+      it 'must return a 204 status code if a file is successfuly updated' do
+        last_response.status.must_equal 204
+      end
 
-    it 'must include the key in the header' do
-      last_response.headers["key"].must_be_instance_of String
-    end
+      it 'must return an empty response body' do
+        last_response.body.must_equal ""
+      end
 
-    it 'must upload the object to the AWS S3 store' do
-      key = last_response.headers["key"]
-      s3 = Aws::S3::Resource.new
-      obj = s3.bucket('kuyenda-slowpost-development').object(key)
-      obj.exists?.must_equal true
-    end
+      it 'must include the key in the header' do
+        last_response.headers["key"].must_be_instance_of String
+      end
 
-    # Not working yet
-    # it 'must upload the file as the AWS object' do
-    #   key = last_response.headers["key"]
-    #   s3 = Aws::S3::Resource.new
-    #   obj = s3.bucket('kuyenda-slowpost-development').object(key)
-    #
-    #   binding.pry
-    #   obj.exists?.must_equal true
-    # end
+      it 'must upload the object to the AWS S3 store' do
+        obj = SnailMail::FileService.get_object_for_key last_response.headers["key"]
+        obj.exists?.must_equal true
+      end
+
+      it 'must upload the complete contents of the file as the AWS object' do
+        obj = SnailMail::FileService.get_object_for_key last_response.headers["key"]
+        obj.content_length.must_equal File.size(@file)
+      end
+
+    end
 
   end
 
