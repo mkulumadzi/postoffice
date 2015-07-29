@@ -346,7 +346,7 @@ put '/upload' do
 
   begin
     key = SnailMail::FileService.put_file file, filename
-    headers = { "key" => key }
+    headers = { "location" => key }
     status = 204
   rescue ArgumentError
     status = 403

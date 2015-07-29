@@ -907,16 +907,16 @@ describe app do
       end
 
       it 'must include the key in the header' do
-        last_response.headers["key"].must_be_instance_of String
+        last_response.headers["location"].must_be_instance_of String
       end
 
       it 'must upload the object to the AWS S3 store' do
-        obj = SnailMail::FileService.get_object_for_key last_response.headers["key"]
+        obj = SnailMail::FileService.get_object_for_key last_response.headers["location"]
         obj.exists?.must_equal true
       end
 
       it 'must upload the complete contents of the file as the AWS object' do
-        obj = SnailMail::FileService.get_object_for_key last_response.headers["key"]
+        obj = SnailMail::FileService.get_object_for_key last_response.headers["location"]
         obj.content_length.must_equal File.size(@file)
       end
 
