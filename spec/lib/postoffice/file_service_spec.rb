@@ -22,6 +22,13 @@ describe SnailMail::FileService do
       ext.must_equal nil
     end
 
+    it 'must raise an argument error if the filename is nil' do
+      filename = nil
+      assert_raises RuntimeError do
+        SnailMail::FileService.get_extension_from_filename filename
+      end
+    end
+
   end
 
   describe 'create key for filename' do

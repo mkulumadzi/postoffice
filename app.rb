@@ -348,11 +348,15 @@ put '/upload' do
     key = SnailMail::FileService.put_file file, filename
     headers = { "location" => key }
     status = 204
-  rescue ArgumentError
+  rescue ArgumentError => error
     status = 403
+    response_body = Hash["message", error.to_s].to_json
+  rescue RuntimeError => error
+    status = 403
+    response_body = Hash["message", error.to_s].to_json
   end
 
-  [status, headers, nil]
+  [status, headers, response_body]
 end
 
 get '/postcard/:uuid' do

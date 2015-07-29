@@ -920,6 +920,25 @@ describe app do
         obj.content_length.must_equal File.size(@file)
       end
 
+      describe 'missing filename' do
+
+        before do
+          @file = File.open("resources/image2.jpg")
+          put "/upload", "file" => @file.read, "filename" => nil
+          @response = last_response
+        end
+
+        it 'must return a 403 status code' do
+          @response.status.must_equal 403
+        end
+
+        it 'must include an error message in the response body' do
+          message = JSON.parse(@response.body)["message"]
+          message.must_equal "Filename must be included in request"
+        end
+
+      end
+
     end
 
   end
