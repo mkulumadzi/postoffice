@@ -39,12 +39,12 @@ Dragonfly.app.configure do
   datastore :s3,
     bucket_name: 'kuyenda-slowpost-development',
     access_key_id: ENV['AWS_ACCESS_KEY_ID'],
-    secret_access_key: ENV['AWS_SECRET_ACCESS_KEY_ID']
+    secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
 end
 
 ## Configuring AWS for storign images
 ## To Do: Use Dragonfly for storing as well?
 Aws.config.update({
-  region: ENV['AWS_REGION'],
-  credentials: Aws::Credentials.new(ENV['AWS_ACCESS_KEY_ID'], ENV['AWS_SECRET_ACCESS_KEY_ID'])
+  region: 'us-west-2',
+  credentials: Aws::Credentials.new(ENV['AWS_ACCESS_KEY_ID'], ENV['AWS_SECRET_ACCESS_KEY'])
 })

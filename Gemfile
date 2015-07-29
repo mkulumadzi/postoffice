@@ -23,7 +23,7 @@ gem 'dragonfly-s3_data_store'
 gem 'aws-sdk', '~> 2'
 
 group :test do
-	gem 'webmock'
+	# gem 'webmock'
 	gem 'turn'
 	gem 'rake'
 	gem 'minitest-reporters'

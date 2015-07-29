@@ -9,7 +9,7 @@ require "digest"
 require "digest/bubblebabble"
 require "dragonfly"
 require "dragonfly/s3_data_store"
-# require "aws-sdk"
+require "aws-sdk"
 
 require File.dirname(__FILE__) + '/app.rb'
 

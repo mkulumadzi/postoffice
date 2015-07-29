@@ -341,17 +341,12 @@ end
 
 post '/postcard/new' do
 
+  data = JSON.parse(request.body.read)
+
   begin
-    bucket = 'kuyenda-slowpost-development'
-    AWS::S3::Base.establish_connection!(
-      :access_key_id     => 'AKIAJQ4UCOE3I4MJBNBQ',
-      :secret_access_key => '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'
-    )
-    AWS::S3::S3Object.store(
-      params["filename"],
-      open(params["fileURL"]),
-      bucket
-    )
+    s3 = Aws::S3::Resource.new
+    obj = s3.bucket('kuyenda-slowpost-development').object(data["key"])
+    obj.upload_file(data["fileURL"])
   end
 
   [200, nil]
