@@ -2,51 +2,14 @@ require_relative '../../spec_helper'
 
 describe SnailMail::FileService do
 
-  describe 'get extension from filename' do
-
-    it 'must return the extension for a file' do
-      filename = "image.jpg"
-      ext = SnailMail::FileService.get_extension_from_filename filename
-      ext.must_equal ".jpg"
-    end
-
-    it 'must return an extension even for files that have multiple periods in the name' do
-      filename = "kuyenda.image.png"
-      ext = SnailMail::FileService.get_extension_from_filename filename
-      ext.must_equal ".png"
-    end
-
-    it 'must return nil if there is no extension' do
-      filename = "kuyenda"
-      ext = SnailMail::FileService.get_extension_from_filename filename
-      ext.must_equal nil
-    end
-
-    it 'must raise a runtime error if the filename is nil' do
-      filename = nil
-      assert_raises RuntimeError do
-        SnailMail::FileService.get_extension_from_filename filename
-      end
-    end
-
-  end
-
-  describe 'create key for filename' do
+  describe 'create key' do
 
     before do
-      filename = "image.jpg"
-      key = SnailMail::FileService.create_key_for_filename filename
-      @split_key = key.split('.')
+      @key = SnailMail::FileService.create_key
     end
 
-    it 'must prepend the key with a 36-character uuid' do
-      uuid = @split_key[0]
-      assert_match /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/, uuid
-    end
-
-    it 'must append the key with the file extension' do
-      ext = @split_key[1]
-      ext.must_equal "jpg"
+    it 'must generate a uuid' do
+      assert_match /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/, @key
     end
 
   end
@@ -74,7 +37,7 @@ describe SnailMail::FileService do
   describe 'encode a file as a Base64 string' do
 
     before do
-      @file = File.open('resources/asamplefile.txt')
+      @file = File.open('spec/resources/asamplefile.txt')
       @file_contents = @file.read
     end
 
@@ -94,21 +57,39 @@ describe SnailMail::FileService do
     before do
       @string = "This is a string to encode."
       base64_string = Base64.encode64(@string)
-      @filename = "sample.txt"
-      @file = File.open(SnailMail::FileService.decode_string_to_file base64_string, @filename)
+      @key = "samplekey"
+      @file = File.open(SnailMail::FileService.decode_string_to_file base64_string, @key)
       @file_contents = @file.read
     end
 
     after do
       @file.close
+      File.delete(@file)
     end
 
     it 'must decode the string and store it in the file' do
       @file_contents.must_equal @string
     end
 
-    it 'must store the name of the file' do
-      File.basename(@file).must_equal @filename
+    it 'must store the key as the name of the file' do
+      File.basename(@file).must_equal @key
+    end
+
+  end
+
+  describe 'delete temporary file' do
+
+    it 'must delete a file if it exists in the /tmp directory' do
+      file = File.open('tmp/filetodelete.txt', 'w')
+      file.close
+      SnailMail::FileService.delete_temporary_file 'filetodelete.txt'
+      File.exists?('tmp/filetodelete.txt').must_equal false
+    end
+
+    it 'must raise a RuntimeError if the file is not found' do
+      assert_raises RuntimeError do
+        SnailMail::FileService.delete_temporary_file 'thisoneisnotthere.txt'
+      end
     end
 
   end
@@ -117,12 +98,15 @@ describe SnailMail::FileService do
 
     before do
       base64_string = Base64.encode64("I am uploading this file.")
-      filename = "Uploaded.txt"
-      @key = SnailMail::FileService.put_file base64_string, filename
+      @key = SnailMail::FileService.put_file base64_string
     end
 
-    it 'must return a key that is a UUID plus the file extension' do
-      assert_match /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}.txt/, @key
+    after do
+      SnailMail::FileService.delete_temporary_file @key
+    end
+
+    it 'must return a UUID as the key' do
+      assert_match /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/, @key
     end
 
     it 'must upload the file to the AWS S3 store' do

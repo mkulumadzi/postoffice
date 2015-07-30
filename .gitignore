@@ -35,3 +35,7 @@ build/
 
 # Dragonfly files
 dragonfly.log
+dragonfly/*
+
+# Test files for uploads
+tmp/*

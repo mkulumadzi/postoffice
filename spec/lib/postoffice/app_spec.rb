@@ -894,11 +894,10 @@ describe app do
     describe 'upload a file' do
 
       before do
-        image_file = File.open('resources/image1.jpg')
+        image_file = File.open('spec/resources/image1.jpg')
         @image_file_size = File.size(image_file)
         base64_string = SnailMail::FileService.encode_file_contents(image_file.read)
-        filename = 'image1.jpg'
-        data = '{"file": "' + base64_string + '", "filename": "' + filename + '"}'
+        data = '{"file": "' + base64_string + '"}'
         post "/upload", data
         image_file.close
       end
@@ -925,25 +924,9 @@ describe app do
         obj.content_length.must_equal @image_file_size
       end
 
-      describe 'missing filename' do
-
-        before do
-          image_file = File.open('resources/image1.jpg')
-          base64_string = SnailMail::FileService.encode_file_contents(image_file.read)
-          data = '{"file": "' + base64_string + '"}'
-          post "/upload", data
-          image_file.close
-        end
-
-        it 'must return a 403 status code' do
-          last_response.status.must_equal 403
-        end
-
-        it 'must include an error message in the response body' do
-          message = JSON.parse(last_response.body)["message"]
-          message.must_equal "Filename must be included in request"
-        end
-
+      it 'must remove the temporary file' do
+        key = last_response.headers["location"]
+        File.exists?('tmp/' + key).must_equal false
       end
 
     end

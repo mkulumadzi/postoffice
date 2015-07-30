@@ -2,24 +2,8 @@ module SnailMail
 
 	class FileService
 
-    def self.create_key_for_filename filename
-      ext = self.get_extension_from_filename filename
-      uuid = SecureRandom.uuid()
-      uuid + ext
-    end
-
-    def self.get_extension_from_filename filename
-      unless filename
-        raise "Filename must be included in request"
-      end
-
-      if filename.include? '.'
-        split_file = filename.split('.')
-        file_extension = split_file[split_file.length - 1]
-        "." + file_extension
-      else
-        nil
-      end
+    def self.create_key
+      SecureRandom.uuid()
     end
 
     def self.get_object_for_key key
@@ -27,8 +11,8 @@ module SnailMail
       s3.bucket(ENV['AWS_BUCKET']).object(key)
     end
 
-    def self.decode_string_to_file base64_string, filename
-      file = File.open(filename, 'wb')
+    def self.decode_string_to_file base64_string, key
+      file = File.open("tmp/#{key}", 'wb')
       file.write(Base64.decode64(base64_string))
       file.close
       file
@@ -38,13 +22,21 @@ module SnailMail
       Base64.encode64(file_contents)
     end
 
-    def self.put_file base64_string, filename
-      key = self.create_key_for_filename filename
+    def self.put_file base64_string
+      key = self.create_key
       obj = self.get_object_for_key key
-      file = File.open(self.decode_string_to_file base64_string, filename)
+      file = File.open(self.decode_string_to_file base64_string, key)
       obj.put(body: file)
       file.close
       key
+    end
+
+    def self.delete_temporary_file filename
+      unless File.exists?('tmp/' + filename)
+        raise "File not found."
+      end
+
+      File.delete('tmp/' + filename)
     end
 
 	end

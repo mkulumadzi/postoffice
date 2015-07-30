@@ -343,10 +343,9 @@ post '/upload' do
 
   data = JSON.parse request.body.read.gsub("\n", "")
   file_base64_string = data["file"]
-  filename = data["filename"]
 
   begin
-    key = SnailMail::FileService.put_file file_base64_string, filename
+    key = SnailMail::FileService.put_file file_base64_string
     headers = { "location" => key }
     status = 201
   rescue ArgumentError => error
@@ -357,6 +356,7 @@ post '/upload' do
     response_body = Hash["message", error.to_s].to_json
   end
 
+  SnailMail::FileService.delete_temporary_file key
   [status, headers, response_body]
 end
 
