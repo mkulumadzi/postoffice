@@ -123,9 +123,3 @@ end
 task :migrate_data do
   require_relative 'db/migrate.rb'
 end
-
-task :test_aws do
-	s3 = Aws::S3::Resource.new
-	binding.pry
-	puts s3
-end
