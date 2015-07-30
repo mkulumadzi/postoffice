@@ -27,21 +27,24 @@ module SnailMail
       s3.bucket(ENV['AWS_BUCKET']).object(key)
     end
 
-    def self.put_file filestring, filename
-      key = self.create_key_for_filename filename
-      obj = self.get_object_for_key key
-      file = self.encode_file filestring, filename
-      obj.put(body: file)
-      key
+    def self.decode_string_to_file base64_string, filename
+      file = File.open(filename, 'wb')
+      file.write(Base64.decode64(base64_string))
+      file.close
+      file
     end
 
-    def self.encode_file filestring, filename
-      file = nil
-      File.open(filename, 'wb') do |f|
-        f.write(Base64.decode64(filestring))
-        file = f
-      end
-      file
+    def self.encode_file_contents file_contents
+      Base64.encode64(file_contents)
+    end
+
+    def self.put_file base64_string, filename
+      key = self.create_key_for_filename filename
+      obj = self.get_object_for_key key
+      file = File.open(self.decode_string_to_file base64_string, filename)
+      obj.put(body: file)
+      file.close
+      key
     end
 
 	end

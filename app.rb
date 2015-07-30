@@ -341,14 +341,12 @@ end
 
 post '/upload' do
 
-  data = JSON.parse request.body.read
-  file = data["file"]
+  data = JSON.parse request.body.read.gsub("\n", "")
+  file_base64_string = data["file"]
   filename = data["filename"]
-  # file = params["file"]
-  # filename = params["filename"]
 
   begin
-    key = SnailMail::FileService.put_file file, filename
+    key = SnailMail::FileService.put_file file_base64_string, filename
     headers = { "location" => key }
     status = 201
   rescue ArgumentError => error

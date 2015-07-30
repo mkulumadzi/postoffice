@@ -71,16 +71,58 @@ describe SnailMail::FileService do
 
   end
 
+  describe 'encode a file as a Base64 string' do
+
+    before do
+      @file = File.open('resources/asamplefile.txt')
+      @file_contents = @file.read
+    end
+
+    after do
+      @file.close
+    end
+
+    it 'must encode the contents of the file as a Base64 string' do
+      base64 = SnailMail::FileService.encode_file_contents(@file_contents)
+      base64.must_equal Base64.encode64(@file_contents)
+    end
+
+  end
+
+  describe 'decode a base64 string and return a file' do
+
+    before do
+      @string = "This is a string to encode."
+      base64_string = Base64.encode64(@string)
+      @filename = "sample.txt"
+      @file = File.open(SnailMail::FileService.decode_string_to_file base64_string, @filename)
+      @file_contents = @file.read
+    end
+
+    after do
+      @file.close
+    end
+
+    it 'must decode the string and store it in the file' do
+      @file_contents.must_equal @string
+    end
+
+    it 'must store the name of the file' do
+      File.basename(@file).must_equal @filename
+    end
+
+  end
+
   describe 'put file' do
 
     before do
-      file = File.open('resources/image1.jpg')
-      filename = 'image1.jpg'
-      @key = SnailMail::FileService.put_file file, filename
+      base64_string = Base64.encode64("I am uploading this file.")
+      filename = "Uploaded.txt"
+      @key = SnailMail::FileService.put_file base64_string, filename
     end
 
     it 'must return a key that is a UUID plus the file extension' do
-      assert_match /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}.jpg/, @key
+      assert_match /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}.txt/, @key
     end
 
     it 'must upload the file to the AWS S3 store' do

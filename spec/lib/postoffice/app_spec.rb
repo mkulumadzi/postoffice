@@ -894,15 +894,16 @@ describe app do
     describe 'upload a file' do
 
       before do
-          @file = File.open("resources/asamplefile.txt")
-          # post "/upload", "file" => @file.read, "filename" => "image2.jpg"
-
-          data = '{"file": "' + @file.read + '", "filename": "asamplefile.txt"}'
-          post "/upload", data
-          @file.close
+        image_file = File.open('resources/image1.jpg')
+        @image_file_size = File.size(image_file)
+        base64_string = SnailMail::FileService.encode_file_contents(image_file.read)
+        filename = 'image1.jpg'
+        data = '{"file": "' + base64_string + '", "filename": "' + filename + '"}'
+        post "/upload", data
+        image_file.close
       end
 
-      it 'must return a 201 status code if a file is successfuly updated' do
+      it 'must return a 201 status code if a file is successfuly uploaded' do
         last_response.status.must_equal 201
       end
 
@@ -921,27 +922,25 @@ describe app do
 
       it 'must upload the complete contents of the file as the AWS object' do
         obj = SnailMail::FileService.get_object_for_key last_response.headers["location"]
-        obj.content_length.must_equal File.size(@file)
+        obj.content_length.must_equal @image_file_size
       end
 
       describe 'missing filename' do
 
         before do
-          @file = File.open("resources/asamplefile.txt")
-          # post "/upload", "file" => @file.read, "filename" => nil
-
-          data = '{"file": "' + file.read + '"}'
+          image_file = File.open('resources/image1.jpg')
+          base64_string = SnailMail::FileService.encode_file_contents(image_file.read)
+          data = '{"file": "' + base64_string + '"}'
           post "/upload", data
-          @response = last_response
-          @file.close
+          image_file.close
         end
 
         it 'must return a 403 status code' do
-          @response.status.must_equal 403
+          last_response.status.must_equal 403
         end
 
         it 'must include an error message in the response body' do
-          message = JSON.parse(@response.body)["message"]
+          message = JSON.parse(last_response.body)["message"]
           message.must_equal "Filename must be included in request"
         end
 
