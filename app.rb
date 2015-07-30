@@ -360,7 +360,11 @@ post '/upload' do
   [status, headers, response_body]
 end
 
-get '/postcard/:uuid' do
-  image_url = Dragonfly.app.remote_url_for("postcards/#{params["uuid"]}")
-  Dragonfly.app.fetch_url(image_url).to_response
+get '/image/:key' do
+
+  begin
+    image_url = Dragonfly.app.remote_url_for(params["key"])
+    Dragonfly.app.fetch_url(image_url).to_response
+  end
+
 end

@@ -933,4 +933,35 @@ describe app do
 
   end
 
+  describe '/image' do
+
+    describe 'download an image' do
+
+      before do
+
+        #Upload image
+        image_file = File.open('spec/resources/image1.jpg')
+        base64_string = SnailMail::FileService.encode_file_contents(image_file.read)
+        data = '{"file": "' + base64_string + '"}'
+        post "/upload", data
+        image_file.close
+
+        key = last_response.headers["location"]
+
+        get "/image/#{key}"
+      end
+
+      it 'must return a 200 status code if the image is found' do
+        last_response.status.must_equal 200
+      end
+
+      # it 'must return the image in the response body' do
+      #   response = JSON.parse(last_response.body)
+      #   response.must_equal "foo"
+      # end
+
+    end
+
+  end
+
 end
