@@ -341,8 +341,11 @@ end
 
 post '/upload' do
 
-  file = params["file"]
-  filename = params["filename"]
+  data = JSON.parse request.body.read
+  file = data["file"]
+  filename = data["filename"]
+  # file = params["file"]
+  # filename = params["filename"]
 
   begin
     key = SnailMail::FileService.put_file file, filename
