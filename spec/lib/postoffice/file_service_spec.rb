@@ -2,56 +2,6 @@ require_relative '../../spec_helper'
 
 describe SnailMail::FileService do
 
-  describe 'create key' do
-
-    before do
-      @key = SnailMail::FileService.create_key
-    end
-
-    it 'must generate a uuid' do
-      assert_match /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/, @key
-    end
-
-  end
-
-  describe 'get AWS s3 for key' do
-
-    before do
-      @obj = SnailMail::FileService.get_object_for_key "abc"
-    end
-
-    it 'must create an AWS S3 for the key' do
-      @obj.must_be_instance_of Aws::S3::Object
-    end
-
-    it 'must store the key for this object' do
-      @obj.key.must_equal "abc"
-    end
-
-    it 'must use the bucket stored in the AWS_BUCKET environment variable' do
-      @obj.bucket_name.must_equal ENV['AWS_BUCKET']
-    end
-
-  end
-
-  describe 'encode a file as a Base64 string' do
-
-    before do
-      @file = File.open('spec/resources/asamplefile.txt')
-      @file_contents = @file.read
-    end
-
-    after do
-      @file.close
-    end
-
-    it 'must encode the contents of the file as a Base64 string' do
-      base64 = SnailMail::FileService.encode_file_contents(@file_contents)
-      base64.must_equal Base64.encode64(@file_contents)
-    end
-
-  end
-
   describe 'decode a base64 string and return a file' do
 
     before do
@@ -77,45 +27,33 @@ describe SnailMail::FileService do
 
   end
 
-  describe 'delete temporary file' do
-
-    it 'must delete a file if it exists in the /tmp directory' do
-      file = File.open('tmp/filetodelete.txt', 'w')
-      file.close
-      SnailMail::FileService.delete_temporary_file 'filetodelete.txt'
-      File.exists?('tmp/filetodelete.txt').must_equal false
-    end
-
-    it 'must raise a RuntimeError if the file is not found' do
-      assert_raises RuntimeError do
-        SnailMail::FileService.delete_temporary_file 'thisoneisnotthere.txt'
-      end
-    end
-
-  end
-
-  describe 'put file' do
+  describe 'upload file using Dragonfly' do
 
     before do
-      base64_string = Base64.encode64("I am uploading this file.")
-      @key = SnailMail::FileService.put_file base64_string
+      @contents = "I am uploading this file."
+      base64_string = Base64.encode64(@contents)
+      @filename = "sample.txt"
+      data = JSON.parse(('{"file": "'+ base64_string + '", "filename": "' + @filename + '"}').gsub("\n", ""))
+      @uid = SnailMail::FileService.upload_file data
     end
 
-    after do
-      SnailMail::FileService.delete_temporary_file @key
-    end
-
-    it 'must return a UUID as the key' do
-      assert_match /[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}/, @key
+    it 'must return a String as the UID' do
+      @uid.must_be_instance_of String
     end
 
     it 'must upload the file to the AWS S3 store' do
-      s3 = Aws::S3::Resource.new
-      obj = s3.bucket(ENV['AWS_BUCKET']).object(@key)
-      obj.exists?.must_equal true
+      contents = Dragonfly.app.fetch(@uid).data
+      contents.must_equal @contents
+    end
+
+    it 'must store the filename' do
+      Dragonfly.app.fetch(@uid).name.must_equal @filename
+    end
+
+    it 'must delete the temporary file' do
+      File.exists?('tmp/' + @filename).must_equal false
     end
 
   end
-
 
 end

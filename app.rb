@@ -342,11 +342,10 @@ end
 post '/upload' do
 
   data = JSON.parse request.body.read.gsub("\n", "")
-  file_base64_string = data["file"]
 
   begin
-    key = SnailMail::FileService.put_file file_base64_string
-    headers = { "location" => key }
+    uid = SnailMail::FileService.upload_file data
+    headers = { "location" => uid }
     status = 201
   rescue ArgumentError => error
     status = 403
@@ -356,15 +355,14 @@ post '/upload' do
     response_body = Hash["message", error.to_s].to_json
   end
 
-  SnailMail::FileService.delete_temporary_file key
   [status, headers, response_body]
 end
 
-get '/image/:key' do
-
-  begin
-    image_url = Dragonfly.app.remote_url_for(params["key"])
-    Dragonfly.app.fetch_url(image_url).to_response
-  end
-
-end
+# Need to rework this because Dragonfly UIDs can't be part of an URL
+# get '/image/:uid' do
+#
+#   begin
+#     Dragonfly.app.fetch(params["uid"]).to_response
+#   end
+#
+# end

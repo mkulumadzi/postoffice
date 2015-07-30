@@ -895,9 +895,10 @@ describe app do
 
       before do
         image_file = File.open('spec/resources/image1.jpg')
+        @filename = 'image1.jpg'
         @image_file_size = File.size(image_file)
-        base64_string = SnailMail::FileService.encode_file_contents(image_file.read)
-        data = '{"file": "' + base64_string + '"}'
+        base64_string = Base64.encode64(image_file.read)
+        data = '{"file": "' + base64_string + '", "filename": "image1.jpg"}'
         post "/upload", data
         image_file.close
       end
@@ -910,58 +911,67 @@ describe app do
         last_response.body.must_equal ""
       end
 
-      it 'must include the key in the header' do
+      it 'must include the uid in the header' do
         last_response.headers["location"].must_be_instance_of String
       end
 
       it 'must upload the object to the AWS S3 store' do
-        obj = SnailMail::FileService.get_object_for_key last_response.headers["location"]
-        obj.exists?.must_equal true
+        uid = last_response.headers["location"]
+        Dragonfly.app.fetch(uid).name.must_equal @filename
       end
 
       it 'must upload the complete contents of the file as the AWS object' do
-        obj = SnailMail::FileService.get_object_for_key last_response.headers["location"]
-        obj.content_length.must_equal @image_file_size
-      end
-
-      it 'must remove the temporary file' do
-        key = last_response.headers["location"]
-        File.exists?('tmp/' + key).must_equal false
+        uid = last_response.headers["location"]
+        Dragonfly.app.fetch(uid).size.must_equal @image_file_size
       end
 
     end
 
   end
 
-  describe '/image' do
-
-    describe 'download an image' do
-
-      before do
-
-        #Upload image
-        image_file = File.open('spec/resources/image1.jpg')
-        base64_string = SnailMail::FileService.encode_file_contents(image_file.read)
-        data = '{"file": "' + base64_string + '"}'
-        post "/upload", data
-        image_file.close
-
-        key = last_response.headers["location"]
-
-        get "/image/#{key}"
-      end
-
-      it 'must return a 200 status code if the image is found' do
-        last_response.status.must_equal 200
-      end
-
-      # it 'must return the image in the response body' do
-      #   response = JSON.parse(last_response.body)
-      #   response.must_equal "foo"
-      # end
-
-    end
-
-  end
+  # describe '/image' do
+  #
+  #   describe 'download an image' do
+  #
+  #     before do
+  #
+  #       #Upload image
+  #       @image_file = File.open('spec/resources/image1.jpg')
+  #       base64_string = Base64.encode64(@image_file.read)
+  #       data = '{"file": "' + base64_string + '", "filename": "image1.jpg"}'
+  #       post "/upload", data
+  #
+  #       uid = last_response.headers["location"]
+  #       get "/image/#{uid}"
+  #     end
+  #
+  #     after do
+  #       @image_file.close
+  #     end
+  #
+  #     it 'must return a 200 status code if the image is found' do
+  #       last_response.status.must_equal 200
+  #     end
+  #
+  #     describe 'image returned' do
+  #
+  #       before do
+  #         @image_file_returned = File.open('/tmp/image1.jpg', 'w')
+  #         @image_file_returned.write(last_response.body)
+  #       end
+  #
+  #       after do
+  #         @image_file_returned.close
+  #       end
+  #
+  #       it 'must return the image in the response body' do
+  #         File.size(@image_file_returned).must_equal File.size(@image_file)
+  #       end
+  #
+  #     end
+  #
+  #   end
+  #
+  # end
 
 end

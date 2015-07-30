@@ -37,17 +37,11 @@ Dragonfly.app.configure do
 	secret 'I miss my Sony camera'
 
   datastore :s3,
+		region: 'us-west-2',
     bucket_name: ENV['AWS_BUCKET'],
     access_key_id: ENV['AWS_ACCESS_KEY_ID'],
     secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
 end
-
-## Configuring AWS for storign images
-## To Do: Use Dragonfly for storing as well?
-Aws.config.update({
-  region: 'us-west-2',
-  credentials: Aws::Credentials.new(ENV['AWS_ACCESS_KEY_ID'], ENV['AWS_SECRET_ACCESS_KEY'])
-})
 
 ## Increasing max keyspace limit to allow photo uploads in base64 format...
 if Rack::Utils.respond_to?("key_space_limit=")

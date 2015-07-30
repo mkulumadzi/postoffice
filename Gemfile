@@ -19,7 +19,6 @@ gem 'multi_json'
 gem 'apns'
 gem 'dragonfly'
 gem 'dragonfly-s3_data_store'
-gem 'aws-sdk', '~> 2'
 gem 'factory_girl'
 
 group :test do
