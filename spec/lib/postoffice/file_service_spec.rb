@@ -22,7 +22,7 @@ describe SnailMail::FileService do
       ext.must_equal nil
     end
 
-    it 'must raise an argument error if the filename is nil' do
+    it 'must raise a runtime error if the filename is nil' do
       filename = nil
       assert_raises RuntimeError do
         SnailMail::FileService.get_extension_from_filename filename

@@ -339,7 +339,7 @@ get '/person/id/:id/contacts' do
 
 end
 
-put '/upload' do
+post '/upload' do
 
   file = params["file"]
   filename = params["filename"]
@@ -347,13 +347,13 @@ put '/upload' do
   begin
     key = SnailMail::FileService.put_file file, filename
     headers = { "location" => key }
-    status = 204
+    status = 201
   rescue ArgumentError => error
     status = 403
     response_body = Hash["message", error.to_s].to_json
   rescue RuntimeError => error
     status = 403
-    response_body = Hash["message", params.to_s].to_json
+    response_body = Hash["message", error.to_s].to_json
   end
 
   [status, headers, response_body]
