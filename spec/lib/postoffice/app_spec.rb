@@ -70,9 +70,9 @@ describe app do
 				@welcome_mail.from.must_equal "snailmail.kuyenda"
 			end
 
-			it 'must set the image to be the SnailMail Postman' do
-				@welcome_mail.image.must_equal "SnailMail Postman.png"
-			end
+			# it 'must set the image to be the SnailMail Postman' do
+			# 	@welcome_mail.image.must_equal "SnailMail Postman.png"
+			# end
 
 			it 'must deliver the mail' do
 				assert_operator @welcome_mail.scheduled_to_arrive, :<=, Time.now

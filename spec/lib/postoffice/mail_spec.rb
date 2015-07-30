@@ -31,9 +31,9 @@ describe SnailMail::Mail do
 			@mail1.content.must_equal @expected_attrs[:content]
 		end
 
-		it 'must store the image name' do
-			@mail1.image.must_equal @expected_attrs[:image]
-		end
+		# it 'must store the image name' do
+		# 	@mail1.image.must_equal @expected_attrs[:image]
+		# end
 
 		it 'must have a default status of "DRAFT"' do
 			@mail1.status.must_equal 'DRAFT'
@@ -48,7 +48,7 @@ describe SnailMail::Mail do
 		end
 
 		it 'must calculate the number of days to arrive as 3 or more' do
-			assert_operator @mail1.days_to_arrive, :>=, 2 
+			assert_operator @mail1.days_to_arrive, :>=, 2
 		end
 
 		it 'must calculate the number of days to arrive as 5 or less' do

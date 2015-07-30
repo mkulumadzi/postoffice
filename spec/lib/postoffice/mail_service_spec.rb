@@ -21,7 +21,7 @@ describe SnailMail::MailService do
 	describe 'create mail' do
 
 		before do
-			data = Hash["to", @person2.username, "content", @expected_attrs[:content], "image", @expected_attrs[:image]]
+			data = Hash["to", @person2.username, "content", @expected_attrs[:content]]
 			@mail4 = SnailMail::MailService.create_mail @person1.id, data
 		end
 
@@ -41,9 +41,9 @@ describe SnailMail::MailService do
 			@mail4.content.must_equal @expected_attrs[:content]
 		end
 
-		it 'must store the image name' do
-			@mail4.image.must_equal @expected_attrs[:image]
-		end
+		# it 'must store the image name' do
+		# 	@mail4.image.must_equal @expected_attrs[:image]
+		# end
 
 		it 'must have a default status of "DRAFT"' do
 			@mail4.status.must_equal 'DRAFT'

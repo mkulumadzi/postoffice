@@ -8,8 +8,8 @@ module SnailMail
 		    mail = SnailMail::Mail.create!({
 		      from: person.username,
 		      to: data["to"],
-		      content: data["content"],
-		      image: data["image"]
+		      content: data["content"]
+		      # image: data["image"]
 		    })
 		end
 
@@ -51,8 +51,8 @@ module SnailMail
 			mail = SnailMail::Mail.create!({
 				from: "snailmail.kuyenda",
 				to: person.username,
-				content: text,
-				image: "SnailMail Postman.png"
+				content: text
+				# image: "SnailMail Postman.png"
 			})
 
 			mail.mail_it
