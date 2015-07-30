@@ -1,7 +1,6 @@
 require 'rack/test'
 require 'minitest/autorun'
 require_relative '../../spec_helper'
-require "base64"
 
 include Rack::Test::Methods
 
@@ -896,10 +895,9 @@ describe app do
 
       before do
           @file = File.open("resources/asamplefile.txt")
-          @filestring = Base64.encode64(@file.read)
           # post "/upload", "file" => @file.read, "filename" => "image2.jpg"
 
-          data = '{"file": "' + @filestring + '", "filename": "asamplefile.txt"}'
+          data = '{"file": "' + @file.read + '", "filename": "asamplefile.txt"}'
           post "/upload", data
           @file.close
       end
@@ -930,10 +928,9 @@ describe app do
 
         before do
           @file = File.open("resources/asamplefile.txt")
-          @filestring = Base64.encode64(@file.read)
           # post "/upload", "file" => @file.read, "filename" => nil
 
-          data = '{"file": "' + @filestring + '"}'
+          data = '{"file": "' + file.read + '"}'
           post "/upload", data
           @response = last_response
           @file.close

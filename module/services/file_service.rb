@@ -12,7 +12,7 @@ module SnailMail
       unless filename
         raise "Filename must be included in request"
       end
-      
+
       if filename.include? '.'
         split_file = filename.split('.')
         file_extension = split_file[split_file.length - 1]
