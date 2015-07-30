@@ -26,7 +26,7 @@ task :remove_indexes do
 
   Mongoid.load!("config/mongoid.yml")
   SnailMail::Person.remove_indexes
-  
+
 end
 
 task :setup_demo_data do
@@ -37,7 +37,7 @@ task :setup_demo_data do
 	SnailMail::Person.delete_all
 
   data =  JSON.parse '{"name": "Evan", "username": "evan.waters", "email": "evan.waters@gmail.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
-  
+
   person = SnailMail::PersonService.create_person data
 
 	SnailMail::Person.create!({
@@ -122,4 +122,10 @@ end
 
 task :migrate_data do
   require_relative 'db/migrate.rb'
+end
+
+task :test_aws do
+	s3 = Aws::S3::Resource.new
+	binding.pry
+	puts s3
 end
