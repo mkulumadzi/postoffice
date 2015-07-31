@@ -13,6 +13,7 @@ module SnailMail
 
 				if data["image_uid"]
 					mail.image = Dragonfly.app.fetch(data["image_uid"]).apply
+					mail.save
 				end
 
 				mail

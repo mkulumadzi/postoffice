@@ -222,6 +222,18 @@ get '/mail/id/:id' do
 
 end
 
+get '/mail/id/:id/image' do
+
+  mail = SnailMail::Mail.find(params[:id])
+
+  if mail.image_uid == nil
+    [404, nil, nil]
+  else
+    Dragonfly.app.fetch(mail.image_uid).to_response
+  end
+
+end
+
 # View all mail in the system
 get '/mail' do
   content_type :json
@@ -357,12 +369,3 @@ post '/upload' do
 
   [status, headers, response_body]
 end
-
-# Need to rework this because Dragonfly UIDs can't be part of an URL
-# get '/image/:uid' do
-#
-#   begin
-#     Dragonfly.app.fetch(params["uid"]).to_response
-#   end
-#
-# end

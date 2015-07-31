@@ -929,49 +929,50 @@ describe app do
 
   end
 
-  # describe '/image' do
-  #
-  #   describe 'download an image' do
-  #
-  #     before do
-  #
-  #       #Upload image
-  #       @image_file = File.open('spec/resources/image1.jpg')
-  #       base64_string = Base64.encode64(@image_file.read)
-  #       data = '{"file": "' + base64_string + '", "filename": "image1.jpg"}'
-  #       post "/upload", data
-  #
-  #       uid = last_response.headers["location"]
-  #       get "/image/#{uid}"
-  #     end
-  #
-  #     after do
-  #       @image_file.close
-  #     end
-  #
-  #     it 'must return a 200 status code if the image is found' do
-  #       last_response.status.must_equal 200
-  #     end
-  #
-  #     describe 'image returned' do
-  #
-  #       before do
-  #         @image_file_returned = File.open('/tmp/image1.jpg', 'w')
-  #         @image_file_returned.write(last_response.body)
-  #       end
-  #
-  #       after do
-  #         @image_file_returned.close
-  #       end
-  #
-  #       it 'must return the image in the response body' do
-  #         File.size(@image_file_returned).must_equal File.size(@image_file)
-  #       end
-  #
-  #     end
-  #
-  #   end
-  #
-  # end
+  describe '/mail/id/:id/image' do
+
+    before do
+      @image = File.open('spec/resources/image2.jpg')
+      @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
+
+      data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
+      @mail5 = SnailMail::MailService.create_mail @person1.id, data
+
+      get "/mail/id/#{@mail5.id}/image"
+    end
+
+    after do
+      @image.close
+    end
+
+    it 'must return a 200 status code if the image is found' do
+      last_response.status.must_equal 200
+    end
+
+    it 'must show that the content length matches the size of the original image' do
+      last_response.headers["Content-Length"].must_equal @image.size.to_s
+    end
+
+    it 'must return the filename in a header' do
+      last_response.headers["Content-Disposition"].must_equal "filename=\"image2.jpg\""
+    end
+
+  end
+
+  describe 'attempt to get mail image that does not exist.' do
+
+    before do
+      get "/mail/id/#{@mail1.id}/image"
+    end
+
+    it 'must return a 404 status' do
+      last_response.status.must_equal 404
+    end
+
+    it 'must return an empty response body' do
+      last_response.body.must_equal ""
+    end
+
+  end
 
 end
