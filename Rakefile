@@ -76,6 +76,14 @@ task :setup_demo_data do
       zip: "10012"
     })
 
+		image1 = File.open('spec/resources/image1.jpg')
+		uid1 = Dragonfly.app.store(image1.read, 'name' => 'image1.jpg')
+		image1.close
+
+		image2 = File.open('spec/resources/image2.jpg')
+		uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
+		image2.close
+
     mail1 = SnailMail::Mail.create!({
     	from: "nwaters4",
     	to: "evan.waters",
@@ -91,7 +99,7 @@ task :setup_demo_data do
     	from: "kulwelling",
     	to: "evan.waters",
     	content: "Greetings from NOLA!",
-      image: "Fireworks.jpg"
+      image_uid: uid1
     })
 
     mail2.mail_it
@@ -102,7 +110,7 @@ task :setup_demo_data do
     	from: "nwaters4",
     	to: "evan.waters",
     	content: "Go U of A!",
-      image: "Dhow.jpg"
+      image_uid: uid2
     })
 
 end
