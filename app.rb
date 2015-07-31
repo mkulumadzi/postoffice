@@ -226,10 +226,15 @@ get '/mail/id/:id/image' do
 
   mail = SnailMail::Mail.find(params[:id])
 
-  if mail.image_uid == nil
-    [404, nil, nil]
-  else
-    Dragonfly.app.fetch(mail.image_uid).to_response
+  begin
+    if mail.image_uid == nil
+      [404, nil, nil]
+    else
+      SnailMail::FileService.fetch_image(mail.image_uid, params).to_response
+    end
+  rescue ArgumentError
+    response_body = Hash["message", "Could not process thumbnail parameter."].to_json
+    [403, nil, response_body]
   end
 
 end

@@ -17,6 +17,14 @@ module SnailMail
       uid
     end
 
+		def self.fetch_image image_uid, params
+			if params["thumb"]
+				Dragonfly.app.fetch(image_uid).thumb(params["thumb"])
+			else
+				Dragonfly.app.fetch(image_uid)
+			end
+		end
+
 	end
 
 end

@@ -56,4 +56,54 @@ describe SnailMail::FileService do
 
   end
 
+  describe 'fetch image' do
+
+    before do
+      @image = File.open('spec/resources/image2.jpg')
+      @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
+    end
+
+    after do
+      @image.close
+    end
+
+    describe 'fetch full image' do
+
+      before do
+        params = ""
+        @image_fetched = SnailMail::FileService.fetch_image @uid, params
+      end
+
+      it 'must fetch the image' do
+        @image_fetched.name.must_equal 'image2.jpg'
+      end
+
+      it 'must fetch the full image' do
+        @image_fetched.size.must_equal @image.size
+      end
+
+    end
+
+    describe 'fetch image with thumbnail' do
+
+      it 'must resize the image if a thumbnail is given' do
+        params = Hash["thumb", "400x"]
+        image_fetched = SnailMail::FileService.fetch_image @uid, params
+        image_fetched.width.must_equal 400
+      end
+
+      it 'must return a Argument Error if the thumbnail parameter is invalid' do
+        params = Hash["thumb", "splat"]
+        assert_raises ArgumentError do
+          image_fetched = SnailMail::FileService.fetch_image @uid, params
+          image_fetched.apply
+        end
+      end
+
+    end
+
+
+
+  end
+
 end

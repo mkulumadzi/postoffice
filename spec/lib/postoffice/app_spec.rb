@@ -957,6 +957,32 @@ describe app do
       last_response.headers["Content-Disposition"].must_equal "filename=\"image2.jpg\""
     end
 
+    describe 'resize image with thumbnail parameter' do
+
+      it 'must resize the image if a thumbnail parameter is given' do
+        get "/mail/id/#{@mail5.id}/image?thumb=400x"
+        assert_operator last_response.headers["Content-Length"].to_i, :<, @image.size
+      end
+
+      describe 'unrecognized thumbnail parameter' do
+
+        before do
+          get "/mail/id/#{@mail5.id}/image?thumb=foo"
+        end
+
+        it 'must return a 403 status code if an unrecognized thumbnail parameter is entered' do
+          last_response.status.must_equal 403
+        end
+
+        it 'must return an error message' do
+          response = JSON.parse(last_response.body)
+          response["message"].must_equal "Could not process thumbnail parameter."
+        end
+
+      end
+
+    end
+
   end
 
   describe 'attempt to get mail image that does not exist.' do
