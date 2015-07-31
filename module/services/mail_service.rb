@@ -9,8 +9,13 @@ module SnailMail
 		      from: person.username,
 		      to: data["to"],
 		      content: data["content"]
-		      # image: data["image"]
 		    })
+
+				if data["image_uid"]
+					mail.image = Dragonfly.app.fetch(data["image_uid"]).apply
+				end
+
+				mail
 		end
 
 		def self.get_mail params = {}

@@ -41,12 +41,29 @@ describe SnailMail::MailService do
 			@mail4.content.must_equal @expected_attrs[:content]
 		end
 
-		# it 'must store the image name' do
-		# 	@mail4.image.must_equal @expected_attrs[:image]
-		# end
-
 		it 'must have a default status of "DRAFT"' do
 			@mail4.status.must_equal 'DRAFT'
+		end
+
+	end
+
+	describe 'create mail with image' do
+
+		before do
+			image = File.open('spec/resources/image2.jpg')
+			@uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
+			image.close
+
+			data = Hash["to", @person2.username, "content", @expected_attrs[:content], "image_uid", @uid]
+			@mail4 = SnailMail::MailService.create_mail @person1.id, data
+		end
+
+		it 'must add a Dragonfly attachment for the mail capable of getting the image name' do
+			@mail4.image.name.must_equal 'image2.jpg'
+		end
+
+		it 'must be able to return the mime-type' do
+			@mail4.image.mime_type.must_equal "image/jpeg"
 		end
 
 	end

@@ -18,7 +18,6 @@ FactoryGirl.define do
     from "a_user"
     to "a_different_user"
     content "I love this app"
-    # image "Default card.png"
   end
 
 end

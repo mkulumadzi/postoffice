@@ -31,9 +31,21 @@ describe SnailMail::Mail do
 			@mail1.content.must_equal @expected_attrs[:content]
 		end
 
-		# it 'must store the image name' do
-		# 	@mail1.image.must_equal @expected_attrs[:image]
-		# end
+		describe 'add mail image' do
+
+			before do
+				image = File.open('spec/resources/image2.jpg')
+				@uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
+				image.close
+
+				@mail1.image = Dragonfly.app.fetch(@uid).apply
+			end
+
+			it 'must store the Dragonfly UID for the mail' do
+				@mail1.image.name.must_equal 'image2.jpg'
+			end
+
+		end
 
 		it 'must have a default status of "DRAFT"' do
 			@mail1.status.must_equal 'DRAFT'
