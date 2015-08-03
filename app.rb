@@ -113,10 +113,8 @@ get '/people' do
   content_type :json
 
   if request.env["SINCE"]
-    params[:updated_at] = { "$lte" => request.env["SINCE"].to_s }
+    params[:updated_at] = { "$gte" => request.env["SINCE"] }
   end
-
-  binding.pry
 
   response_body = SnailMail::PersonService.get_people(params).to_json( :except => ["salt", "hashed_password", "device_token"] )
   [200, response_body]

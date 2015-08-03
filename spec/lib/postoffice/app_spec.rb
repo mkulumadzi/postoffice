@@ -448,7 +448,8 @@ describe app do
 
       it 'must only return records that were created or updated after the timestamp' do
         num_returned = JSON.parse(last_response.body).count
-        expected_number = SnailMail::Person.where({updated_at: { "$lte" => "#{@timestamp}" } }).count
+        expected_number = SnailMail::Person.where({updated_at: { "$gte" => @timestamp } }).count
+
         num_returned.must_equal expected_number
       end
 
