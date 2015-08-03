@@ -434,7 +434,7 @@ describe app do
 
       before do
         @person4 = create(:person, username: random_username)
-        person_record = SnailMail::Person.find(@person4.id)
+        person_record = SnailMail::Person.find(@person3.id)
         @timestamp = person_record.updated_at
         @timestamp_string = JSON.parse(person_record.as_document.to_json)["updated_at"]
         get "/people", nil, {"HTTP_SINCE" => @timestamp_string}
@@ -446,7 +446,7 @@ describe app do
 
       it 'must only return records that were created or updated after the timestamp' do
         num_returned = JSON.parse(last_response.body).count
-        expected_number = SnailMail::Person.where({updated_at: { "$gte" => @timestamp } }).count
+        expected_number = SnailMail::Person.where({updated_at: { "$gt" => @timestamp } }).count
         num_returned.must_equal expected_number
       end
 
@@ -709,7 +709,7 @@ describe app do
 
       before do
         @mail5 = create(:mail, from: @person3.username, to: @person1.username)
-        mail_record = SnailMail::Mail.find(@mail5.id)
+        mail_record = SnailMail::Mail.find(@mail1.id)
         @timestamp = mail_record.updated_at
         @timestamp_string = JSON.parse(mail_record.as_document.to_json)["updated_at"]
         get "/mail", nil, {"HTTP_SINCE" => @timestamp_string}
@@ -721,7 +721,7 @@ describe app do
 
       it 'must only return records that were created or updated after the timestamp' do
         num_returned = JSON.parse(last_response.body).count
-        expected_number = SnailMail::Mail.where({updated_at: { "$gte" => @timestamp } }).count
+        expected_number = SnailMail::Mail.where({updated_at: { "$gt" => @timestamp } }).count
         num_returned.must_equal expected_number
       end
 

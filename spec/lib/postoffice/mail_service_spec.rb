@@ -121,6 +121,24 @@ describe SnailMail::MailService do
 			SnailMail::Mail.find(@mail1.id).status.must_equal "DELIVERED"
 		end
 
+		describe 'get only mailbox updates since a datetime' do
+
+			before do
+				@mail4 = create(:mail, from: @person1.username, to: @person2.username)
+				@mail4.mail_it
+				@mail4.deliver_now
+
+				@params[:updated_at] = { "$gt" => @mail2.updated_at }
+			end
+
+			it 'must get mailbox records that were updated after the date specified' do
+				number_returned = SnailMail::MailService.mailbox(@params).count
+				expected_number = SnailMail::Mail.where({to: @person2.username, scheduled_to_arrive: { "$lte" => Time.now }, updated_at: { "$gt" => @mail2.updated_at }}).count
+				number_returned.must_equal expected_number
+			end
+
+		end
+
 	end
 
 	describe 'outbox' do
@@ -142,6 +160,24 @@ describe SnailMail::MailService do
 
 		it 'must not get mail that has been sent by another user' do
 			SnailMail::MailService.outbox(@params2).to_s.match(/#{@mail1.id.to_s}/).must_equal nil
+		end
+
+		describe 'get only mailbox updates since a datetime' do
+
+			before do
+				@mail4 = create(:mail, from: @person1.username, to: @person2.username)
+				@mail4.mail_it
+				@mail4.deliver_now
+
+				@params1[:updated_at] = { "$gt" => @mail1.updated_at }
+			end
+
+			it 'must get outbox records that were updated after the date specified' do
+				number_returned = SnailMail::MailService.outbox(@params1).count
+				expected_number = SnailMail::Mail.where({from: @person1.username, updated_at: { "$gt" => @mail1.updated_at }}).count
+				number_returned.must_equal expected_number
+			end
+
 		end
 
 	end

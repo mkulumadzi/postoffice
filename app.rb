@@ -8,7 +8,7 @@ end
 def add_since_to_request_parameters app
   if app.request.env["HTTP_SINCE"]
     utc_date = Time.parse(env["HTTP_SINCE"])
-    app.params[:updated_at] = { "$gte" => utc_date }
+    app.params[:updated_at] = { "$gt" => utc_date }
   end
 end
 
@@ -319,6 +319,7 @@ end
 # View delivered mail for a person
 get '/person/id/:id/mailbox' do
   content_type :json
+  add_since_to_request_parameters self
 
   begin
     response_body = SnailMail::MailService.mailbox(params).to_json
@@ -335,6 +336,7 @@ end
 # View sent mail
 get '/person/id/:id/outbox' do
   content_type :json
+  add_since_to_request_parameters self
 
   begin
     response_body = SnailMail::MailService.outbox(params).to_json

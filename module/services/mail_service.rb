@@ -31,7 +31,13 @@ module SnailMail
 			username = SnailMail::Person.find(params[:id]).username
 			mails = []
 
-			SnailMail::Mail.where({to: username, scheduled_to_arrive: { "$lte" => Time.now } }).each do |mail|
+			query = {to: username, scheduled_to_arrive: { "$lte" => Time.now } }
+
+			if params[:updated_at]
+				query[:updated_at] = params[:updated_at]
+			end
+
+			SnailMail::Mail.where(query).each do |mail|
 				mail.update_delivery_status
 				mails << mail.as_document
 			end
@@ -43,7 +49,13 @@ module SnailMail
 			username = SnailMail::Person.find(params[:id]).username
 			mails = []
 
-			SnailMail::Mail.where({from: username}).each do |mail|
+			query = {from: username}
+
+			if params[:updated_at]
+				query[:updated_at] = params[:updated_at]
+			end
+
+			SnailMail::Mail.where(query).each do |mail|
 				mails << mail.as_document
 			end
 
