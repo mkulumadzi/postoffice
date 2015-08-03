@@ -1,8 +1,15 @@
 require_relative 'module/postoffice'
 
-
 get '/' do
   "Hello World!"
+end
+
+# Convenience Methods
+def add_since_to_request_parameters app
+  if app.request.env["HTTP_SINCE"]
+    utc_date = Time.parse(env["HTTP_SINCE"])
+    app.params[:updated_at] = { "$gte" => utc_date }
+  end
 end
 
 # Create a new person
@@ -111,11 +118,7 @@ end
 # Filtering implemented, for example: /people?username=bigedubs
 get '/people' do
   content_type :json
-
-  if request.env["SINCE"]
-    params[:updated_at] = { "$gte" => request.env["SINCE"] }
-  end
-
+  add_since_to_request_parameters self
   response_body = SnailMail::PersonService.get_people(params).to_json( :except => ["salt", "hashed_password", "device_token"] )
   [200, response_body]
 end
@@ -247,6 +250,7 @@ end
 # View all mail in the system
 get '/mail' do
   content_type :json
+  add_since_to_request_parameters self
   response_body = SnailMail::MailService.get_mail(params).to_json
   [200, response_body]
 end
