@@ -210,3 +210,10 @@ D, [2015-07-31T10:32:44.222957 #62342] DEBUG -- : DRAGONFLY: shell command: 'con
 I, [2015-07-31T10:32:44.416967 #62342]  INFO -- : DRAGONFLY: GET  200
 D, [2015-07-31T10:32:53.509160 #62342] DEBUG -- : DRAGONFLY: shell command: 'convert' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150731-62342-2zurhw' '-resize' '400x' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150731-62342-1yl1kb8.jpg'
 D, [2015-07-31T10:32:53.651099 #62342] DEBUG -- : DRAGONFLY: shell command: 'identify' '-ping' '-format' '%m %w %h' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150731-62342-1yl1kb8.jpg'
+I, [2015-07-31T10:34:32.114025 #62361]  INFO -- : DRAGONFLY: GET  200
+D, [2015-07-31T10:34:41.574243 #62361] DEBUG -- : DRAGONFLY: shell command: 'convert' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150731-62361-7aki8a' '-resize' '50x50' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150731-62361-1gz0g31.jpg'
+I, [2015-07-31T10:34:41.756097 #62361]  INFO -- : DRAGONFLY: GET  200
+D, [2015-07-31T10:35:10.563644 #62361] DEBUG -- : DRAGONFLY: shell command: 'convert' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150731-62361-1k7yxz8' '-resize' '100x100' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150731-62361-ub5vpf.jpg'
+I, [2015-07-31T10:35:10.681456 #62361]  INFO -- : DRAGONFLY: GET  200
+D, [2015-07-31T10:35:57.274602 #62361] DEBUG -- : DRAGONFLY: shell command: 'convert' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150731-62361-749goq' '-resize' '100x100' '/var/folders/2b/fk3c4b_91b76pz6fr_5htvh40000gp/T/dragonfly20150731-62361-19o7kxa.jpg'
+I, [2015-07-31T10:35:57.480234 #62361]  INFO -- : DRAGONFLY: GET  200

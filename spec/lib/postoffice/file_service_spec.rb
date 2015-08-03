@@ -102,8 +102,6 @@ describe SnailMail::FileService do
 
     end
 
-
-
   end
 
 end

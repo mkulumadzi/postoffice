@@ -432,6 +432,28 @@ describe app do
 			people_response[0].must_equal expected_json_fields_for_person(@person1)
 		end
 
+    describe 'get only records that were created or updated after a specific date and time' do
+
+      before do
+        @person4 = create(:person, username: random_username)
+        person_record = SnailMail::Person.find(@person4.id)
+        @timestamp = person_record.updated_at
+
+        get "/people", nil, {"SINCE" => @timestamp}
+      end
+
+      it 'must include the timestamp in the header' do
+        last_request.env["SINCE"].must_equal @timestamp
+      end
+
+      it 'must only return records that were created or updated after the timestamp' do
+        num_returned = JSON.parse(last_response.body).count
+        expected_number = SnailMail::Person.where({updated_at: { "$lte" => "#{@timestamp}" } }).count
+        num_returned.must_equal expected_number
+      end
+
+    end
+
 	end
 
 	describe '/person/id/:id/mail/new' do
