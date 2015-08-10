@@ -46,6 +46,9 @@ task :setup_demo_data do
 	data =  JSON.parse '{"name": "Kristen Ulwelling", "username": "kulwelling", "email": "kulwelling@gmail.com", "phone": "(555) 444-4321", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
 	Postoffice::PersonService.create_person data
 
+	data =  JSON.parse '{"name": "Demo User", "username": "demo", "email": "demo@test.com", "phone": "(555) 444-4555", "password": "password"}'
+	demo = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message demo
 
   Postoffice::Person.create!({
       username: "postman",
@@ -94,6 +97,24 @@ task :setup_demo_data do
     	content: "Go U of A!",
       image_uid: uid2
     })
+
+		mail4 = Postoffice::Mail.create!({
+			from: "evan.waters",
+			to: "demo",
+			content: "Thanks for checking out the app! Looking forward to getting your feedback.",
+			image_uid: uid1
+		})
+
+		mail4.mail_it
+		mail4.deliver_now
+		mail4.update_delivery_status
+
+		mail5 = Postoffice::Mail.create!({
+			from: "demo",
+			to: "evan.waters",
+			content: "Can't wait to receive a few more Slowposts!",
+			image_uid: uid2
+		})
 
 end
 
