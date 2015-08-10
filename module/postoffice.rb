@@ -20,10 +20,10 @@ end
 APNS.host = 'gateway.sandbox.push.apple.com'
 
 if ENV['RACK_ENV'] == 'staging' || ENV['RACK_ENV'] == 'production'
-	APNS.pem  = 'certificates/snailtale_production.pem'
+	APNS.pem  = 'certificates/slowpost_production.pem'
 	APNS.host = 'gateway.push.apple.com'
 else
-	APNS.pem  = 'certificates/snailtale_development.pem'
+	APNS.pem  = 'certificates/slowpost_development.pem'
 	APNS.host = 'gateway.sandbox.push.apple.com'
 end
 
