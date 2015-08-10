@@ -1,7 +1,9 @@
 postoffice
 =============
 
-The Slowpost App Server
+## The Postoffice Server
+
+Backend for Slowpost app
 
 ## Initial Setup
 
