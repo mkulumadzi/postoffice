@@ -1,6 +1,6 @@
 require_relative '../../spec_helper'
 
-describe SnailMail::MailService do
+describe Postoffice::MailService do
 
 	Mongoid.load!('config/mongoid.yml')
 
@@ -22,11 +22,11 @@ describe SnailMail::MailService do
 
 		before do
 			data = Hash["to", @person2.username, "content", @expected_attrs[:content]]
-			@mail4 = SnailMail::MailService.create_mail @person1.id, data
+			@mail4 = Postoffice::MailService.create_mail @person1.id, data
 		end
 
 		it 'must create a new piece of mail' do
-			@mail4.must_be_instance_of SnailMail::Mail
+			@mail4.must_be_instance_of Postoffice::Mail
 		end
 
 		it 'must store the person it is from' do
@@ -55,7 +55,7 @@ describe SnailMail::MailService do
 			image.close
 
 			data = Hash["to", @person2.username, "content", @expected_attrs[:content], "image_uid", @uid]
-			@mail4 = SnailMail::MailService.create_mail @person1.id, data
+			@mail4 = Postoffice::MailService.create_mail @person1.id, data
 		end
 
 		it 'must add a Dragonfly attachment for the mail capable of getting the image name' do
@@ -72,22 +72,22 @@ describe SnailMail::MailService do
 	describe 'get mail' do
 
 		it 'must get all of the mail if no parameters are given' do
-			num_mail = SnailMail::Mail.count
-			mail = SnailMail::MailService.get_mail
+			num_mail = Postoffice::Mail.count
+			mail = Postoffice::MailService.get_mail
 			mail.length.must_equal num_mail
 		end
 
 		it 'must filter the records by from when it is passed in as a parameter' do
-			num_mail = SnailMail::Mail.where({from: @person1.username}).count
+			num_mail = Postoffice::Mail.where({from: @person1.username}).count
 			params = Hash[:from, @person1.username]
-			mail = SnailMail::MailService.get_mail params
+			mail = Postoffice::MailService.get_mail params
 			mail.length.must_equal num_mail
 		end
 
 		it 'must filter the records by username and name when both are passed in as a parameter' do
-			num_mail = SnailMail::Mail.where({from: @person1.username, to: @person2.username}).count
+			num_mail = Postoffice::Mail.where({from: @person1.username, to: @person2.username}).count
 			params = Hash[:from, @person1.username, :to, @person2.username]
-			mail = SnailMail::MailService.get_mail params
+			mail = Postoffice::MailService.get_mail params
 			mail.length.must_equal num_mail
 		end
 
@@ -105,20 +105,20 @@ describe SnailMail::MailService do
 
 			@params = Hash[:id, @person2.id]
 
-			SnailMail::MailService.mailbox(@params)
+			Postoffice::MailService.mailbox(@params)
 
 		end
 
 		it 'must get mail that has arrived' do
-			SnailMail::MailService.mailbox(@params).to_s.must_include @mail1.id.to_s
+			Postoffice::MailService.mailbox(@params).to_s.must_include @mail1.id.to_s
 		end
 
 		it 'must not show mail that has not arrived' do
-			SnailMail::MailService.mailbox(@params).to_s.match(/#{@mail2.id.to_s}/).must_equal nil
+			Postoffice::MailService.mailbox(@params).to_s.match(/#{@mail2.id.to_s}/).must_equal nil
 		end
 
 		it 'must have updated the delivery status if necessary' do
-			SnailMail::Mail.find(@mail1.id).status.must_equal "DELIVERED"
+			Postoffice::Mail.find(@mail1.id).status.must_equal "DELIVERED"
 		end
 
 		describe 'get only mailbox updates since a datetime' do
@@ -132,8 +132,8 @@ describe SnailMail::MailService do
 			end
 
 			it 'must get mailbox records that were updated after the date specified' do
-				number_returned = SnailMail::MailService.mailbox(@params).count
-				expected_number = SnailMail::Mail.where({to: @person2.username, scheduled_to_arrive: { "$lte" => Time.now }, updated_at: { "$gt" => @mail2.updated_at }}).count
+				number_returned = Postoffice::MailService.mailbox(@params).count
+				expected_number = Postoffice::Mail.where({to: @person2.username, scheduled_to_arrive: { "$lte" => Time.now }, updated_at: { "$gt" => @mail2.updated_at }}).count
 				number_returned.must_equal expected_number
 			end
 
@@ -151,15 +151,15 @@ describe SnailMail::MailService do
 			@params2 = Hash[:id, @person2.id]
 
 			@mail1.deliver_now
-			SnailMail::MailService.outbox(@params1)
+			Postoffice::MailService.outbox(@params1)
 		end
 
 		it 'must get mail that has been sent by the user' do
-			SnailMail::MailService.outbox(@params1).to_s.must_include @mail1.id.to_s
+			Postoffice::MailService.outbox(@params1).to_s.must_include @mail1.id.to_s
 		end
 
 		it 'must not get mail that has been sent by another user' do
-			SnailMail::MailService.outbox(@params2).to_s.match(/#{@mail1.id.to_s}/).must_equal nil
+			Postoffice::MailService.outbox(@params2).to_s.match(/#{@mail1.id.to_s}/).must_equal nil
 		end
 
 		describe 'get only mailbox updates since a datetime' do
@@ -173,8 +173,8 @@ describe SnailMail::MailService do
 			end
 
 			it 'must get outbox records that were updated after the date specified' do
-				number_returned = SnailMail::MailService.outbox(@params1).count
-				expected_number = SnailMail::Mail.where({from: @person1.username, updated_at: { "$gt" => @mail1.updated_at }}).count
+				number_returned = Postoffice::MailService.outbox(@params1).count
+				expected_number = Postoffice::Mail.where({from: @person1.username, updated_at: { "$gt" => @mail1.updated_at }}).count
 				number_returned.must_equal expected_number
 			end
 
@@ -190,7 +190,7 @@ describe SnailMail::MailService do
 			@mail1.deliver_now
 			@mail2.mail_it
 
-			@mail_to_deliver = SnailMail::MailService.find_mail_to_deliver
+			@mail_to_deliver = Postoffice::MailService.find_mail_to_deliver
 		end
 
 		it 'must return mail that is scheduled to arrive in the past' do
@@ -221,9 +221,9 @@ describe SnailMail::MailService do
 			@mail1.deliver_now
 			@mail2.mail_it
 
-			@mail_to_deliver = SnailMail::MailService.find_mail_to_deliver
+			@mail_to_deliver = Postoffice::MailService.find_mail_to_deliver
 
-			SnailMail::MailService.deliver_mail @mail_to_deliver
+			Postoffice::MailService.deliver_mail @mail_to_deliver
 
 		end
 
@@ -242,7 +242,7 @@ describe SnailMail::MailService do
 
 		before do
 			mails = [@mail1, @mail2]
-			@people_to_notify = SnailMail::MailService.people_to_notify mails
+			@people_to_notify = Postoffice::MailService.people_to_notify mails
 		end
 
 		it 'must return people that are receiving the mail' do
@@ -267,19 +267,19 @@ describe SnailMail::MailService do
 		describe 'get users the person has sent mail to' do
 
 			before do
-				@recipients = SnailMail::MailService.get_people_who_received_mail_from @person1.username
+				@recipients = Postoffice::MailService.get_people_who_received_mail_from @person1.username
 			end
 
 			it 'must return an array of people' do
-				@recipients[0].must_be_instance_of SnailMail::Person
+				@recipients[0].must_be_instance_of Postoffice::Person
 			end
 
 			it 'must include every user who has received mail from this person' do
 
 				not_in = 0
 
-				SnailMail::Mail.where(from: @person1.id).each do |mail|
-					person = SnailMail::Person.find_by(username: mail.to)
+				Postoffice::Mail.where(from: @person1.id).each do |mail|
+					person = Postoffice::Person.find_by(username: mail.to)
 
 					if @recipients.include? person == false
 						not_in += 1
@@ -295,17 +295,17 @@ describe SnailMail::MailService do
 		describe 'get users the person has received mail from' do
 
 			before do
-				@senders = SnailMail::MailService.get_people_who_sent_mail_to @person1.username
+				@senders = Postoffice::MailService.get_people_who_sent_mail_to @person1.username
 			end
 
 			it 'must return an array of people' do
-				@senders[0].must_be_instance_of SnailMail::Person
+				@senders[0].must_be_instance_of Postoffice::Person
 			end
 
 			it 'must include every user who has sent mail to this person' do
 				not_in = 0
-				SnailMail::Mail.where(to: @person1.id).each do |mail|
-					person = SnailMail::Person.find_by(username: mail.from)
+				Postoffice::Mail.where(to: @person1.id).each do |mail|
+					person = Postoffice::Person.find_by(username: mail.from)
 					if @recipients.include? person == false
 						not_in += 1
 					end
@@ -316,21 +316,21 @@ describe SnailMail::MailService do
 		end
 
 		it 'must return an array of bson documents' do
-			contacts = SnailMail::MailService.get_contacts @person1.username
+			contacts = Postoffice::MailService.get_contacts @person1.username
 			contacts[0].must_be_instance_of BSON::Document
 		end
 
 		it 'must create a unique list of all senders and recipients' do
 
-			senders = SnailMail::MailService.get_people_who_sent_mail_to @person1.username
-			recipients = SnailMail::MailService.get_people_who_received_mail_from @person1.username
+			senders = Postoffice::MailService.get_people_who_sent_mail_to @person1.username
+			recipients = Postoffice::MailService.get_people_who_received_mail_from @person1.username
 
 			comparison_group = []
 			senders.concat(recipients).uniq.each do |person|
 				comparison_group << person.as_document
 			end
 
-			contacts = SnailMail::MailService.get_contacts @person1.username
+			contacts = Postoffice::MailService.get_contacts @person1.username
 
 			not_in = 0
 			comparison_group.each do |doc|

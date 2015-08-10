@@ -1,6 +1,6 @@
 FactoryGirl.define do
 
-  factory :person, class: SnailMail::Person do
+  factory :person, class: Postoffice::Person do
     username "testuser"
     name "Test User"
     email "testuser@test.com"
@@ -14,7 +14,7 @@ FactoryGirl.define do
     device_token "abc123"
   end
 
-  factory :mail, class: SnailMail::Mail do
+  factory :mail, class: Postoffice::Mail do
     from "a_user"
     to "a_different_user"
     content "I love this app"

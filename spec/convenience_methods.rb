@@ -31,10 +31,10 @@ end
 
 def get_mail_object_from_mail_response mail_response
 	mail_id = mail_response["_id"]["$oid"]
-	mail = SnailMail::Mail.find(mail_id)
+	mail = Postoffice::Mail.find(mail_id)
 end
 
 def get_person_object_from_person_response person_response
 	person_id = person_response["_id"]["$oid"]
-	person = SnailMail::Person.find(person_id)
+	person = Postoffice::Person.find(person_id)
 end

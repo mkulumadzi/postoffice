@@ -1,4 +1,4 @@
-module SnailMail
+module Postoffice
 	class Person
 		include Mongoid::Document
 		include Mongoid::Timestamps
@@ -18,6 +18,6 @@ module SnailMail
 		index({ username: 1 }, { unique: true })
 		index({ email: 1 })
 		index({ phone: 1 })
-		
+
 	end
 end

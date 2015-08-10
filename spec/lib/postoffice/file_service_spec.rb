@@ -1,6 +1,6 @@
 require_relative '../../spec_helper'
 
-describe SnailMail::FileService do
+describe Postoffice::FileService do
 
   describe 'decode a base64 string and return a file' do
 
@@ -8,7 +8,7 @@ describe SnailMail::FileService do
       @string = "This is a string to encode."
       base64_string = Base64.encode64(@string)
       @key = "samplekey"
-      @file = File.open(SnailMail::FileService.decode_string_to_file base64_string, @key)
+      @file = File.open(Postoffice::FileService.decode_string_to_file base64_string, @key)
       @file_contents = @file.read
     end
 
@@ -34,7 +34,7 @@ describe SnailMail::FileService do
       base64_string = Base64.encode64(@contents)
       @filename = "sample.txt"
       data = JSON.parse(('{"file": "'+ base64_string + '", "filename": "' + @filename + '"}').gsub("\n", ""))
-      @uid = SnailMail::FileService.upload_file data
+      @uid = Postoffice::FileService.upload_file data
     end
 
     it 'must return a String as the UID' do
@@ -71,7 +71,7 @@ describe SnailMail::FileService do
 
       before do
         params = ""
-        @image_fetched = SnailMail::FileService.fetch_image @uid, params
+        @image_fetched = Postoffice::FileService.fetch_image @uid, params
       end
 
       it 'must fetch the image' do
@@ -88,14 +88,14 @@ describe SnailMail::FileService do
 
       it 'must resize the image if a thumbnail is given' do
         params = Hash["thumb", "400x"]
-        image_fetched = SnailMail::FileService.fetch_image @uid, params
+        image_fetched = Postoffice::FileService.fetch_image @uid, params
         image_fetched.width.must_equal 400
       end
 
       it 'must return a Argument Error if the thumbnail parameter is invalid' do
         params = Hash["thumb", "splat"]
         assert_raises ArgumentError do
-          image_fetched = SnailMail::FileService.fetch_image @uid, params
+          image_fetched = Postoffice::FileService.fetch_image @uid, params
           image_fetched.apply
         end
       end

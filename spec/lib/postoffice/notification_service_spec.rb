@@ -18,7 +18,7 @@ describe APNS do
 
 	end
 
-	describe SnailMail::NotificationService do
+	describe Postoffice::NotificationService do
 
 		before do
 
@@ -39,7 +39,7 @@ describe APNS do
 		end
 
 		it 'must return the number of mail that is delivered to a person' do
-			num_unread = SnailMail::NotificationService.count_unread_mail @person2
+			num_unread = Postoffice::NotificationService.count_unread_mail @person2
 			num_unread.must_equal 1
 		end
 
@@ -48,7 +48,7 @@ describe APNS do
 			before do
 				people = [@person1, @person2]
 
-				@notifications = SnailMail::NotificationService.create_notification_for_people people, "Hello", "New Mail"
+				@notifications = Postoffice::NotificationService.create_notification_for_people people, "Hello", "New Mail"
 			end
 
 			it 'must return an array of APNS notifications' do
@@ -82,7 +82,7 @@ describe APNS do
 		# 	person1_username = random_username
 		# 	salt = SecureRandom.hex(64)
 		# 	hashed_password = Digest::SHA256.bubblebabble ("password" + salt)
-		# 	SnailMail::Person.create!(
+		# 	Postoffice::Person.create!(
 		# 		name: "Evan",
 		# 		username: "#{person1_username}",
 		# 		address1: "121 W 3rd St",
@@ -90,14 +90,14 @@ describe APNS do
 		# 		state: "NY",
 		# 		zip: "10012",
 		# 		device_token: "4144e129b885dbf301deacdb0b427ad02f052a39cb7e5c0443d6188a483fa166"
-		# 	)		
+		# 	)
 		# }
 
 		# it 'must send the notification' do
-		# 	SnailMail::NotificationService.send_notification person1, "Hello my friend"
+		# 	Postoffice::NotificationService.send_notification person1, "Hello my friend"
 		# 	last_response.must_equal "foo"
 		# end
 
 	end
-	
+
 end

@@ -1,4 +1,4 @@
-module SnailMail
+module Postoffice
 
 	class NotificationService
 
@@ -17,7 +17,7 @@ module SnailMail
 		end
 
 		def self.count_unread_mail person
-			SnailMail::Mail.where({to: person.username, status: "DELIVERED"}).count
+			Postoffice::Mail.where({to: person.username, status: "DELIVERED"}).count
 		end
 
 	end

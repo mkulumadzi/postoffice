@@ -2,7 +2,7 @@ require 'securerandom'
 require 'digest'
 require 'digest/bubblebabble'
 
-module SnailMail
+module Postoffice
 
 	class LoginService
 
@@ -26,13 +26,13 @@ module SnailMail
 		# Currently letting user log in with username or email and sending this to the server as "username". This function looks in both username and email to find a match.
 		def self.find_person_record_from_login username_or_email
 			begin
-				person = SnailMail::Person.find_by(username: username_or_email)
+				person = Postoffice::Person.find_by(username: username_or_email)
 				return person
 			rescue Mongoid::Errors::DocumentNotFound
 			end
 
 			begin
-				person = SnailMail::Person.find_by(email: username_or_email)
+				person = Postoffice::Person.find_by(email: username_or_email)
 				return person
 			rescue Mongoid::Errors::DocumentNotFound
 				return nil
@@ -51,7 +51,7 @@ module SnailMail
 
 		def self.reset_password id, data
 
-			person = SnailMail::Person.find(id)
+			person = Postoffice::Person.find(id)
 
 			if data["old_password"] == data["new_password"]
 				raise "New password cannot equal existing password"
@@ -60,9 +60,9 @@ module SnailMail
 			elsif person.hashed_password != self.hash_password(data["old_password"], person.salt)
 				raise "Existing password is incorrect"
 			else
-				salt = SnailMail::LoginService.salt
+				salt = Postoffice::LoginService.salt
 				person.salt = salt
-				person.hashed_password = SnailMail::LoginService.hash_password data["new_password"], salt 
+				person.hashed_password = Postoffice::LoginService.hash_password data["new_password"], salt
 				person.save
 			end
 

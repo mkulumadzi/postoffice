@@ -1,4 +1,4 @@
-module SnailMail
+module Postoffice
 	class Mail
 		include Mongoid::Document
 		include Mongoid::Timestamps

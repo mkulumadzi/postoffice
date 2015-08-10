@@ -1,6 +1,6 @@
 require_relative '../../spec_helper'
 
-describe SnailMail::Person do
+describe Postoffice::Person do
 
 	Mongoid.load!('config/mongoid.yml')
 
@@ -14,7 +14,7 @@ describe SnailMail::Person do
 		describe 'store the fields' do
 
 			it 'must create a new person record' do
-				@person.must_be_instance_of SnailMail::Person
+				@person.must_be_instance_of Postoffice::Person
 			end
 
 			it 'must store the username' do
@@ -24,7 +24,7 @@ describe SnailMail::Person do
 			it 'must thrown an error if a record is submitted with a duplicate username' do
 				person = create(:person, username: random_username)
 				assert_raises(Moped::Errors::OperationFailure) {
-					SnailMail::Person.create!(
+					Postoffice::Person.create!(
 						username: person.username,
 						name: "test",
 						email: "test@test.com",

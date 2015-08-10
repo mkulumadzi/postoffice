@@ -31,9 +31,9 @@ describe app do
 			end
 		end
 
-		describe 'SNAILMAIL_BASE_URL' do
-			it 'must have a value for SNAILMAIL BASE URL' do
-				ENV['SNAILMAIL_BASE_URL'].must_be_instance_of String
+		describe 'POSTOFFICE_BASE_URL' do
+			it 'must have a value for Postoffice BASE URL' do
+				ENV['POSTOFFICE_BASE_URL'].must_be_instance_of String
 			end
 		end
 	end
@@ -55,21 +55,21 @@ describe app do
 		end
 
 		it 'must include a link to the person in the header' do
-			assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/person\/id\/\w{24}/, last_response.header["location"])
+			assert_match(/#{ENV['POSTOFFICE_BASE_URL']}\/person\/id\/\w{24}/, last_response.header["location"])
 		end
 
 		describe 'welcome message' do
 
 			before do
-				@welcome_mail = SnailMail::Mail.find_by(to: @username)
+				@welcome_mail = Postoffice::Mail.find_by(to: @username)
 			end
 
-			it 'must generate a welcome message from the SnailMail Postman' do
-				@welcome_mail.from.must_equal "snailmail.kuyenda"
+			it 'must generate a welcome message from the Postoffice Postman' do
+				@welcome_mail.from.must_equal "postman"
 			end
 
-			# it 'must set the image to be the SnailMail Postman' do
-			# 	@welcome_mail.image.must_equal "SnailMail Postman.png"
+			# it 'must set the image to be the Postoffice Postman' do
+			# 	@welcome_mail.image.must_equal "Postoffice Postman.png"
 			# end
 
 			it 'must deliver the mail' do
@@ -258,12 +258,12 @@ describe app do
 			end
 
 			it 'must update the person record' do
-				person = SnailMail::Person.find(@person1.id)
+				person = Postoffice::Person.find(@person1.id)
 				person.city.must_equal "New York"
 			end
 
 			it 'must not void fields that are not included in the update' do
-				person = SnailMail::Person.find(@person1.id)
+				person = Postoffice::Person.find(@person1.id)
 				person.name.must_equal @person1.name
 			end
 
@@ -290,7 +290,7 @@ describe app do
 				# Creating a person with a password to test login
 				person_attrs = attributes_for(:person)
 				data = Hash["username", random_username, "name", person_attrs[:name], "email", random_email, "phone", random_phone, "password", "password"]
-				@user = SnailMail::PersonService.create_person data
+				@user = Postoffice::PersonService.create_person data
 
 				data = '{"username": "' + @user.username + '", "password": "password"}'
 				post "/login", data
@@ -345,7 +345,7 @@ describe app do
 		before do
 			person_attrs = attributes_for(:person)
 			data = Hash["username", random_username, "name", person_attrs[:name], "email", random_email, "phone", random_phone, "password", "password"]
-			@person = SnailMail::PersonService.create_person data
+			@person = Postoffice::PersonService.create_person data
 		end
 
 		describe 'submit the correct old password and a valid new password' do
@@ -360,8 +360,8 @@ describe app do
 			end
 
 			it 'must reset the password' do
-				person_record = SnailMail::Person.find(@person.id)
-				person_record.hashed_password.must_equal SnailMail::LoginService.hash_password "password123", person_record.salt
+				person_record = Postoffice::Person.find(@person.id)
+				person_record.hashed_password.must_equal Postoffice::LoginService.hash_password "password123", person_record.salt
 			end
 
 			it 'must return an empty response body' do
@@ -412,13 +412,13 @@ describe app do
 		it 'must return a collection with all of the people if no parameters are entered' do
 			get '/people'
 			collection = JSON.parse(last_response.body)
-			num_people = SnailMail::Person.count
+			num_people = Postoffice::Person.count
 			collection.length.must_equal num_people
 		end
 
 		it 'must return a filtered collection if parameters are given' do
 			get "/people?name=Evan"
-			expected_number = SnailMail::Person.where(name: "Evan").count
+			expected_number = Postoffice::Person.where(name: "Evan").count
 			actual_number = JSON.parse(last_response.body).count
 			actual_number.must_equal expected_number
 		end
@@ -434,7 +434,7 @@ describe app do
 
       before do
         @person4 = create(:person, username: random_username)
-        person_record = SnailMail::Person.find(@person3.id)
+        person_record = Postoffice::Person.find(@person3.id)
         @timestamp = person_record.updated_at
         @timestamp_string = JSON.parse(person_record.as_document.to_json)["updated_at"]
         get "/people", nil, {"HTTP_SINCE" => @timestamp_string}
@@ -446,7 +446,7 @@ describe app do
 
       it 'must only return records that were created or updated after the timestamp' do
         num_returned = JSON.parse(last_response.body).count
-        expected_number = SnailMail::Person.where({updated_at: { "$gt" => @timestamp } }).count
+        expected_number = Postoffice::Person.where({updated_at: { "$gt" => @timestamp } }).count
         num_returned.must_equal expected_number
       end
 
@@ -475,7 +475,7 @@ describe app do
 			end
 
 			it 'must include a link to the mail in the header' do
-				assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/mail\/id\/\w{24}/, last_response.header["location"])
+				assert_match(/#{ENV['POSTOFFICE_BASE_URL']}\/mail\/id\/\w{24}/, last_response.header["location"])
 			end
 
 		end
@@ -520,12 +520,12 @@ describe app do
 			end
 
 			it 'must include a link to the mail in the header' do
-				assert_match(/#{ENV['SNAILMAIL_BASE_URL']}\/mail\/id\/\w{24}/, last_response.header["location"])
+				assert_match(/#{ENV['POSTOFFICE_BASE_URL']}\/mail\/id\/\w{24}/, last_response.header["location"])
 			end
 
 			it 'must have sent the mail' do
 				mail_id = last_response.header["location"].split("/").pop
-				mail = SnailMail::Mail.find(mail_id)
+				mail = Postoffice::Mail.find(mail_id)
 				mail.status.must_equal "SENT"
 			end
 
@@ -573,12 +573,12 @@ describe app do
 			end
 
 			it 'must send the mail' do
-				mail = SnailMail::Mail.find(@mail1.id)
+				mail = Postoffice::Mail.find(@mail1.id)
 				mail.status.must_equal "SENT"
 			end
 
 			it 'must be scheduled to arrive' do
-				mail = SnailMail::Mail.find(@mail1.id)
+				mail = Postoffice::Mail.find(@mail1.id)
 				mail.scheduled_to_arrive.must_be_instance_of DateTime
 			end
 
@@ -632,7 +632,7 @@ describe app do
 			end
 
 			it 'must be scheduled to arrive in the past' do
-				mail = SnailMail::Mail.find(@mail1.id)
+				mail = Postoffice::Mail.find(@mail1.id)
 				assert_operator mail.scheduled_to_arrive, :<=, Time.now
 			end
 
@@ -690,13 +690,13 @@ describe app do
 		it 'must return a collection with all of the mail if no parameters are entered' do
 			get '/mail'
 			response = JSON.parse(last_response.body)
-			response.count.must_equal SnailMail::Mail.count
+			response.count.must_equal Postoffice::Mail.count
 		end
 
 		it 'must return a filtered collection if parameters are given' do
 			get "/mail?from=#{@person1.username}"
 			response = JSON.parse(last_response.body)
-			response.count.must_equal SnailMail::Mail.where(from: @person1.username).count
+			response.count.must_equal Postoffice::Mail.where(from: @person1.username).count
 		end
 
 		it 'must return the expected fields for the mail' do
@@ -709,7 +709,7 @@ describe app do
 
       before do
         @mail5 = create(:mail, from: @person3.username, to: @person1.username)
-        mail_record = SnailMail::Mail.find(@mail1.id)
+        mail_record = Postoffice::Mail.find(@mail1.id)
         @timestamp = mail_record.updated_at
         @timestamp_string = JSON.parse(mail_record.as_document.to_json)["updated_at"]
         get "/mail", nil, {"HTTP_SINCE" => @timestamp_string}
@@ -721,7 +721,7 @@ describe app do
 
       it 'must only return records that were created or updated after the timestamp' do
         num_returned = JSON.parse(last_response.body).count
-        expected_number = SnailMail::Mail.where({updated_at: { "$gt" => @timestamp } }).count
+        expected_number = Postoffice::Mail.where({updated_at: { "$gt" => @timestamp } }).count
         num_returned.must_equal expected_number
       end
 
@@ -799,7 +799,7 @@ describe app do
 		end
 
 		it 'must mark the mail as read' do
-			mail = SnailMail::Mail.find(@mail1.id)
+			mail = Postoffice::Mail.find(@mail1.id)
 			mail.status.must_equal "READ"
 		end
 
@@ -841,7 +841,7 @@ describe app do
 
 		## This test should be improved...
 		it 'must return all of the users contacts' do
-			contacts = SnailMail::MailService.get_contacts @person1.username
+			contacts = Postoffice::MailService.get_contacts @person1.username
 			@response.length.must_equal contacts.length
 		end
 
@@ -978,7 +978,7 @@ describe app do
       @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
 
       data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
-      @mail5 = SnailMail::MailService.create_mail @person1.id, data
+      @mail5 = Postoffice::MailService.create_mail @person1.id, data
 
       get "/mail/id/#{@mail5.id}/image"
     end

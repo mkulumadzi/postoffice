@@ -2,7 +2,7 @@ require 'securerandom'
 require 'digest'
 require 'digest/bubblebabble'
 
-module SnailMail
+module Postoffice
 
 	class PersonService
 
@@ -12,8 +12,8 @@ module SnailMail
 			hashed_password = nil
 
 			if data["password"]
-				salt = SnailMail::LoginService.salt
-				hashed_password = SnailMail::LoginService.hash_password data["password"], salt
+				salt = Postoffice::LoginService.salt
+				hashed_password = Postoffice::LoginService.hash_password data["password"], salt
 			end
 
 			if data["phone"]
@@ -22,7 +22,7 @@ module SnailMail
 
 			self.validate_required_fields data
 
-			SnailMail::Person.create!({
+			Postoffice::Person.create!({
 		      username: data["username"],
 		      name: data["name"],
 		      email: data["email"],
@@ -42,11 +42,11 @@ module SnailMail
 				raise "Missing required field: username"
 			elsif data["email"] == nil || data["email"] == ""
 				raise "Missing required field: email"
-			elsif SnailMail::Person.where(email: data["email"]).exists?
+			elsif Postoffice::Person.where(email: data["email"]).exists?
 				raise "An account with that email already exists!"
 			elsif data["phone"] == nil || data["phone"] == ""
 				raise "Missing required field: phone"
-			elsif SnailMail::Person.where(phone: data["phone"]).exists?
+			elsif Postoffice::Person.where(phone: data["phone"]).exists?
 				raise "An account with that phone number already exists!"
 			elsif data["password"] == nil || data["password"] == ""
 				raise "Missing required field: password"
@@ -58,7 +58,7 @@ module SnailMail
 		end
 
 		def self.update_person person_id, data
-			person = SnailMail::Person.find(person_id)
+			person = Postoffice::Person.find(person_id)
 
 			if data["username"]
 				raise ArgumentError
@@ -70,7 +70,7 @@ module SnailMail
 
 		def self.get_people params = {}
 			people = []
-			SnailMail::Person.where(params).each do |person|
+			Postoffice::Person.where(params).each do |person|
 				people << person.as_document
 			end
 			people
@@ -86,7 +86,7 @@ module SnailMail
 				search_limit = 25
 			end
 
-			SnailMail::Person.or({name: /#{search_term}/}, {username: /#{search_term}/}).limit(search_limit).each do |person|
+			Postoffice::Person.or({name: /#{search_term}/}, {username: /#{search_term}/}).limit(search_limit).each do |person|
 				people << person
 			end
 
@@ -122,7 +122,7 @@ module SnailMail
 			people = []
 
 			email_array.each do |email|
-				SnailMail::Person.where(email: email).each do |person|
+				Postoffice::Person.where(email: email).each do |person|
 					people << person
 				end
 			end
@@ -135,7 +135,7 @@ module SnailMail
 
 			phone_array.each do |phone|
 				phone = self.format_phone_number phone
-				SnailMail::Person.where(phone: phone).each do |person|
+				Postoffice::Person.where(phone: phone).each do |person|
 					people << person
 				end
 			end

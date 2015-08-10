@@ -1,4 +1,4 @@
-module SnailMail
+module Postoffice
 
 	class FileService
 

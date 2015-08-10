@@ -19,10 +19,10 @@ post '/person/new' do
   data = JSON.parse request.body.read
 
   begin
-    person = SnailMail::PersonService.create_person data
-    SnailMail::MailService.generate_welcome_message person
+    person = Postoffice::PersonService.create_person data
+    Postoffice::MailService.generate_welcome_message person
 
-    person_link = "#{ENV['SNAILMAIL_BASE_URL']}/person/id/#{person.id}"
+    person_link = "#{ENV['POSTOFFICE_BASE_URL']}/person/id/#{person.id}"
 
     status = 201
     headers = { "location" => person_link }
@@ -46,7 +46,7 @@ post '/login' do
   data = JSON.parse request.body.read
 
   begin
-    person = SnailMail::LoginService.check_login data
+    person = Postoffice::LoginService.check_login data
     if person
       status = 200
       response_body = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
@@ -65,7 +65,7 @@ end
 get '/person/id/:id' do
   content_type :json
   begin
-    person = SnailMail::Person.find(params[:id])
+    person = Postoffice::Person.find(params[:id])
     status = 200
     response_body = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
   rescue Mongoid::Errors::DocumentNotFound
@@ -82,7 +82,7 @@ post '/person/id/:id' do
   data = JSON.parse request.body.read
 
   begin
-    SnailMail::PersonService.update_person params[:id], data
+    Postoffice::PersonService.update_person params[:id], data
     status = 204
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
@@ -101,7 +101,7 @@ post '/person/id/:id/reset_password' do
   data = JSON.parse request.body.read
 
   begin
-    SnailMail::LoginService.reset_password params[:id], data
+    Postoffice::LoginService.reset_password params[:id], data
     status = 204
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
@@ -119,7 +119,7 @@ end
 get '/people' do
   content_type :json
   add_since_to_request_parameters self
-  response_body = SnailMail::PersonService.get_people(params).to_json( :except => ["salt", "hashed_password", "device_token"] )
+  response_body = Postoffice::PersonService.get_people(params).to_json( :except => ["salt", "hashed_password", "device_token"] )
   [200, response_body]
 end
 
@@ -128,7 +128,7 @@ get '/people/search' do
   content_type :json
 
   begin
-    people_returned = SnailMail::PersonService.search_people params
+    people_returned = Postoffice::PersonService.search_people params
 
     people_bson = []
     people_returned.each do |person|
@@ -151,7 +151,7 @@ post '/people/bulk_search' do
   data = JSON.parse request.body.read
 
   begin
-    people = SnailMail::PersonService.bulk_search data
+    people = Postoffice::PersonService.bulk_search data
 
     people_bson = []
     people.each do |person|
@@ -174,8 +174,8 @@ post '/person/id/:id/mail/new' do
   data = JSON.parse request.body.read
 
   begin
-    mail = SnailMail::MailService.create_mail params[:id], data
-    mail_link = "#{ENV['SNAILMAIL_BASE_URL']}/mail/id/#{mail.id}"
+    mail = Postoffice::MailService.create_mail params[:id], data
+    mail_link = "#{ENV['POSTOFFICE_BASE_URL']}/mail/id/#{mail.id}"
     headers = { "location" => mail_link }
     status = 201
   rescue Mongoid::Errors::DocumentNotFound
@@ -196,9 +196,9 @@ post '/person/id/:id/mail/send' do
   data = JSON.parse request.body.read
 
   begin
-    mail = SnailMail::MailService.create_mail params[:id], data
+    mail = Postoffice::MailService.create_mail params[:id], data
     mail.mail_it
-    mail_link = "#{ENV['SNAILMAIL_BASE_URL']}/mail/id/#{mail.id}"
+    mail_link = "#{ENV['POSTOFFICE_BASE_URL']}/mail/id/#{mail.id}"
     headers = { "location" => mail_link }
     status = 201
   rescue Mongoid::Errors::DocumentNotFound
@@ -218,7 +218,7 @@ get '/mail/id/:id' do
   content_type :json
 
   begin
-    mail = SnailMail::Mail.find(params[:id])
+    mail = Postoffice::Mail.find(params[:id])
     status = 200
     response_body = mail.as_document.to_json
   rescue Mongoid::Errors::DocumentNotFound
@@ -232,13 +232,13 @@ end
 
 get '/mail/id/:id/image' do
 
-  mail = SnailMail::Mail.find(params[:id])
+  mail = Postoffice::Mail.find(params[:id])
 
   begin
     if mail.image_uid == nil
       [404, nil, nil]
     else
-      SnailMail::FileService.fetch_image(mail.image_uid, params).to_response
+      Postoffice::FileService.fetch_image(mail.image_uid, params).to_response
     end
   rescue ArgumentError
     response_body = Hash["message", "Could not process thumbnail parameter."].to_json
@@ -251,7 +251,7 @@ end
 get '/mail' do
   content_type :json
   add_since_to_request_parameters self
-  response_body = SnailMail::MailService.get_mail(params).to_json
+  response_body = Postoffice::MailService.get_mail(params).to_json
   [200, response_body]
 end
 
@@ -260,7 +260,7 @@ end
 post '/mail/id/:id/send' do
 
   begin
-    mail = SnailMail::Mail.find(params[:id])
+    mail = Postoffice::Mail.find(params[:id])
     mail.mail_it
     status = 204
     response_body = nil
@@ -280,7 +280,7 @@ end
 post '/mail/id/:id/deliver' do
 
    begin
-    mail = SnailMail::Mail.find(params[:id])
+    mail = Postoffice::Mail.find(params[:id])
     mail.deliver_now
     status = 204
     response_body = nil
@@ -300,7 +300,7 @@ end
 post '/mail/id/:id/read' do
 
   begin
-    mail = SnailMail::Mail.find(params[:id])
+    mail = Postoffice::Mail.find(params[:id])
     mail.read
     status = 204
     response_body = nil
@@ -322,7 +322,7 @@ get '/person/id/:id/mailbox' do
   add_since_to_request_parameters self
 
   begin
-    response_body = SnailMail::MailService.mailbox(params).to_json
+    response_body = Postoffice::MailService.mailbox(params).to_json
     status = 200
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
@@ -339,7 +339,7 @@ get '/person/id/:id/outbox' do
   add_since_to_request_parameters self
 
   begin
-    response_body = SnailMail::MailService.outbox(params).to_json
+    response_body = Postoffice::MailService.outbox(params).to_json
     status = 200
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
@@ -355,8 +355,8 @@ get '/person/id/:id/contacts' do
   content_type :json
 
   begin
-    person = SnailMail::Person.find(params["id"])
-    response_body = SnailMail::MailService.get_contacts(person.username).to_json( :except => ["salt", "hashed_password", "device_token"] )
+    person = Postoffice::Person.find(params["id"])
+    response_body = Postoffice::MailService.get_contacts(person.username).to_json( :except => ["salt", "hashed_password", "device_token"] )
     status = 200
   rescue Mongoid::Errors::DocumentNotFound
     status = 404
@@ -372,7 +372,7 @@ post '/upload' do
   data = JSON.parse request.body.read.gsub("\n", "")
 
   begin
-    uid = SnailMail::FileService.upload_file data
+    uid = Postoffice::FileService.upload_file data
     headers = { "location" => uid }
     status = 201
   rescue ArgumentError => error

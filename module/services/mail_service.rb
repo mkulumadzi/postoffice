@@ -1,11 +1,11 @@
-module SnailMail
+module Postoffice
 
 	class MailService
 
 		def self.create_mail person_id, data
-			person = SnailMail::Person.find(person_id)
+			person = Postoffice::Person.find(person_id)
 
-		    mail = SnailMail::Mail.create!({
+		    mail = Postoffice::Mail.create!({
 		      from: person.username,
 		      to: data["to"],
 		      content: data["content"]
@@ -21,14 +21,14 @@ module SnailMail
 
 		def self.get_mail params = {}
 			mails = []
-			SnailMail::Mail.where(params).each do |mail|
+			Postoffice::Mail.where(params).each do |mail|
 				mails << mail.as_document
 			end
 			mails
 		end
 
 		def self.mailbox params
-			username = SnailMail::Person.find(params[:id]).username
+			username = Postoffice::Person.find(params[:id]).username
 			mails = []
 
 			query = {to: username, scheduled_to_arrive: { "$lte" => Time.now } }
@@ -37,7 +37,7 @@ module SnailMail
 				query[:updated_at] = params[:updated_at]
 			end
 
-			SnailMail::Mail.where(query).each do |mail|
+			Postoffice::Mail.where(query).each do |mail|
 				mail.update_delivery_status
 				mails << mail.as_document
 			end
@@ -46,7 +46,7 @@ module SnailMail
 		end
 
 		def self.outbox params
-			username = SnailMail::Person.find(params[:id]).username
+			username = Postoffice::Person.find(params[:id]).username
 			mails = []
 
 			query = {from: username}
@@ -55,7 +55,7 @@ module SnailMail
 				query[:updated_at] = params[:updated_at]
 			end
 
-			SnailMail::Mail.where(query).each do |mail|
+			Postoffice::Mail.where(query).each do |mail|
 				mails << mail.as_document
 			end
 
@@ -66,11 +66,11 @@ module SnailMail
 		def self.generate_welcome_message person
 			text = File.open("templates/Welcome Message.txt").read
 
-			mail = SnailMail::Mail.create!({
-				from: "snailmail.kuyenda",
+			mail = Postoffice::Mail.create!({
+				from: ENV['POSTOFFICE_POSTMAN_USERNAME'],
 				to: person.username,
 				content: text
-				# image: "SnailMail Postman.png"
+				# image: "Postoffice Postman.png"
 			})
 
 			mail.mail_it
@@ -81,7 +81,7 @@ module SnailMail
 		def self.find_mail_to_deliver
 			mails = []
 
-			SnailMail::Mail.where({status: "SENT", scheduled_to_arrive: { "$lte" => Time.now } }).each do |mail|
+			Postoffice::Mail.where({status: "SENT", scheduled_to_arrive: { "$lte" => Time.now } }).each do |mail|
 				mails << mail
 			end
 
@@ -100,7 +100,7 @@ module SnailMail
 			people = []
 
 			mails.each do |mail|
-				person = SnailMail::Person.where({username: mail.to})[0]
+				person = Postoffice::Person.where({username: mail.to})[0]
 				people << person
 			end
 
@@ -116,7 +116,7 @@ module SnailMail
 
 			people = self.people_to_notify mails
 
-			notifications = SnailMail::NotificationService.create_notification_for_people people, "You've received new mail!", "New Mail"
+			notifications = Postoffice::NotificationService.create_notification_for_people people, "You've received new mail!", "New Mail"
 
 			puts "Sending notifications: #{notifications}"
 
@@ -128,8 +128,8 @@ module SnailMail
 		def self.get_people_who_received_mail_from username
 			list_of_people = []
 
-			SnailMail::Mail.where(from: username).each do |mail|
-				list_of_people << SnailMail::Person.find_by(username: mail.to)
+			Postoffice::Mail.where(from: username).each do |mail|
+				list_of_people << Postoffice::Person.find_by(username: mail.to)
 			end
 
 			list_of_people
@@ -138,8 +138,8 @@ module SnailMail
 		def self.get_people_who_sent_mail_to username
 			list_of_people = []
 
-			SnailMail::Mail.where(to: username).each do |mail|
-				list_of_people << SnailMail::Person.find_by(username: mail.from)
+			Postoffice::Mail.where(to: username).each do |mail|
+				list_of_people << Postoffice::Person.find_by(username: mail.from)
 			end
 
 			list_of_people

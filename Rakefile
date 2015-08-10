@@ -18,14 +18,14 @@ task :default => :test
 task :create_indexes do
 
 	Mongoid.load!("config/mongoid.yml")
-	SnailMail::Person.create_indexes
+	Postoffice::Person.create_indexes
 
 end
 
 task :remove_indexes do
 
   Mongoid.load!("config/mongoid.yml")
-  SnailMail::Person.remove_indexes
+  Postoffice::Person.remove_indexes
 
 end
 
@@ -33,47 +33,29 @@ task :setup_demo_data do
 
 	Mongoid.load!("config/mongoid.yml")
 
-	SnailMail::Mail.delete_all
-	SnailMail::Person.delete_all
+	Postoffice::Mail.delete_all
+	Postoffice::Person.delete_all
 
-  data =  JSON.parse '{"name": "Evan", "username": "evan.waters", "email": "evan.waters@gmail.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
+  data =  JSON.parse '{"name": "Evan Waters", "username": "evan.waters", "email": "evan.waters@gmail.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
+  person = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message person
 
-  person = SnailMail::PersonService.create_person data
+	data =  JSON.parse '{"name": "Neal Waters", "username": "nwaters4", "email": "nwaters4@gmail.com", "phone": "(555) 444-1234", "address1": "44 Prichard St", "city": "Somerville", "state": "MA", "zip": "02132", "password": "password"}'
+	Postoffice::PersonService.create_person data
 
-	SnailMail::Person.create!({
-      username: "nwaters4",
-      name: "Neal Waters",
-      email: "nwaters4@gmail.com",
-      phone: "5554441234",
-      address1: "44 Prichard St",
-      city: "Somerville",
-      state: "MA",
-      zip: "02132"
-    })
+	data =  JSON.parse '{"name": "Kristen Ulwelling", "username": "kulwelling", "email": "kulwelling@gmail.com", "phone": "(555) 444-4321", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
+	Postoffice::PersonService.create_person data
 
-  SnailMail::MailService.generate_welcome_message person
 
-  SnailMail::Person.create!({
-      username: "snailmail.kuyenda",
-      email: "snailmail.kuyenda@gmail.com",
-      name: "Snailtale Postman",
+  Postoffice::Person.create!({
+      username: "postman",
+      email: "postman@slowpost.com",
+      name: "Slowpost Postman",
       phone: "5554441234",
       address1: nil,
       city: nil,
       state: nil,
       zip: nil
-    })
-
-
-	SnailMail::Person.create!({
-      username: "kulwelling",
-      name: "Kristen Ulwelling",
-      email: "kulwelling@gmail.com",
-      phone: "5554443133",
-      address1: "121 W 3rd St",
-      city: "New York",
-      state: "NY",
-      zip: "10012"
     })
 
 		image1 = File.open('spec/resources/image1.jpg')
@@ -84,7 +66,7 @@ task :setup_demo_data do
 		uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
 		image2.close
 
-    mail1 = SnailMail::Mail.create!({
+    mail1 = Postoffice::Mail.create!({
     	from: "nwaters4",
     	to: "evan.waters",
     	content: "Hey bro, how's it going? Would you like to watch the game?"
@@ -95,7 +77,7 @@ task :setup_demo_data do
     mail1.update_delivery_status
     mail1.read
 
-    mail2 = SnailMail::Mail.create!({
+    mail2 = Postoffice::Mail.create!({
     	from: "kulwelling",
     	to: "evan.waters",
     	content: "Greetings from NOLA!",
@@ -106,7 +88,7 @@ task :setup_demo_data do
     mail2.deliver_now
     mail1.update_delivery_status
 
-    mail3 = SnailMail::Mail.create!({
+    mail3 = Postoffice::Mail.create!({
     	from: "nwaters4",
     	to: "evan.waters",
     	content: "Go U of A!",
@@ -117,13 +99,13 @@ end
 
 task :notify_recipients do
   puts "Notifying recipients for #{ENV['RACK_ENV']} environment"
-  SnailMail::MailService.deliver_mail_and_notify_recipients
+  Postoffice::MailService.deliver_mail_and_notify_recipients
 end
 
 task :test_notification do
   puts "Sending test notification for #{ENV['RACK_ENV']} environment"
-  people = SnailMail::Person.where(:device_token.exists => true, :device_token.ne => "abc123")
-  notifications = SnailMail::NotificationService.create_notification_for_people people, "Test notification", "Test"
+  people = Postoffice::Person.where(:device_token.exists => true, :device_token.ne => "abc123")
+  notifications = Postoffice::NotificationService.create_notification_for_people people, "Test notification", "Test"
   puts "Sending notifications: #{notifications}"
   APNS.send_notifications(notifications)
 end

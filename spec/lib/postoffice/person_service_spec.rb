@@ -1,6 +1,6 @@
 require_relative '../../spec_helper'
 
-describe SnailMail::PersonService do
+describe Postoffice::PersonService do
 
 	Mongoid.load!('config/mongoid.yml')
 
@@ -13,11 +13,11 @@ describe SnailMail::PersonService do
 			@email = SecureRandom.uuid()
 
 			data = Hash["name", "Evan", "username", @username, "email", @email, "phone", @phone, "address1", "121 W 3rd St", "city", "New York", "state", "NY", "zip", "10012", "password", "password"]
-			@person = SnailMail::PersonService.create_person data
+			@person = Postoffice::PersonService.create_person data
 		end
 
 		it 'must create a new person record' do
-			@person.must_be_instance_of SnailMail::Person
+			@person.must_be_instance_of Postoffice::Person
 		end
 
 		it 'must store the username' do
@@ -33,63 +33,63 @@ describe SnailMail::PersonService do
 			it 'must throw an exception if username is missing' do
 				data = Hash["email", "testemail", "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
-					SnailMail::PersonService.validate_required_fields data
+					Postoffice::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception is username is empty' do
 				data = Hash["username", "", "email", "testemail", "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
-					SnailMail::PersonService.validate_required_fields data
+					Postoffice::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception if email is missing' do
 				data = Hash["username", "test", "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
-					SnailMail::PersonService.validate_required_fields data
+					Postoffice::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception is email is empty' do
 				data = Hash["username", "test", "email", "", "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
-					SnailMail::PersonService.validate_required_fields data
+					Postoffice::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception if email is duplicate' do
 				data = Hash["username", "test", "email", @person.email, "phone", "685714571", "password", "password"]
 				assert_raises RuntimeError do
-					SnailMail::PersonService.validate_required_fields data
+					Postoffice::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception if phone is missing' do
 				data = Hash["username", "test", "email", "wha@test.co", "password", "password"]
 				assert_raises RuntimeError do
-					SnailMail::PersonService.validate_required_fields data
+					Postoffice::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception is phone is empty' do
 				data = Hash["username", "test", "email", "test", "phone", "", "password", "password"]
 				assert_raises RuntimeError do
-					SnailMail::PersonService.validate_required_fields data
+					Postoffice::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception if phone is duplicate' do
 				data = Hash["username", "test", "email", "wha@test.co", "phone", @person.phone, "password", "password"]
 				assert_raises RuntimeError do
-					SnailMail::PersonService.validate_required_fields data
+					Postoffice::PersonService.validate_required_fields data
 				end
 			end
 
 			it 'must throw an exception is password is empty' do
 				data = Hash["username", "test", "email", "test", "phone", "5556665555", "password", ""]
 				assert_raises RuntimeError do
-					SnailMail::PersonService.validate_required_fields data
+					Postoffice::PersonService.validate_required_fields data
 				end
 			end
 
@@ -102,12 +102,12 @@ describe SnailMail::PersonService do
 				# mocked_method = MiniTest::Mock.new
 				# mocked_method.expect :validate_required_fields, nil, [data]
 
-				# SnailMail::PersonService.create_person data
+				# Postoffice::PersonService.create_person data
 
 				# mocked_method.verify
 
 				assert_raises RuntimeError do
-					SnailMail::PersonService.create_person data
+					Postoffice::PersonService.create_person data
 				end
 			end
 
@@ -120,22 +120,22 @@ describe SnailMail::PersonService do
 		describe 'store the phone number' do
 
 			it 'must remove spaces from the phone number' do
-				phone = SnailMail::PersonService.format_phone_number '555 444 3333'
+				phone = Postoffice::PersonService.format_phone_number '555 444 3333'
 				phone.must_equal '5554443333'
 			end
 
 			it 'must remove special characters from the phone number' do
-				phone = SnailMail::PersonService.format_phone_number '(555)444-3333'
+				phone = Postoffice::PersonService.format_phone_number '(555)444-3333'
 				phone.must_equal '5554443333'
 			end
 
 			it 'must remove letters from the phone number' do
-				phone = SnailMail::PersonService.format_phone_number 'aB5554443333'
+				phone = Postoffice::PersonService.format_phone_number 'aB5554443333'
 				phone.must_equal '5554443333'
 			end
 
 			it 'must store the phone number as a string of numeric digits' do
-				@person.phone.must_equal SnailMail::PersonService.format_phone_number @phone
+				@person.phone.must_equal Postoffice::PersonService.format_phone_number @phone
 			end
 
 		end
@@ -173,21 +173,21 @@ describe SnailMail::PersonService do
 		end
 
 		it 'must get all of the people if no parameters are given' do
-			people = SnailMail::PersonService.get_people
-			people.length.must_equal SnailMail::Person.count
+			people = Postoffice::PersonService.get_people
+			people.length.must_equal Postoffice::Person.count
 		end
 
 		it 'must filter the records by username when it is passed in as a parameter' do
-			num_people = SnailMail::Person.where({username: "#{@person.username}"}).count
+			num_people = Postoffice::Person.where({username: "#{@person.username}"}).count
 			params = Hash["username", @person.username]
-			people = SnailMail::PersonService.get_people params
+			people = Postoffice::PersonService.get_people params
 			people.length.must_equal num_people
 		end
 
 		it 'must filter the records by username and name when both are passed in as a parameter' do
-			num_people = SnailMail::Person.where({username: "#{@person.username}", name: "Joe Person"}).count
+			num_people = Postoffice::Person.where({username: "#{@person.username}", name: "Joe Person"}).count
 			params = Hash["username", @person.username, "name", "Joe Person"]
-			people = SnailMail::PersonService.get_people params
+			people = Postoffice::PersonService.get_people params
 			people.length.must_equal num_people
 		end
 
@@ -215,11 +215,11 @@ describe SnailMail::PersonService do
 
 			before do
 				parameters = Hash["term", "Evan", "limit", 2]
-				@people_returned = SnailMail::PersonService.search_people parameters
+				@people_returned = Postoffice::PersonService.search_people parameters
 			end
 
 			it 'must return an array of people' do
-				@people_returned[0].must_be_instance_of SnailMail::Person
+				@people_returned[0].must_be_instance_of Postoffice::Person
 			end
 
 			it 'must return only people whose name or username matches the search string' do
@@ -241,19 +241,19 @@ describe SnailMail::PersonService do
 
 				it 'must limit the number of records returned to 25 by default, if no limit parameter is given' do
 					parameters = Hash["term", "Evan"]
-					people_returned = SnailMail::PersonService.search_people parameters
+					people_returned = Postoffice::PersonService.search_people parameters
 
 					assert_operator people_returned.count, :<=, 25
 
 				end
 
 				it 'must replace instances of + with a space' do
-					SnailMail::PersonService.format_search_term("A+term").must_equal "A term"
+					Postoffice::PersonService.format_search_term("A+term").must_equal "A term"
 				end
 
 				it 'must format the search string and return correct results' do
 					parameters = Hash["term", "Evan+Rachel"]
-					people_returned = SnailMail::PersonService.search_people parameters
+					people_returned = Postoffice::PersonService.search_people parameters
 
 					assert_operator people_returned.count, :>=, 1
 				end
@@ -262,7 +262,7 @@ describe SnailMail::PersonService do
 
 					before do
 						@parameters = Hash["term", @rando_name]
-						@people_returned = SnailMail::PersonService.search_people @parameters
+						@people_returned = Postoffice::PersonService.search_people @parameters
 					end
 
 					it 'must return matches for the name' do
@@ -285,11 +285,11 @@ describe SnailMail::PersonService do
 
 				before do
 					@email_array = [@person1.email, @person2.email, "not_in_the_database@test.com"]
-					@people = SnailMail::PersonService.get_people_from_email_array @email_array
+					@people = Postoffice::PersonService.get_people_from_email_array @email_array
 				end
 
 				it 'must return an array of people do' do
-					@people[0].must_be_instance_of SnailMail::Person
+					@people[0].must_be_instance_of Postoffice::Person
 				end
 
 				it 'must return person records who match the search terms' do
@@ -298,7 +298,7 @@ describe SnailMail::PersonService do
 				end
 
 				it 'must return a person record for each successful search result' do
-					num_expected = SnailMail::Person.or({email: @person1.email}, {email: @person2.email}).count
+					num_expected = Postoffice::Person.or({email: @person1.email}, {email: @person2.email}).count
 					@people.count.must_equal num_expected
 				end
 
@@ -308,11 +308,11 @@ describe SnailMail::PersonService do
 
 				before do
 					@phone_array = [@person1.phone, @person2.phone, "1234"]
-					@people = SnailMail::PersonService.get_people_from_phone_array @phone_array
+					@people = Postoffice::PersonService.get_people_from_phone_array @phone_array
 				end
 
 				it 'must return an array of people do' do
-					@people[0].must_be_instance_of SnailMail::Person
+					@people[0].must_be_instance_of Postoffice::Person
 				end
 
 				it 'must return person records who match the search terms' do
@@ -320,12 +320,12 @@ describe SnailMail::PersonService do
 				end
 
 				it 'must return a person record for each successful search result' do
-					num_expected = SnailMail::Person.or({phone: @person1.phone}, {phone: @person2.phone}).count
+					num_expected = Postoffice::Person.or({phone: @person1.phone}, {phone: @person2.phone}).count
 					@people.count.must_equal num_expected
 				end
 
 				it 'must remove special characters when searching phone strings' do
-					people = SnailMail::PersonService.get_people_from_phone_array ["()#{@person2.phone}"]
+					people = Postoffice::PersonService.get_people_from_phone_array ["()#{@person2.phone}"]
 					people[0].phone.must_equal @person2.phone
 				end
 
@@ -346,10 +346,10 @@ describe SnailMail::PersonService do
 				data.append(entry1)
 				data.append(entry2)
 
-				people = SnailMail::PersonService.bulk_search data
+				people = Postoffice::PersonService.bulk_search data
 
 				expected_people = []
-				SnailMail::Person.or({email: "evanw@test.com"}, {email: "espiegs2013@test.com"}, {phone: "5554443321"}).each do |person|
+				Postoffice::Person.or({email: "evanw@test.com"}, {email: "espiegs2013@test.com"}, {phone: "5554443321"}).each do |person|
 					expected_people << person
 				end
 

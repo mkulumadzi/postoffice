@@ -1,20 +1,36 @@
 postoffice
 =============
 
-The SnailMail Server
+The Slowpost Server
 
 ## Initial Setup
 
+### Installation
 * Install Mongo DB locally
 * bundle install
+* Add development and production .pem certificates for Apple notifications to certificates directory
+
+### Configure environment variables
+* Set environment variable POSTOFFICE_BASE_URL to application root, ie 'http://localhost:9292'
+* Set environment variable POSTOFFICE_POSTMAN_USERNAME to username for Postman (this is used for welcome messages)
+* Set AWS environment variables
+
+```
+AWS_BUCKET=[bucket name]
+AWS_SECRET_ACCESS_KEY=[Secret key]
+AWS_REGION=[Region]
+AWS_ACCESS_KEY_ID=[Access key id]
+```
+
+### Running the application
 * Ensure 'mongod' is running
 * Set up database indexes and demo data
 ```
 bundle exec rake create_indexes
 bundle exec rake setup_demo_data
 ```
-* Set environment variable SNAILMAIL_BASE_URL to application root, ie 'http://localhost:9292'
-* Start app with 'rackup'
+* Start app with ```rackup```
+
 
 ## API
 

@@ -1,5 +1,5 @@
 # Fix person records where email is stored as the username
-email_as_username = SnailMail::Person.where(email: nil, :username => /@/)
+email_as_username = Postoffice::Person.where(email: nil, :username => /@/)
 
 puts "\nFound #{email_as_username.count} person records with username storing email address"
 
@@ -14,13 +14,13 @@ email_as_username.each do |doc|
 end
 
 #Fix mail with 'to' person orphaned by migrating usernames to email field
-email_as_to = SnailMail::Mail.where(:to => /@/)
+email_as_to = Postoffice::Mail.where(:to => /@/)
 
 puts "\nFound #{email_as_to.count} records with 'to' field storing an email address"
 
 email_as_to.each do |doc|
 
-	if person = SnailMail::Person.find_by(email: doc.to)
+	if person = Postoffice::Person.find_by(email: doc.to)
 		puts ">> Changing 'to' field from #{doc.to} to #{person.username}"
 		doc.to = person.username
 		doc.save! rescue puts "Could not modiy doc #{doc.id}/#{doc.to}"
@@ -29,13 +29,13 @@ email_as_to.each do |doc|
 end
 
 #Fix mail with 'from' person orphaned by migrating usernames to email field
-email_as_from = SnailMail::Mail.where(:from => /@/)
+email_as_from = Postoffice::Mail.where(:from => /@/)
 
 puts "\nFound #{email_as_from.count} records with 'from' field storing an email address"
 
 email_as_from.each do |doc|
 
-	if person = SnailMail::Person.find_by(email: doc.from)
+	if person = Postoffice::Person.find_by(email: doc.from)
 		puts ">> Changing 'from' field from #{doc.from} to #{person.username}"
 		doc.from = person.username
 		doc.save! rescue puts "Could not modiy doc #{doc.id}/#{doc.from}"

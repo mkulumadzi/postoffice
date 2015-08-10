@@ -1,6 +1,6 @@
 require_relative '../../spec_helper'
 
-describe SnailMail::Mail do
+describe Postoffice::Mail do
 
 	Mongoid.load!('config/mongoid.yml')
 
@@ -16,7 +16,7 @@ describe SnailMail::Mail do
 	describe 'create mail' do
 
 		it 'must create a new piece of mail' do
-			@mail1.must_be_instance_of SnailMail::Mail
+			@mail1.must_be_instance_of Postoffice::Mail
 		end
 
 		it 'must store the person it is from' do
