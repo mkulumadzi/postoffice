@@ -68,9 +68,13 @@ describe app do
 				@welcome_mail.from.must_equal "postman"
 			end
 
-			# it 'must set the image to be the Postoffice Postman' do
-			# 	@welcome_mail.image.must_equal "Postoffice Postman.png"
-			# end
+			it 'must set the image using the welcome image environment variable' do
+				@welcome_mail.image_uid.must_equal ENV['POSTOFFICE_WELCOME_IMAGE']
+			end
+
+      it 'must point to a real image from the image_uid' do
+        @welcome_mail.image.data.must_be_instance_of String
+      end
 
 			it 'must deliver the mail' do
 				assert_operator @welcome_mail.scheduled_to_arrive, :<=, Time.now

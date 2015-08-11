@@ -69,8 +69,8 @@ module Postoffice
 			mail = Postoffice::Mail.create!({
 				from: ENV['POSTOFFICE_POSTMAN_USERNAME'],
 				to: person.username,
-				content: text
-				# image: "Postoffice Postman.png"
+				content: text,
+				image_uid: ENV['POSTOFFICE_WELCOME_IMAGE']
 			})
 
 			mail.mail_it

@@ -52,7 +52,7 @@ task :setup_demo_data do
 
   Postoffice::Person.create!({
       username: "postman",
-      email: "postman@slowpost.com",
+      email: "postman@slowpost.me",
       name: "Slowpost Postman",
       phone: "5554441234",
       address1: nil,
