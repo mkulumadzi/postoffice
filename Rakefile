@@ -134,3 +134,7 @@ end
 task :migrate_data do
   require_relative 'db/migrate.rb'
 end
+
+task :give_me_binding do
+	binding.pry
+end
