@@ -98,6 +98,8 @@ task :setup_demo_data do
       image_uid: uid2
     })
 
+		mail3.mail_it
+
 		mail4 = Postoffice::Mail.create!({
 			from: "evan.waters",
 			to: "demo",
@@ -115,6 +117,8 @@ task :setup_demo_data do
 			content: "Can't wait to receive a few more Slowposts!",
 			image_uid: uid2
 		})
+
+		mail5.mail_it
 
 end
 
