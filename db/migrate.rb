@@ -42,23 +42,3 @@ email_as_from.each do |doc|
 	end
 
 end
-
-# Migrate images to image_uids
-image_as_text = Postoffice::Mail.where(:image.ne => nil)
-
-puts "\nFound #{image_as_text.count} records with 'image' stored as text."
-
-image_as_text.each do |doc|
-
-	uid = "resources/cards/#{doc.image}"
-	image = Dragonfly.app.fetch(uid)
-
-	begin
-		image.apply
-		doc.image_uid = uid
-		doc.save! rescue puts "Could not modify doc #{doc.id}/#{doc.image}"
-	rescue Dragonfly::Job::Fetch::NotFound
-		puts "No image found for uid = #{uid}"
-	end
-
-end
