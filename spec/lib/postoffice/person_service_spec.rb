@@ -65,20 +65,6 @@ describe Postoffice::PersonService do
 				end
 			end
 
-			it 'must throw an exception if phone is missing' do
-				data = Hash["username", "test", "email", "wha@test.co", "password", "password"]
-				assert_raises RuntimeError do
-					Postoffice::PersonService.validate_required_fields data
-				end
-			end
-
-			it 'must throw an exception is phone is empty' do
-				data = Hash["username", "test", "email", "test", "phone", "", "password", "password"]
-				assert_raises RuntimeError do
-					Postoffice::PersonService.validate_required_fields data
-				end
-			end
-
 			it 'must throw an exception if phone is duplicate' do
 				data = Hash["username", "test", "email", "wha@test.co", "phone", @person.phone, "password", "password"]
 				assert_raises RuntimeError do

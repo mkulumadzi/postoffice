@@ -177,24 +177,6 @@ describe app do
 
 		end
 
-		describe 'no phone number' do
-
-			before do
-				data = '{"username": "' + random_username + '", "email": "' + random_email + '", "password": "password"}'
-				post "/person/new", data
-			end
-
-			it 'must return a 403 error if no phone is posted' do
-				last_response.status.must_equal 403
-			end
-
-			it 'must return the correct error message' do
-				response = JSON.parse(last_response.body)
-				response["message"].must_equal "Missing required field: phone"
-			end
-
-		end
-
 		describe 'no password' do
 
 			before do
