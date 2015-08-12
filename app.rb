@@ -385,3 +385,16 @@ post '/upload' do
 
   [status, headers, response_body]
 end
+
+# Get a list of uids for pstcards in the resources/cards bucket on AWS
+get '/cards' do
+  content_type :json
+
+  begin
+    response_body = Postoffice::FileService.get_cards.to_json
+    status = 200
+  end
+
+  [status, response_body]
+  
+end

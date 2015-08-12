@@ -47,3 +47,10 @@ end
 if Rack::Utils.respond_to?("key_space_limit=")
   Rack::Utils.key_space_limit = 1048576 # 16 times the default size
 end
+
+## Configuring AWS for storign images
+## To Do: Use Dragonfly for storing as well?
+Aws.config.update({
+  region: 'us-west-2',
+  credentials: Aws::Credentials.new(ENV['AWS_ACCESS_KEY_ID'], ENV['AWS_SECRET_ACCESS_KEY'])
+})

@@ -20,6 +20,7 @@ gem 'apns'
 gem 'dragonfly'
 gem 'dragonfly-s3_data_store'
 gem 'factory_girl'
+gem 'aws-sdk', '~> 2'
 
 group :test do
 	gem 'turn'

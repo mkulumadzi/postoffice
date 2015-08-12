@@ -104,4 +104,23 @@ describe Postoffice::FileService do
 
   end
 
+  describe 'get card uids' do
+
+    before do
+      @cards = Postoffice::FileService.get_cards
+    end
+
+    it 'must return an array' do
+      @cards.must_be_instance_of Array
+    end
+
+    it 'must contain uids for all of the cards on the s3 bucket at resources/cards' do
+      s3 = Aws::S3::Resource.new
+      bucket = s3.bucket(ENV['AWS_BUCKET'])
+      expected_number = bucket.objects(prefix: 'resources/cards').collect(&:key).count
+      @cards.count.must_equal expected_number
+    end
+
+  end
+
 end
