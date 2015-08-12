@@ -114,11 +114,15 @@ describe Postoffice::FileService do
       @cards.must_be_instance_of Array
     end
 
-    it 'must contain uids for all of the cards on the s3 bucket at resources/cards' do
+    it 'must contain uids for all of the cards on the s3 bucket at resources/cards, except the root resource' do
       s3 = Aws::S3::Resource.new
       bucket = s3.bucket(ENV['AWS_BUCKET'])
       expected_number = bucket.objects(prefix: 'resources/cards').collect(&:key).count
-      @cards.count.must_equal expected_number
+      @cards.count.must_equal expected_number - 1
+    end
+
+    it 'must not contain a reference to the root folder' do
+      @cards.index('resources/cards/').must_equal nil
     end
 
   end

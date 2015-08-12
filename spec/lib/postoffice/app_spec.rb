@@ -1064,4 +1064,40 @@ describe app do
 
   end
 
+  describe 'get image by its uid' do
+
+    describe 'get an image' do
+
+      before do
+        get "/image/resources/cards/Dhow.jpg"
+      end
+
+      it 'must return a 200 status' do
+        last_response.status.must_equal 200
+      end
+
+      it 'must return the image data as a base64 string' do
+        last_response.body.must_be_instance_of String
+      end
+
+      it 'must set the mime type to jpg' do
+        last_response.headers["Content-Type"].must_equal "image/jpeg"
+      end
+
+    end
+
+    describe 'get an image that does not exist' do
+
+      before do
+        get "/image/foo.jpg"
+      end
+
+      it 'must return a 404 status' do
+        last_response.status.must_equal 404
+      end
+
+    end
+
+  end
+
 end

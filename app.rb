@@ -396,5 +396,12 @@ get '/cards' do
   end
 
   [status, response_body]
-  
+
+end
+
+get '/image/*' do
+
+  uid = params['splat'][0]
+  Dragonfly.app.fetch(uid).encode('jpg').to_response
+
 end

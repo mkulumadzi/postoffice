@@ -29,6 +29,8 @@ module Postoffice
 			s3 = Aws::S3::Resource.new
 	    bucket = s3.bucket(ENV['AWS_BUCKET'])
 	    cards = bucket.objects(prefix: 'resources/cards').collect(&:key)
+			cards.delete('resources/cards/')
+			cards
 		end
 
 	end
