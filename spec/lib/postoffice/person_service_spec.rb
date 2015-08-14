@@ -72,6 +72,11 @@ describe Postoffice::PersonService do
 				end
 			end
 
+			it 'must not throw an exception if phone is empty' do
+				data = Hash["username", "test", "email", "wha@test.co", "phone", "", "password", "password"]
+				Postoffice::PersonService.validate_required_fields(data).must_equal nil
+			end
+
 			it 'must throw an exception is password is empty' do
 				data = Hash["username", "test", "email", "test", "phone", "5556665555", "password", ""]
 				assert_raises RuntimeError do

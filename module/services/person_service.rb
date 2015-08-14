@@ -44,7 +44,7 @@ module Postoffice
 				raise "Missing required field: email"
 			elsif Postoffice::Person.where(email: data["email"]).exists?
 				raise "An account with that email already exists!"
-			elsif Postoffice::Person.where(phone: data["phone"]).exists?
+			elsif Postoffice::Person.where(phone: data["phone"]).exists? && data["phone"] != ""
 				raise "An account with that phone number already exists!"
 			elsif data["password"] == nil || data["password"] == ""
 				raise "Missing required field: password"
