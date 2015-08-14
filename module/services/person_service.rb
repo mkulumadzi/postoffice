@@ -141,6 +141,23 @@ module Postoffice
 			people
 		end
 
+		def self.check_field_availability params
+			fields_that_can_be_checked = ["username", "phone", "email"]
+			if params.count > 1
+				raise "Only one field may be checked at a time"
+			elsif fields_that_can_be_checked.index(params.keys[0]) == nil
+				raise "#{params.keys[0]} cannot be checked"
+			else
+				begin
+					Postoffice::Person.find_by(params)
+					return Hash[params.keys[0], "unavailable"]
+				rescue Mongoid::Errors::DocumentNotFound
+					return Hash[params.keys[0], "available"]
+				end
+			end
+
+		end
+
 	end
 
 end

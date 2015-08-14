@@ -40,6 +40,16 @@ post '/person/new' do
 
 end
 
+get '/available' do
+  begin
+    content_type :json
+    response_body = Postoffice::PersonService.check_field_availability(params).to_json
+    [200, response_body]
+  rescue RuntimeError
+    [404, nil]
+  end
+end
+
 post '/login' do
   content_type :json
 

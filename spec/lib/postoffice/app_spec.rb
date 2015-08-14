@@ -38,6 +38,47 @@ describe app do
 		end
 	end
 
+  describe 'get /available' do
+
+    describe 'look for a field that can be checked (username, email, phone)' do
+
+      describe 'valid parameters' do
+
+        before do
+          get "/available?username=availableusername"
+        end
+
+        it 'must return a 200 status code' do
+          last_response.status.must_equal 200
+        end
+
+        it 'must return a JSON response indicating whether or not the field is valid' do
+          result = JSON.parse(last_response.body)
+          result.must_equal Hash["username", "available"]
+        end
+
+      end
+
+      describe 'invalid parameters' do
+
+        before do
+          get "/available?name=Evan%20Waters"
+        end
+
+        it 'must return a 404 status if the parameters cannot be checked' do
+          last_response.status.must_equal 404
+        end
+
+        it 'must return an empty response body' do
+          last_response.body.must_equal ""
+        end
+
+      end
+
+    end
+
+  end
+
 	describe 'post /person/new' do
 
 		before do

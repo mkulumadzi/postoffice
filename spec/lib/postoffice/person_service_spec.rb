@@ -346,4 +346,62 @@ describe Postoffice::PersonService do
 
 	end
 
+	describe 'check field availability' do
+
+		describe 'look for a field that can be checked (username, email, phone)' do
+
+			describe 'search for a username that is available' do
+
+					before do
+						params = Hash["username", "availableusername"]
+						@result = Postoffice::PersonService.check_field_availability params
+					end
+
+					it 'must return a hash indicating that the field is avilable' do
+						@result.must_equal Hash["username", "available"]
+					end
+
+			end
+
+			it 'must check phone numbers' do
+				params = Hash["phone", "availablephone"]
+				result = Postoffice::PersonService.check_field_availability params
+				result.must_equal Hash["phone", "available"]
+			end
+
+			it 'must check phone emails' do
+				params = Hash["email", "availableemail"]
+				result = Postoffice::PersonService.check_field_availability params
+				result.must_equal Hash["email", "available"]
+			end
+
+			it 'if a field is already used, it must indicate that it is unavailble' do
+				person = create(:person, username: random_username)
+				params = Hash["username", person.username]
+				result = Postoffice::PersonService.check_field_availability(params)
+				result.must_equal Hash["username", "unavailable"]
+			end
+
+		end
+
+		describe 'invalid parameters' do
+
+			it 'must raise a RuntimeError if more than one field is submitted' do
+				params = Hash["username", "user", "phone", "555"]
+				assert_raises RuntimeError do
+					Postoffice::PersonService.check_field_availability params
+				end
+			end
+
+			it 'must raise an RuntimeError if the parameters include a field that cannot be checked' do
+				params = Hash["name", "A Name"]
+				assert_raises RuntimeError do
+					Postoffice::PersonService.check_field_availability params
+				end
+			end
+
+		end
+
+	end
+
 end
