@@ -1107,6 +1107,12 @@ describe app do
         last_response.headers["Content-Type"].must_equal "image/jpeg"
       end
 
+      it 'must return the filename' do
+        content_disposition = last_response.headers["Content-Disposition"]
+        filename = content_disposition.split('=')[1].gsub('"', '')
+        filename.must_equal 'Dhow.jpg'
+      end
+
     end
 
     describe 'get an image that does not exist' do

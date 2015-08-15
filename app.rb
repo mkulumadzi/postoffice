@@ -412,6 +412,8 @@ end
 get '/image/*' do
 
   uid = params['splat'][0]
-  Dragonfly.app.fetch(uid).encode('jpg').to_response
-
+  name = uid.split('/').last
+  image = Dragonfly.app.fetch(uid).encode('jpg')
+  image.name = name
+  image.to_response
 end
