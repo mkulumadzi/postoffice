@@ -49,7 +49,7 @@ module Postoffice
 		end
 
 		def self.response_for_successful_login person
-			token = self.generate_token_for_person person
+			token = Postoffice::AuthService.generate_token_for_person person
 			exp_in = 3600 * 24 * 72
 			person_json = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
 			response = '{"access_token": "' + token + '", "token_type": "bearer", "expires_in": "' + exp_in.to_s + '", "person": ' + person_json + '}'
@@ -75,33 +75,33 @@ module Postoffice
 
 		end
 
-		def self.get_private_key
-			pem = File.read 'certificates/private_key.pem'
-			key = OpenSSL::PKey::RSA.new pem, ENV['POSTOFFICE_KEYWORD']
-			key
-		end
-
-		def self.get_public_key
-			pem = File.read 'certificates/public_key.pem'
-			OpenSSL::PKey::RSA.new pem
-		end
-
-		def self.generate_expiration_date_for_token
-			#Generate a date that is 3 months in the future
-			Time.now.to_i + 3600 * 24 * 72
-		end
-
-		def self.generate_payload_for_person person
-			exp = self.generate_expiration_date_for_token
-			{:id => person.id.to_s, :exp => exp}
-		end
-
-		def self.generate_token_for_person person
-			payload = self.generate_payload_for_person person
-			rsa_private = self.get_private_key
-			token = JWT.encode payload, rsa_private, 'RS256'
-			token
-		end
+		# def self.get_private_key
+		# 	pem = File.read 'certificates/private_key.pem'
+		# 	key = OpenSSL::PKey::RSA.new pem, ENV['POSTOFFICE_KEYWORD']
+		# 	key
+		# end
+		#
+		# def self.get_public_key
+		# 	pem = File.read 'certificates/public_key.pem'
+		# 	OpenSSL::PKey::RSA.new pem
+		# end
+		#
+		# def self.generate_expiration_date_for_token
+		# 	#Generate a date that is 3 months in the future
+		# 	Time.now.to_i + 3600 * 24 * 72
+		# end
+		#
+		# def self.generate_payload_for_person person
+		# 	exp = self.generate_expiration_date_for_token
+		# 	{:id => person.id.to_s, :exp => exp}
+		# end
+		#
+		# def self.generate_token_for_person person
+		# 	payload = self.generate_payload_for_person person
+		# 	rsa_private = self.get_private_key
+		# 	token = JWT.encode payload, rsa_private, 'RS256'
+		# 	token
+		# end
 
 	end
 

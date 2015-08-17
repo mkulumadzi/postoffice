@@ -13,6 +13,7 @@ def add_since_to_request_parameters app
 end
 
 # Create a new person
+# Scope: create_person
 post '/person/new' do
   content_type :json
 
@@ -40,6 +41,8 @@ post '/person/new' do
 
 end
 
+# Check if a registration field such as username is available
+# Scope: create_person
 get '/available' do
   begin
     content_type :json
@@ -50,6 +53,8 @@ get '/available' do
   end
 end
 
+# Login and return an oauth token if successful
+# Scope: nil
 post '/login' do
   content_type :json
 
@@ -72,6 +77,7 @@ post '/login' do
 end
 
 # Retrieve a single person record
+# Scope: can_read
 get '/person/id/:id' do
   content_type :json
   begin
@@ -87,6 +93,7 @@ get '/person/id/:id' do
 end
 
 # Update a person record
+# Scope: admin or (can_write & is person)
 post '/person/id/:id' do
 
   data = JSON.parse request.body.read
@@ -106,6 +113,8 @@ post '/person/id/:id' do
 
 end
 
+# Reset a password for a user
+# Scope: reset_password
 post '/person/id/:id/reset_password' do
   content_type :json
   data = JSON.parse request.body.read
@@ -126,6 +135,7 @@ end
 
 # View records for all people in the database.
 # Filtering implemented, for example: /people?username=bigedubs
+# Scope: admin
 get '/people' do
   content_type :json
   add_since_to_request_parameters self
@@ -133,6 +143,8 @@ get '/people' do
   [200, response_body]
 end
 
+# Search people by username or name
+# Scope: can_read
 get '/people/search' do
 
   content_type :json
@@ -156,6 +168,7 @@ get '/people/search' do
 end
 
 # Do a bulk search of people (for example, when searching for contacts from a phone who are registered users of the service)
+# Scope: bulk_search
 post '/people/bulk_search' do
   content_type :json
   data = JSON.parse request.body.read
@@ -180,6 +193,7 @@ end
 
 # Creae a new piece of mail
 # Mail from field is interpreted by the ID in the URI
+# Scope: admin OR (can_write, is the person)
 post '/person/id/:id/mail/new' do
   data = JSON.parse request.body.read
 
@@ -200,8 +214,8 @@ post '/person/id/:id/mail/new' do
 
 end
 
-# TO DO: Implement feature enabling mail to be sent right away (rather than entering a 'draft' state.)
-
+# Send mail right away, without creating draft state
+# Scope: admin OR (can_write, is person)
 post '/person/id/:id/mail/send' do
   data = JSON.parse request.body.read
 
@@ -224,6 +238,7 @@ post '/person/id/:id/mail/send' do
 end
 
 # Retrieve a piece of mail
+# Scope: admin OR (can_read, is to or from person)
 get '/mail/id/:id' do
   content_type :json
 
@@ -240,6 +255,8 @@ get '/mail/id/:id' do
 
 end
 
+# Retrieve image for a piece of mail
+# Scope: admin OR (can_read, is to or from person)
 get '/mail/id/:id/image' do
 
   mail = Postoffice::Mail.find(params[:id])
@@ -258,6 +275,7 @@ get '/mail/id/:id/image' do
 end
 
 # View all mail in the system
+# Scope: admin
 get '/mail' do
   content_type :json
   add_since_to_request_parameters self
@@ -267,6 +285,7 @@ end
 
 # Send a piece of mail
 # Known issue: You can send mail to an invalid username (not sure if this needs to be fixed)
+# Scope: admin OR (can_write, is 'from' person)
 post '/mail/id/:id/send' do
 
   begin
@@ -287,6 +306,7 @@ post '/mail/id/:id/send' do
 end
 
 # Deliver a piece of mail
+# Scope: admin
 post '/mail/id/:id/deliver' do
 
    begin
@@ -307,6 +327,7 @@ post '/mail/id/:id/deliver' do
 end
 
 # Mark a piece of mail as read
+# Scope: admin OR (can_write, is 'from' person)
 post '/mail/id/:id/read' do
 
   begin
@@ -327,6 +348,7 @@ post '/mail/id/:id/read' do
 end
 
 # View delivered mail for a person
+# Scope: admin OR (can_read, is person)
 get '/person/id/:id/mailbox' do
   content_type :json
   add_since_to_request_parameters self
@@ -344,6 +366,7 @@ get '/person/id/:id/mailbox' do
 end
 
 # View sent mail
+# Scope: admin OR (can_read, is person)
 get '/person/id/:id/outbox' do
   content_type :json
   add_since_to_request_parameters self
@@ -361,6 +384,7 @@ get '/person/id/:id/outbox' do
 end
 
 # Get a list of people a person has sent mail to or received mail from
+# Scope: admin OR (can_read, is person)
 get '/person/id/:id/contacts' do
   content_type :json
 
@@ -377,6 +401,8 @@ get '/person/id/:id/contacts' do
 
 end
 
+# Upload a File
+# Scope: can_upload
 post '/upload' do
 
   data = JSON.parse request.body.read.gsub("\n", "")
@@ -397,6 +423,7 @@ post '/upload' do
 end
 
 # Get a list of uids for pstcards in the resources/cards bucket on AWS
+# Scope: get_images
 get '/cards' do
   content_type :json
 
@@ -409,6 +436,8 @@ get '/cards' do
 
 end
 
+# Get a specific image
+# Scope: get_images can get images in /resources only, admin can get any image
 get '/image/*' do
 
   begin
