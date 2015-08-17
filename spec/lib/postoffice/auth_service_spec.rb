@@ -18,47 +18,152 @@ describe Postoffice::AuthService do
 		key.public?.must_equal true
 	end
 
-	describe 'create payload for the user' do
+  describe 'get scope by user type' do
 
-		it 'must generate an expiration date that is 3 months in the future' do
-			expiration_integer = Postoffice::AuthService.generate_expiration_date_for_token
-			just_less_than_3_months = Time.now.to_i + 3600 * 24 * 72 - 60
-			assert_operator expiration_integer, :>=, just_less_than_3_months
-		end
+    it 'must return the correct scope for a person' do
+      scope = Postoffice::AuthService.get_scopes_for_user_type "person"
+      scope.must_equal "can-read can-write"
+    end
 
-		describe 'the payload' do
+    it 'must return the scope for an app' do
+      scope = Postoffice::AuthService.get_scopes_for_user_type "app"
+      scope.must_equal "can-read can-write create-person reset-password bulk-search can-upload get-image"
+    end
 
-			before do
-				@payload = Postoffice::AuthService.generate_payload_for_person @person
-			end
+    it 'must return the scope for an admin' do
+      scope = Postoffice::AuthService.get_scopes_for_user_type "admin"
+      scope.must_equal "admin can-read can-write create-person reset-password bulk-search can-upload get-image"
+    end
 
-			it 'must return a hash with the user id as a string' do
-				@payload[:id].must_equal @person.id.to_s
-			end
+    it 'must return nil for an unrecognized user type' do
+      scope = Postoffice::AuthService.get_scopes_for_user_type "foo"
+      scope.must_equal nil
+    end
 
-			it 'must also return the expiration date as an integer' do
-				@payload[:exp].must_be_instance_of Fixnum
-			end
+  end
 
-		end
+	describe 'generate a token' do
 
-	end
+    before do
+      @payload = {:data => "test"}
+      @token = Postoffice::AuthService.generate_token @payload
+    end
 
-	describe 'generate the token' do
+    it 'must return the token as a string' do
+      @token.must_be_instance_of String
+    end
 
-		before do
-			@token = Postoffice::AuthService.generate_token_for_person @person
-		end
+    describe 'decode a token' do
 
-		it 'must return the token as a string' do
-			@token.must_be_instance_of String
-		end
+      before do
+        @token_decoded = Postoffice::AuthService.decode_token @token
+      end
 
-		it 'must return a token that can be decoded to get the payload' do
-			public_key = Postoffice::AuthService.get_public_key
-			decoded_token = JWT.decode @token, public_key
-			decoded_token[0]["id"].must_equal @person.id.to_s
-		end
+      it 'must return an array' do
+        @token_decoded.must_be_instance_of Array
+      end
+
+      it 'must include the payload in the first item of the array, with symbols converted to strings' do
+        @token_decoded[0]["data"].must_equal "test"
+      end
+
+    end
+
+    describe 'expiring token' do
+
+      it 'must generate an expiration date that is 3 months in the future' do
+        expiration_integer = Postoffice::AuthService.generate_expiration_date_for_token
+        just_less_than_3_months = Time.now.to_i + 3600 * 24 * 72 - 60
+        assert_operator expiration_integer, :>=, just_less_than_3_months
+      end
+
+    end
+
+    describe 'token for a person' do
+
+      describe 'generate the payload for the person' do
+
+        describe 'the payload' do
+
+          before do
+            @payload = Postoffice::AuthService.generate_payload_for_person @person
+          end
+
+          it 'must return a hash with the user id as a string' do
+            @payload[:id].must_equal @person.id.to_s
+          end
+
+          it 'must also return the expiration date as an integer' do
+            @payload[:exp].must_be_instance_of Fixnum
+          end
+
+          it 'must return the scope for a person' do
+            @payload[:scope].must_equal "can-read can-write"
+          end
+
+        end
+
+      end
+
+      describe 'generate the token for the person' do
+
+    		before do
+    			@token = Postoffice::AuthService.generate_token_for_person @person
+    		end
+
+    		it 'must return the token as a string' do
+    			@token.must_be_instance_of String
+    		end
+
+    		it 'must return a token that can be decoded to get the payload' do
+          decoded_token = Postoffice::AuthService.decode_token @token
+    			decoded_token[0]["id"].must_equal @person.id.to_s
+    		end
+
+      end
+
+    end
+
+    describe 'apps and admins' do
+
+      describe 'payloads' do
+
+        before do
+          @payload = Postoffice::AuthService.generate_payload_for_user_type "admin"
+        end
+
+        it 'must create a payload for an admin that includes the scope' do
+          @payload[:scope].must_equal Postoffice::AuthService.get_scopes_for_user_type "admin"
+        end
+
+        it 'must not expire' do
+          @payload[:exp].must_equal nil
+        end
+
+        it 'must work for user type app' do
+          payload = Postoffice::AuthService.generate_payload_for_user_type "app"
+          payload[:scope].must_equal Postoffice::AuthService.get_scopes_for_user_type "app"
+        end
+
+      end
+
+    end
+
+    describe 'tokens' do
+
+      it 'must be able to generate a token with the admin scope' do
+        admin_token = Postoffice::AuthService.get_admin_token
+        decoded = Postoffice::AuthService.decode_token admin_token
+        decoded[0]["scope"].must_equal Postoffice::AuthService.get_scopes_for_user_type "admin"
+      end
+
+      it 'must be able to generate a token with the app scope' do
+        app_token = Postoffice::AuthService.get_app_token
+        decoded = Postoffice::AuthService.decode_token app_token
+        decoded[0]["scope"].must_equal Postoffice::AuthService.get_scopes_for_user_type "app"
+      end
+
+    end
 
 	end
 
