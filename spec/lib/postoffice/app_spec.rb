@@ -23,6 +23,7 @@ describe app do
 
     @admin_token = Postoffice::AuthService.get_admin_token
     @app_token = Postoffice::AuthService.get_app_token
+    @person1_token = Postoffice::AuthService.generate_token_for_person @person1
 	end
 
   describe 'convenience methods' do
@@ -77,6 +78,25 @@ describe app do
           get_payload_from_authorization_header(last_request).must_equal "No token provided"
         end
 
+      end
+
+    end
+
+    describe 'check authorization' do
+
+      it 'must return false if the request Authorization includes the required scope' do
+        get "/", nil, {"Authorization" => "Bearer #{@admin_token}"}
+        unauthorized(last_request, "admin").must_equal false
+      end
+
+      it 'must return true if the request Authorization does not include the required scope' do
+        get "/", nil, {"Authorization" => "Bearer #{@app_token}"}
+        unauthorized(last_request, "admin").must_equal true
+      end
+
+      it 'must return true if no Authorization header is submitted' do
+        get "/"
+        unauthorized(last_request, "admin").must_equal true
       end
 
     end
@@ -142,58 +162,62 @@ describe app do
 
 	describe 'post /person/new' do
 
-		before do
-			@username = random_username
-			data = '{"username": "' + @username + '", "phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
-			post "/person/new", data
-		end
+    describe 'create a person' do
 
-		it 'must return a 201 status code' do
-			last_response.status.must_equal 201
-		end
+  		before do
+  			@username = random_username
+  			data = '{"username": "' + @username + '", "phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
+  			post "/person/new", data, {"Authorization" => "Bearer #{@app_token}"}
+  		end
 
-		it 'must return an empty body' do
-			last_response.body.must_equal ""
-		end
+  		it 'must return a 201 status code' do
+  			last_response.status.must_equal 201
+  		end
 
-		it 'must include a link to the person in the header' do
-			assert_match(/#{ENV['POSTOFFICE_BASE_URL']}\/person\/id\/\w{24}/, last_response.header["location"])
-		end
+  		it 'must return an empty body' do
+  			last_response.body.must_equal ""
+  		end
 
-		describe 'welcome message' do
+  		it 'must include a link to the person in the header' do
+  			assert_match(/#{ENV['POSTOFFICE_BASE_URL']}\/person\/id\/\w{24}/, last_response.header["location"])
+  		end
 
-			before do
-				@welcome_mail = Postoffice::Mail.find_by(to: @username)
-			end
+  		describe 'welcome message' do
 
-			it 'must generate a welcome message from the Postoffice Postman' do
-				@welcome_mail.from.must_equal "postman"
-			end
+  			before do
+  				@welcome_mail = Postoffice::Mail.find_by(to: @username)
+  			end
 
-			it 'must set the image using the welcome image environment variable' do
-				@welcome_mail.image_uid.must_equal ENV['POSTOFFICE_WELCOME_IMAGE']
-			end
+  			it 'must generate a welcome message from the Postoffice Postman' do
+  				@welcome_mail.from.must_equal "postman"
+  			end
 
-      it 'must point to a real image from the image_uid' do
-        @welcome_mail.image.data.must_be_instance_of String
-      end
+  			it 'must set the image using the welcome image environment variable' do
+  				@welcome_mail.image_uid.must_equal ENV['POSTOFFICE_WELCOME_IMAGE']
+  			end
 
-			it 'must deliver the mail' do
-				assert_operator @welcome_mail.scheduled_to_arrive, :<=, Time.now
-			end
+        it 'must point to a real image from the image_uid' do
+          @welcome_mail.image.data.must_be_instance_of String
+        end
 
-			it 'must include standard welcome text in the mail content' do
-				text = File.open("templates/Welcome Message.txt").read
-				@welcome_mail.content.must_equal text
-			end
+  			it 'must deliver the mail' do
+  				assert_operator @welcome_mail.scheduled_to_arrive, :<=, Time.now
+  			end
 
-		end
+  			it 'must include standard welcome text in the mail content' do
+  				text = File.open("templates/Welcome Message.txt").read
+  				@welcome_mail.content.must_equal text
+  			end
+
+  		end
+
+    end
 
 		describe 'duplicate username' do
 
 			before do
 				data = '{"username": "' + @person1.username + '", "phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
-				post "/person/new", data
+				post "/person/new", data, {"Authorization" => "Bearer #{@app_token}"}
 			end
 
 			it 'must return a 403 error' do
@@ -211,7 +235,7 @@ describe app do
 
 			before do
 				data = '{"username": "' + random_username + '", "phone": "' + random_phone + '", "email": "' + @person1.email + '", "password": "password"}'
-				post "/person/new", data
+				post "/person/new", data, {"Authorization" => "Bearer #{@app_token}"}
 			end
 
 			it 'must return a 403 error if a duplicate email is posted' do
@@ -229,7 +253,7 @@ describe app do
 
 			before do
 				data = '{"username": "' + random_username + '", "phone": "' + @person1.phone + '", "email": "' + random_email + '", "password": "password"}'
-				post "/person/new", data
+				post "/person/new", data, {"Authorization" => "Bearer #{@app_token}"}
 			end
 
 			it 'must return a 403 error if a duplicate phone is posted' do
@@ -247,7 +271,7 @@ describe app do
 
 			before do
 				data = '{"phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
-				post "/person/new", data
+				post "/person/new", data, {"Authorization" => "Bearer #{@app_token}"}
 			end
 
 			it 'must return a 403 error if no username is posted' do
@@ -265,7 +289,7 @@ describe app do
 
 			before do
 				data = '{"username": "' + random_username + '", "phone": "' + random_phone + '", "password": "password"}'
-				post "/person/new", data
+				post "/person/new", data, {"Authorization" => "Bearer #{@app_token}"}
 			end
 
 			it 'must return a 403 error if no email is posted' do
@@ -283,7 +307,7 @@ describe app do
 
 			before do
 				data = '{"username": "' + random_username + '", "email": "' + random_email + '", "phone": "' + random_phone + '", "password": ""}'
-				post "/person/new", data
+				post "/person/new", data, {"Authorization" => "Bearer #{@app_token}"}
 			end
 
 			it 'must return a 403 error if no password is posted' do
@@ -296,6 +320,16 @@ describe app do
 			end
 
 		end
+
+    describe 'unauthorized request' do
+
+      it 'must return a 403 status if the request is not authorized' do
+        username = random_username
+        data = '{"username": "' + username + '", "phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
+        post "/person/new", data, {"Authorization" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 403
+      end
+    end
 
 	end
 

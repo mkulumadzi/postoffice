@@ -31,32 +31,42 @@ def get_payload_from_authorization_header request
   end
 end
 
+def unauthorized request, required_scope
+  payload = get_payload_from_authorization_header request
+  if payload["scope"] == nil
+    return true
+  elsif payload["scope"].include? required_scope
+    return false
+  else
+    return true
+  end
+end
+
 # Create a new person
-# Scope: create_person
+# Scope: create-person
 post '/person/new' do
   content_type :json
 
-  data = JSON.parse request.body.read
+  if unauthorized(request, "create-person")
+    return [403, nil, nil]
+  end
 
   begin
+    data = JSON.parse request.body.read
     person = Postoffice::PersonService.create_person data
     Postoffice::MailService.generate_welcome_message person
-
     person_link = "#{ENV['POSTOFFICE_BASE_URL']}/person/id/#{person.id}"
 
-    status = 201
     headers = { "location" => person_link }
+    [201, headers, nil]
   rescue Moped::Errors::OperationFailure => error
-    status = 403
-
-    #To Do: Generate this message dynamically based on the type of violation
     response_body = Hash["message", "An account with that username already exists!"].to_json
+    [403, nil, response_body]
   rescue RuntimeError => error
     status = 403
     response_body = Hash["message", error.to_s].to_json
+    [403, nil, response_body]
   end
-
-  [status, headers, response_body]
 
 end
 
