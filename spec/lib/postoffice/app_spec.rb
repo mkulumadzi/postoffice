@@ -20,7 +20,68 @@ describe app do
 		@mail3 = create(:mail, from: @person3.username, to: @person1.username)
 
 		@mail4 = build(:mail, from: @person1.username, to: @person2.username)
+
+    @admin_token = Postoffice::AuthService.get_admin_token
+    @app_token = Postoffice::AuthService.get_app_token
 	end
+
+  describe 'convenience methods' do
+
+    describe 'get payload from request bearer' do
+
+      describe 'get a valid token' do
+
+        before do
+          get "/", nil, {"Authorization" => "Bearer #{@admin_token}"}
+          @payload = get_payload_from_authorization_header last_request
+        end
+
+        it 'must get return the payload of the auth token included in the header as a hash' do
+          @payload.must_be_instance_of Hash
+        end
+
+        it 'must include the scope in the payload' do
+          @payload["scope"].must_equal Postoffice::AuthService.get_scopes_for_user_type "admin"
+        end
+
+      end
+
+      describe 'invalid tokens' do
+
+        it 'must return a message if the token has expired' do
+          expiring_payload = { :data => "test", :exp => Time.now.to_i - 60 }
+          expiring_token = Postoffice::AuthService.generate_token expiring_payload
+          get "/", nil, {"Authorization" => "Bearer #{expiring_token}"}
+
+          get_payload_from_authorization_header(last_request).must_equal "Token expired"
+        end
+
+        it 'must return an error message if the token is invalid' do
+          invalid_token = "abc.123.def"
+          get "/", nil, {"Authorization" => "Bearer #{invalid_token}"}
+
+          get_payload_from_authorization_header(last_request).must_equal "Token is invalid"
+        end
+
+        it 'must raise an error message if the token is not signed by the correct certificate' do
+          rsa_private = OpenSSL::PKey::RSA.generate 2048
+          payload = { :data => "test" }
+          token = JWT.encode payload, rsa_private, 'RS256'
+          get "/", nil, {"Authorization" => "Bearer #{token}"}
+
+          get_payload_from_authorization_header(last_request).must_equal "Invalid token signature"
+        end
+
+        it 'must return an error message if the Authorization header is not provided' do
+          get "/"
+          get_payload_from_authorization_header(last_request).must_equal "No token provided"
+        end
+
+      end
+
+    end
+
+  end
 
 	describe 'app_root' do
 
