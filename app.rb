@@ -411,9 +411,13 @@ end
 
 get '/image/*' do
 
-  uid = params['splat'][0]
-  name = uid.split('/').last
-  image = Dragonfly.app.fetch(uid).encode('jpg')
-  image.name = name
-  image.to_response
+  begin
+    uid = params['splat'][0]
+    name = uid.split('/').last
+    image = Dragonfly.app.fetch(uid).encode('jpg')
+    image.name = name
+    image.to_response
+  rescue Dragonfly::Job::Fetch::NotFound
+    [404, nil, nil]
+  end
 end
