@@ -321,24 +321,24 @@ describe app do
 
 				data = '{"username": "' + @user.username + '", "password": "password"}'
 				post "/login", data
-				@person_json = JSON.parse(last_response.body)
+				@response = JSON.parse(last_response.body)
 			end
 
 			it 'must return a 200 status code' do
 				last_response.status.must_equal 200
 			end
 
-			it 'must include the person id in the response body' do
-				BSON::ObjectId.from_string(@person_json["_id"]["$oid"]).must_equal @user.id
-			end
+      describe 'response body' do
 
-			it 'must include the username in the response body' do
-				@person_json["username"].must_equal @user.username
-			end
+        it 'must include the token in the response body' do
+          @response["access_token"].must_be_instance_of String
+        end
 
-			it 'must include the name in the response body' do
-				@person_json["name"].must_equal @user.name
-			end
+  			it 'must include the person record in the response body, including the id' do
+  				BSON::ObjectId.from_string(@response["person"]["_id"]["$oid"]).must_equal @user.id
+  			end
+
+      end
 
 			describe 'incorrect password' do
 

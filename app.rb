@@ -59,7 +59,7 @@ post '/login' do
     person = Postoffice::LoginService.check_login data
     if person
       status = 200
-      response_body = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
+      response_body = Postoffice::LoginService.response_for_successful_login person
     else
       status = 401
     end

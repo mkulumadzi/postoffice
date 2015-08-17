@@ -48,6 +48,14 @@ module Postoffice
 			end
 		end
 
+		def self.response_for_successful_login person
+			token = self.generate_token_for_person person
+			exp_in = 3600 * 24 * 72
+			person_json = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
+			response = '{"access_token": "' + token + '", "token_type": "bearer", "expires_in": "' + exp_in.to_s + '", "person": ' + person_json + '}'
+			response
+		end
+
 		def self.reset_password id, data
 
 			person = Postoffice::Person.find(id)

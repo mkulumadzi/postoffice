@@ -85,6 +85,34 @@ describe Postoffice::LoginService do
 
 			end
 
+			describe 'generate response body for route' do
+
+				before do
+					@response = JSON.parse(Postoffice::LoginService.response_for_successful_login @person)
+				end
+
+				it 'must include a token as a string in the response' do
+					@response["access_token"].must_be_instance_of String
+				end
+
+				it 'must specify that the token type is bearer' do
+					@response["token_type"].must_equal "bearer"
+				end
+
+				it 'must indicate that the token will expire in 3 months' do
+					@response["expires_in"].to_i.must_equal 3600 * 24 * 72
+				end
+
+				it 'must include the person record as a document' do
+					@response["person"]["username"].must_equal @person.username
+				end
+
+				it 'must not include sensitive fields like the users hashed password' do
+					@response["person"]["hashed_password"].must_equal nil
+				end
+
+			end
+
 		end
 
 		describe 'reset password' do
