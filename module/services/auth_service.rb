@@ -42,7 +42,7 @@ module Postoffice
       when "person"
         "can-read can-write"
       when "app"
-        "can-read can-write create-person reset-password bulk-search can-upload get-image"
+        "create-person reset-password"
       when "admin"
         "admin can-read can-write create-person reset-password bulk-search can-upload get-image"
       else

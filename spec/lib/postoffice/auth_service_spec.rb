@@ -27,7 +27,7 @@ describe Postoffice::AuthService do
 
     it 'must return the scope for an app' do
       scope = Postoffice::AuthService.get_scopes_for_user_type "app"
-      scope.must_equal "can-read can-write create-person reset-password bulk-search can-upload get-image"
+      scope.must_equal "create-person reset-password"
     end
 
     it 'must return the scope for an admin' do

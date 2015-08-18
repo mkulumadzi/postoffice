@@ -24,6 +24,7 @@ describe app do
     @admin_token = Postoffice::AuthService.get_admin_token
     @app_token = Postoffice::AuthService.get_app_token
     @person1_token = Postoffice::AuthService.generate_token_for_person @person1
+    @person2_token = Postoffice::AuthService.generate_token_for_person @person2
 	end
 
   describe 'convenience methods' do
@@ -101,6 +102,25 @@ describe app do
 
     end
 
+    describe 'check authorized ownership' do
+
+      it 'must return false if the person_id is in the payload and it has the required scope' do
+        get "/", nil, {"Authorization" => "Bearer #{@person1_token}"}
+        not_authorized_owner(last_request, "can-read", @person1.id.to_s).must_equal false
+      end
+
+      it 'must return true if the person_id is in the payload but it does not have the required scope' do
+        get "/", nil, {"Authorization" => "Bearer #{@person1_token}"}
+        not_authorized_owner(last_request, "create-person", @person1.id.to_s).must_equal true
+      end
+
+      it 'must return true if the person_id is not in the payload' do
+        get "/", nil, {"Authorization" => "Bearer #{@person1_token}"}
+        not_authorized_owner(last_request, "can-read", @person2.id.to_s).must_equal true
+      end
+
+    end
+
   end
 
 	describe 'app_root' do
@@ -123,10 +143,18 @@ describe app do
 
     describe 'look for a field that can be checked (username, email, phone)' do
 
+      describe 'unauthorized request' do
+
+        it 'must return a 403 status' do
+          get "/available?username=user"
+          last_response.status.must_equal 403
+        end
+      end
+
       describe 'valid parameters' do
 
         before do
-          get "/available?username=availableusername"
+          get "/available?username=availableusername", nil, {"Authorization" => "Bearer #{@app_token}"}
         end
 
         it 'must return a 200 status code' do
@@ -143,7 +171,7 @@ describe app do
       describe 'invalid parameters' do
 
         before do
-          get "/available?name=Evan%20Waters"
+          get "/available?name=Evan%20Waters", nil, {"Authorization" => "Bearer #{@app_token}"}
         end
 
         it 'must return a 404 status if the parameters cannot be checked' do
@@ -338,7 +366,7 @@ describe app do
 		describe 'get /person/id/:id' do
 
 			before do
-				get "/person/id/#{@person1.id}"
+				get "/person/id/#{@person1.id}", nil, {"Authorization" => "Bearer #{@person1_token}"}
 				@response = JSON.parse(last_response.body)
 			end
 
@@ -350,29 +378,38 @@ describe app do
 				@response.must_equal expected_json_fields_for_person(@person1)
 			end
 
-		end
+  		describe 'resource not found' do
 
-		describe 'resource not found' do
+  			before do
+  				get "person/id/abc", nil, {"Authorization" => "Bearer #{@admin_token}"}
+  			end
 
-			before do
-				get "person/id/abc"
-			end
+  			it 'must return 404 if the person is not found' do
+  				last_response.status.must_equal 404
+  			end
 
-			it 'must return 404 if the person is not found' do
-				last_response.status.must_equal 404
-			end
+  			it 'must return an empty response body if the person is not found' do
+  				last_response.body.must_equal ""
+  			end
 
-			it 'must return an empty response body if the person is not found' do
-				last_response.body.must_equal ""
-			end
+  		end
 
-		end
+      describe "unauthorized request" do
+
+        it 'must return a 403 status if the request is not authorized' do
+          get "/person/id/#{@person1.id}"
+          last_response.status.must_equal 403
+        end
+
+      end
+
+    end
 
 		describe 'post /person/id/:id' do
 
 			before do
 				data = '{"city": "New York", "state": "NY"}'
-				post "person/id/#{@person1.id}", data
+				post "person/id/#{@person1.id}", data, {"Authorization" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must return a 204 status code' do
@@ -393,13 +430,33 @@ describe app do
 
 		describe 'prevent invalid updates' do
 
-			it 'must raise a 403 error if the username is attempted to be updated' do
+			it 'must return a 403 status if the username is attempted to be updated' do
 				data = '{"username": "new_username"}'
 				post "person/id/#{@person1.id}", data
 				last_response.status.must_equal 403
 			end
 
 		end
+
+    describe 'unauthorized request' do
+
+      it 'must return a 403 status if a user tries to update another person record' do
+        data = '{"city": "New York", "state": "NY"}'
+        post "person/id/#{@person2.id}", data, {"Authorization" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 403
+      end
+
+    end
+
+    describe 'authorize admin' do
+
+      it 'must allow the admin to updtae a person record' do
+        data = '{"city": "New York", "state": "NY"}'
+        post "person/id/#{@person2.id}", data, {"Authorization" => "Bearer #{@admin_token}"}
+        last_response.status.must_equal 204
+      end
+
+    end
 
 	end
 
@@ -408,7 +465,6 @@ describe app do
 		describe 'successful login' do
 
 			before do
-
 				# Creating a person with a password to test login
 				person_attrs = attributes_for(:person)
 				data = Hash["username", random_username, "name", person_attrs[:name], "email", random_email, "phone", random_phone, "password", "password"]
@@ -474,7 +530,7 @@ describe app do
 
 			before do
 				data = '{"old_password": "password", "new_password": "password123"}'
-				post "/person/id/#{@person.id.to_s}/reset_password", data
+				post "/person/id/#{@person.id.to_s}/reset_password", data, {"Authorization" => "Bearer #{@app_token}"}
 			end
 
 			it 'must return a 204 status code' do
@@ -496,7 +552,7 @@ describe app do
 
 			it 'must return a 404 error if the person record cannot be found' do
 				data = '{"old_password": "password", "new_password": "password123"}'
-				post "/person/id/abc123/reset_password", data
+				post "/person/id/abc123/reset_password", data, {"Authorization" => "Bearer #{@app_token}"}
 
 				last_response.status.must_equal 404
 			end
@@ -506,7 +562,7 @@ describe app do
 				before do
 					#Example case: Submit wrong password
 					data = '{"old_password": "wrongpassword", "new_password": "password123"}'
-					post "/person/id/#{@person.id.to_s}/reset_password", data
+					post "/person/id/#{@person.id.to_s}/reset_password", data, {"Authorization" => "Bearer #{@app_token}"}
 				end
 
 				it 'must return a 403 error' do
@@ -522,31 +578,40 @@ describe app do
 
 		end
 
+    describe 'unauthorized request' do
+      it 'must return a 404 status if the request is not authorized' do
+        data = '{"old_password": "password", "new_password": "password123"}'
+        post "/person/id/#{@person.id.to_s}/reset_password", data, {"Authorization" => "Bearer #{@person1_token}"}
+      end
+    end
+
 	end
 
 	describe '/people' do
 
+    before do
+    	get '/people', nil, {"Authorization" => "Bearer #{@admin_token}"}
+    end
+
 		it 'must return a 200 status code' do
-			get '/people'
 			last_response.status.must_equal 200
 		end
 
 		it 'must return a collection with all of the people if no parameters are entered' do
-			get '/people'
 			collection = JSON.parse(last_response.body)
 			num_people = Postoffice::Person.count
 			collection.length.must_equal num_people
 		end
 
 		it 'must return a filtered collection if parameters are given' do
-			get "/people?name=Evan"
+			get "/people?name=Evan", nil, {"Authorization" => "Bearer #{@admin_token}"}
 			expected_number = Postoffice::Person.where(name: "Evan").count
 			actual_number = JSON.parse(last_response.body).count
 			actual_number.must_equal expected_number
 		end
 
 		it 'must return the expected information for a person record' do
-			get "/people?id=#{@person1.id}"
+			get "/people?id=#{@person1.id}", nil, {"Authorization" => "Bearer #{@admin_token}"}
 			people_response = JSON.parse(last_response.body)
 
 			people_response[0].must_equal expected_json_fields_for_person(@person1)
@@ -559,7 +624,7 @@ describe app do
         person_record = Postoffice::Person.find(@person3.id)
         @timestamp = person_record.updated_at
         @timestamp_string = JSON.parse(person_record.as_document.to_json)["updated_at"]
-        get "/people", nil, {"HTTP_SINCE" => @timestamp_string}
+        get "/people", nil, {"HTTP_SINCE" => @timestamp_string, "Authorization" => "Bearer #{@admin_token}"}
       end
 
       it 'must include the timestamp in the header' do
@@ -574,6 +639,12 @@ describe app do
 
     end
 
+    describe 'unauthorized request' do
+      it 'must return a 404 status if the request is not authorized' do
+        get "/people", nil, {"Authorization" => "Bearer #{@app_token}"}
+      end
+    end
+
 	end
 
 	describe '/person/id/:id/mail/new' do
@@ -585,7 +656,7 @@ describe app do
 		describe 'post /person/id/:id/mail/new' do
 
 			before do
-				post "/person/id/#{@person1.id}/mail/new", @mail_data
+				post "/person/id/#{@person1.id}/mail/new", @mail_data, {"Authorization" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must get a status of 201' do
@@ -606,7 +677,7 @@ describe app do
 
 			before do
 				from_id = 'abc'
-				post "/person/id/#{from_id}/mail/new", @mail_data
+				post "/person/id/#{from_id}/mail/new", @mail_data, {"Authorization" => "Bearer #{@admin_token}"}
 			end
 
 			it 'should return a 404 status' do
@@ -619,6 +690,14 @@ describe app do
 
 		end
 
+    describe 'unauthorized request' do
+
+      it 'must return a 403 error if a person tries to create mail for another user id' do
+        post "/person/id/#{@person2.id}/mail/new", @mail_data, {"Authorization" => "Bearer #{@person1_token}"}
+      end
+
+    end
+
 	end
 
 	describe '/person/id/:id/mail/send' do
@@ -630,7 +709,7 @@ describe app do
 		describe 'post /person/id/:id/mail/send' do
 
 			before do
-				post "/person/id/#{@person1.id}/mail/send", @mail_data
+				post "/person/id/#{@person1.id}/mail/send", @mail_data, {"Authorization" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must get a status of 201' do
@@ -653,45 +732,77 @@ describe app do
 
 		end
 
+    describe 'unauthorized request' do
+
+      it 'must return a 403 error if a person tries to create mail for another user id' do
+        post "/person/id/#{@person2.id}/mail/new", @mail_data, {"Authorization" => "Bearer #{@person1_token}"}
+      end
+
+    end
+
 	end
 
 	describe '/mail/id/:id' do
 
 		describe 'get /mail/id/:id' do
 
+      before do
+        get "/mail/id/#{@mail1.id}", nil, {"Authorization" => "Bearer #{@person1_token}"}
+      end
+
 			it 'must return a 200 status code' do
-				get "/mail/id/#{@mail1.id}"
 				last_response.status.must_equal 200
 			end
 
 			it 'must return the expected JSON document for the mail in the response body' do
-				get "/mail/id/#{@mail1.id}"
 				response = JSON.parse(last_response.body)
 				response.must_equal expected_json_fields_for_mail(@mail1)
 			end
 
-		end
+      describe 'resource not found' do
 
-		describe 'resource not found' do
+        before do
+          get "mail/id/abc", nil, {"Authorization" => "Bearer #{@admin_token}"}
+        end
 
-			before do
-				get "mail/id/abc"
-			end
+        it 'must return 404 if the mail is not found' do
+          last_response.status.must_equal 404
+        end
 
-			it 'must return 404 if the mail is not found' do
-				last_response.status.must_equal 404
-			end
+        it 'must return an empty response body if the mail is not found' do
+          last_response.body.must_equal ""
+        end
 
-			it 'must return an empty response body if the mail is not found' do
-				last_response.body.must_equal ""
-			end
+      end
+
+      describe 'request authorization' do
+
+        it 'must allow a person who sent the mail to get it' do
+          mail = create(:mail, from: @person1.username, to: @person2.username)
+          get "/mail/id/#{@mail1.id}", nil, {"Authorization" => "Bearer #{@person1_token}"}
+          last_response.status.must_equal 200
+        end
+
+        it 'must allow a person who received the mail to get it' do
+          mail = create(:mail, from: @person2.username, to: @person1.username)
+          get "/mail/id/#{@mail1.id}", nil, {"Authorization" => "Bearer #{@person1_token}"}
+          last_response.status.must_equal 200
+        end
+
+        it 'must not allow a person to get the mail if they did not send or receive it' do
+          mail = create(:mail, from: @person2.username, to: @person3.username)
+          get "/mail/id/#{mail.id}", nil, {"Authorization" => "Bearer #{@person1_token}"}
+          last_response.status.must_equal 403
+        end
+
+      end
 
 		end
 
 		describe 'post /mail/id/:id/send' do
 
 			before do
-				post "/mail/id/#{@mail1.id}/send"
+				post "/mail/id/#{@mail1.id}/send", nil, {"Authorization" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must send the mail' do
@@ -715,7 +826,7 @@ describe app do
 			describe 'try to send mail that has already been sent' do
 
 				before do
-					post "/mail/id/#{@mail1.id}/send"
+					post "/mail/id/#{@mail1.id}/send", nil, {"Authorization" => "Bearer #{@person1_token}"}
 				end
 
 				it 'must return a 403 status' do
@@ -730,10 +841,10 @@ describe app do
 
 		end
 
-		describe 'send to a missing piece of mail' do
+		describe 'send a missing piece of mail' do
 
 			before do
-				post "/mail/id/abc/send"
+				post "/mail/id/abc/send", nil, {"Authorization" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must return 404 if the mail is not found' do
@@ -746,32 +857,40 @@ describe app do
 
 		end
 
-		describe 'post /mail/id/:id/deliver' do
+    describe 'unauthorized request' do
 
-			before do
-				post "/mail/id/#{@mail1.id}/send"
-				post "/mail/id/#{@mail1.id}/deliver"
-			end
+      it 'must return a 403 status if a person tries to send a piece of mail that does not belong to them' do
+        post "/mail/id/#{@mail1.id}/send", nil, {"Authorization" => "Bearer #{@person2_token}"}
+        last_response.status.must_equal 403
+      end
+    end
 
-			it 'must be scheduled to arrive in the past' do
-				mail = Postoffice::Mail.find(@mail1.id)
-				assert_operator mail.scheduled_to_arrive, :<=, Time.now
-			end
+  end
 
-			it 'must return a 204 status code' do
-				last_response.status.must_equal 204
-			end
+	describe 'post /mail/id/:id/deliver' do
 
-			it 'must return an empty response body' do
-				last_response.body.must_equal ""
-			end
+		before do
+			post "/mail/id/#{@mail1.id}/send", nil, {"Authorization" => "Bearer #{@person1_token}"}
+			post "/mail/id/#{@mail1.id}/deliver", nil, {"Authorization" => "Bearer #{@person1_token}"}
+		end
 
+		it 'must be scheduled to arrive in the past' do
+			mail = Postoffice::Mail.find(@mail1.id)
+			assert_operator mail.scheduled_to_arrive, :<=, Time.now
+		end
+
+		it 'must return a 204 status code' do
+			last_response.status.must_equal 204
+		end
+
+		it 'must return an empty response body' do
+			last_response.body.must_equal ""
 		end
 
 		describe 'try to deliver mail that has not been sent' do
 
 			before do
-				post "/mail/id/#{@mail1.id}/deliver"
+				post "/mail/id/#{@mail2.id}/deliver", nil, {"Authorization" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must return a 403 status' do
@@ -787,7 +906,7 @@ describe app do
 		describe 'send to a missing piece of mail' do
 
 			before do
-				post "/mail/id/abc/deliver"
+				post "/mail/id/abc/deliver", nil, {"Authorization" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must return 404 if the mail is not found' do
@@ -804,25 +923,27 @@ describe app do
 
 	describe '/mail' do
 
+    before do
+			get '/mail', nil, {"Authorization" => "Bearer #{@admin_token}"}
+    end
+
 		it 'must return a 200 status code' do
-			get '/mail'
 			last_response.status.must_equal 200
 		end
 
 		it 'must return a collection with all of the mail if no parameters are entered' do
-			get '/mail'
 			response = JSON.parse(last_response.body)
 			response.count.must_equal Postoffice::Mail.count
 		end
 
 		it 'must return a filtered collection if parameters are given' do
-			get "/mail?from=#{@person1.username}"
+			get "/mail?from=#{@person1.username}", nil, {"Authorization" => "Bearer #{@admin_token}"}
 			response = JSON.parse(last_response.body)
 			response.count.must_equal Postoffice::Mail.where(from: @person1.username).count
 		end
 
 		it 'must return the expected fields for the mail' do
-			get "/mail?id=#{@mail1.id}"
+			get "/mail?id=#{@mail1.id}", nil, {"Authorization" => "Bearer #{@admin_token}"}
 			response = JSON.parse(last_response.body)
 			response[0].must_equal expected_json_fields_for_mail(@mail1)
 		end
@@ -834,7 +955,7 @@ describe app do
         mail_record = Postoffice::Mail.find(@mail1.id)
         @timestamp = mail_record.updated_at
         @timestamp_string = JSON.parse(mail_record.as_document.to_json)["updated_at"]
-        get "/mail", nil, {"HTTP_SINCE" => @timestamp_string}
+        get "/mail", nil, {"HTTP_SINCE" => @timestamp_string,"Authorization" => "Bearer #{@admin_token}"}
       end
 
       it 'must include the timestamp in the header' do
@@ -862,20 +983,19 @@ describe app do
 			@mail2.mail_it
 			@mail2.save
 
+      get "/person/id/#{@person2.id}/mailbox", nil, {"Authorization" => "Bearer #{@person2_token}"}
+
 		end
 
 		it 'must return a collection of mail that has arrived' do
-			get "/person/id/#{@person2.id}/mailbox"
 			last_response.body.must_include @mail1.id
 		end
 
 		it 'must not return any mail that has not yet arrived' do
-			get "/person/id/#{@person2.id}/mailbox"
 			last_response.body.match(/#{@mail2.id}/).must_equal nil
 		end
 
 		it 'must return the expected fields for the mail' do
-			get "/person/id/#{@person2.id}/mailbox"
 			response = JSON.parse(last_response.body)
 			mail = get_mail_object_from_mail_response response[0]
 
@@ -888,20 +1008,18 @@ describe app do
 
 		before do
 			@mail1.mail_it
+      get "/person/id/#{@person1.id}/outbox", nil, {"Authorization" => "Bearer #{@person1_token}"}
 		end
 
 		it 'must return a collection of mail that has been sent by the user' do
-			get "/person/id/#{@person1.id}/outbox"
 			last_response.body.must_include @mail1.id
 		end
 
 		it 'must not include mail that was sent by someone else' do
-			get "/person/id/#{@person2.id}/outbox"
-			last_response.body.match(/#{@mail1.id}/).must_equal nil
+			last_response.body.match(/#{@mail3.id}/).must_equal nil
 		end
 
 		it 'must return the expected fields for the mail' do
-			get "/person/id/#{@person1.id}/outbox"
 			response = JSON.parse(last_response.body)
 			mail = get_mail_object_from_mail_response response[0]
 
@@ -917,7 +1035,7 @@ describe app do
 			@mail1.deliver_now
 			@mail1.update_delivery_status
 
-			post "/mail/id/#{@mail1.id}/read"
+			post "/mail/id/#{@mail1.id}/read", nil, {"Authorization" => "Bearer #{@person2_token}"}
 		end
 
 		it 'must mark the mail as read' do
@@ -953,7 +1071,7 @@ describe app do
 	describe '/person/id/:id/contacts' do
 
 		before do
-			get "/person/id/#{@person1.id}/contacts"
+			get "/person/id/#{@person1.id}/contacts", nil, {"Authorization" => "Bearer #{@person1_token}"}
 			@response = JSON.parse(last_response.body)
 		end
 
@@ -975,7 +1093,7 @@ describe app do
 		describe 'document not found' do
 
 			it 'must return a 404 status code' do
-				get '/person/id/abc123/contacts'
+				get '/person/id/abc123/contacts', nil, {"Authorization" => "Bearer #{@admin_token}"}
 				last_response.status.must_equal 404
 			end
 
@@ -993,7 +1111,7 @@ describe app do
 			@person6 = create(:person, name: @rando_name, username: random_username)
 			@person7 = create(:person, name: @rando_name, username: random_username)
 
-			get "/people/search?term=#{@rando_name}&limit=2"
+			get "/people/search?term=#{@rando_name}&limit=2", nil, {"Authorization" => "Bearer #{@person1_token}"}
 			@response = JSON.parse(last_response.body)
 
 		end
@@ -1024,7 +1142,7 @@ describe app do
 
 			data = '[{"emails": ["'+ @person5.email + '"], "phoneNumbers": ["' + @person5.phone + '"]}, {"emails": ["' + @person6.email + '"], "phoneNumbers": []}, {"emails": [], "phoneNumbers": ["55667"]}]'
 
-			post "/people/bulk_search", data
+			post "/people/bulk_search", data, {"Authorization" => "Bearer #{@person1_token}"}
 
 			@response = JSON.parse(last_response.body)
 		end
@@ -1063,7 +1181,7 @@ describe app do
         @image_file_size = File.size(image_file)
         base64_string = Base64.encode64(image_file.read)
         data = '{"file": "' + base64_string + '", "filename": "image1.jpg"}'
-        post "/upload", data
+        post "/upload", data, {"Authorization" => "Bearer #{@person1_token}"}
         image_file.close
       end
 
@@ -1102,7 +1220,7 @@ describe app do
       data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
       @mail5 = Postoffice::MailService.create_mail @person1.id, data
 
-      get "/mail/id/#{@mail5.id}/image"
+      get "/mail/id/#{@mail5.id}/image", nil, { "Authorization" => "Bearer #{@person1_token}"}
     end
 
     after do
@@ -1124,14 +1242,14 @@ describe app do
     describe 'resize image with thumbnail parameter' do
 
       it 'must resize the image if a thumbnail parameter is given' do
-        get "/mail/id/#{@mail5.id}/image?thumb=400x"
+        get "/mail/id/#{@mail5.id}/image?thumb=400x", nil, { "Authorization" => "Bearer #{@person1_token}"}
         assert_operator last_response.headers["Content-Length"].to_i, :<, @image.size
       end
 
       describe 'unrecognized thumbnail parameter' do
 
         before do
-          get "/mail/id/#{@mail5.id}/image?thumb=foo"
+          get "/mail/id/#{@mail5.id}/image?thumb=foo", nil, { "Authorization" => "Bearer #{@person1_token}"}
         end
 
         it 'must return a 403 status code if an unrecognized thumbnail parameter is entered' do
@@ -1152,7 +1270,7 @@ describe app do
   describe 'attempt to get mail image that does not exist.' do
 
     before do
-      get "/mail/id/#{@mail1.id}/image"
+      get "/mail/id/#{@mail1.id}/image", nil, { "Authorization" => "Bearer #{@person1_token}"}
     end
 
     it 'must return a 404 status' do
@@ -1168,7 +1286,7 @@ describe app do
   describe 'get a list of cards available' do
 
     before do
-      get "/cards"
+      get "/cards", nil, {"Authorization" => "Bearer #{@person1_token}"}
     end
 
     it 'must return a 200 status' do
@@ -1187,7 +1305,7 @@ describe app do
     describe 'get an image' do
 
       before do
-        get "/image/resources/cards/Dhow.jpg"
+        get "/image/resources/cards/Dhow.jpg", nil, {"Authorization" => "Bearer #{@person1_token}"}
       end
 
       it 'must return a 200 status' do
@@ -1213,11 +1331,30 @@ describe app do
     describe 'get an image that does not exist' do
 
       before do
-        get "/image/foo.jpg"
+        get "/image/resources/foo.jpg", nil, {"Authorization" => "Bearer #{@person1_token}"}
       end
 
       it 'must return a 404 status' do
         last_response.status.must_equal 404
+      end
+
+    end
+
+    describe 'get an image that is not in the resources directory' do
+
+      before do
+        image = File.open('spec/resources/image2.jpg')
+        @uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
+      end
+
+      it 'must succeed if the token has admin scope' do
+        get "/image/#{@uid}", nil, {"Authorization" => "Bearer #{@admin_token}"}
+        last_response.status.must_equal 200
+      end
+
+      it 'must fail if the token does not hae admin scope' do
+        get "/image/#{@uid}", nil, {"Authorization" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 403
       end
 
     end
