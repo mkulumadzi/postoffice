@@ -13,9 +13,9 @@ def add_since_to_request_parameters app
 end
 
 def get_payload_from_authorization_header request
-  if request.env["Authorization"] != nil
+  if request.env["HTTP_AUTHORIZATION"] != nil
     begin
-      token_header = request.env["Authorization"]
+      token_header = request.env["HTTP_AUTHORIZATION"]
       token = token_header.split(' ')[1]
       decoded_token = Postoffice::AuthService.decode_token token
       payload = decoded_token[0]
