@@ -121,15 +121,36 @@ describe app do
 
     end
 
+    describe 'get API version from content-type header' do
+
+      it 'must parse the version from the CONTENT_TYPE header if the header begins with application/vnd.postoffice' do
+          get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}", "CONTENT_TYPE" => "application/vnd.postoffice.v2+json"}
+          get_api_version_from_content_type(last_request).must_equal "v2"
+      end
+
+      it 'must return V1 if the version is not included in the CONTENT_TYPE header' do
+        get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+        get_api_version_from_content_type(last_request).must_equal "v1"
+      end
+
+    end
+
   end
 
 	describe 'app_root' do
 
 		describe 'get /' do
+
 			it 'must say hello world' do
 				get '/'
-				last_response.body.must_include "Hello World"
+				last_response.body.must_equal "Hello World!"
 			end
+
+      it 'must say What a Beautiful Morning if the reuest is for v2' do
+        get '/', nil, {"CONTENT_TYPE" => "application/vnd.postoffice.v2+json"}
+        last_response.body.must_equal "What a Beautiful Morning"
+      end
+
 		end
 
 		describe 'POSTOFFICE_BASE_URL' do
@@ -137,6 +158,7 @@ describe app do
 				ENV['POSTOFFICE_BASE_URL'].must_be_instance_of String
 			end
 		end
+
 	end
 
   describe 'get /available' do

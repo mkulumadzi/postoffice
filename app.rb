@@ -1,9 +1,5 @@
 require_relative 'module/postoffice'
 
-get '/' do
-  "Hello World!"
-end
-
 # Convenience Methods
 def add_since_to_request_parameters app
   if app.request.env["HTTP_SINCE"]
@@ -52,6 +48,25 @@ def not_authorized_owner request, required_scope, person_id
     return false
   else
     return true
+  end
+end
+
+def get_api_version_from_content_type request
+  content_type = request.env["CONTENT_TYPE"]
+  if content_type && content_type.include?("application/vnd.postoffice")
+    version = content_type.split('.').last.split('+')[0]
+  else
+    version = "v1"
+  end
+  version
+end
+
+get '/' do
+  version = get_api_version_from_content_type request
+  if version == "v2"
+    "What a Beautiful Morning"
+  else
+    "Hello World!"
   end
 end
 
