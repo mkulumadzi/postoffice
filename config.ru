@@ -3,7 +3,6 @@
 require "rubygems"
 require "bundler/setup"
 require "sinatra"
-require "sinatra/cross_origin"
 require "mongoid"
 require "securerandom"
 require "digest"

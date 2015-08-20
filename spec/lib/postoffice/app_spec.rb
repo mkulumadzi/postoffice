@@ -83,6 +83,26 @@ describe app do
 
     end
 
+    describe 'check options' do
+
+      before do
+        options "/"
+      end
+
+      it 'must indicate that any origin is allowed' do
+        last_response.headers["Access-Control-Allow-Origin"].must_equal "*"
+      end
+
+      it 'must indicate that GET, POST and OPTIONS are allowed' do
+        last_response.headers["Allow"].must_equal "GET,POST,OPTIONS"
+      end
+
+      it 'must indicate which headers are allowed' do
+          last_response.headers["Access-Control-Allow-Headers"].must_equal "X-Requested-With, X-HTTP-Method-Override, Content-Type, Cache-Control, Accept, Authorization"
+      end
+
+    end
+
     describe 'check authorization' do
 
       it 'must return false if the request Authorization includes the required scope' do
@@ -1437,7 +1457,7 @@ describe app do
         last_response.status.must_equal 200
       end
 
-      it 'must fail if the token does not hae admin scope' do
+      it 'must fail if the token does not have admin scope' do
         get "/image/#{@uid}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
         last_response.status.must_equal 401
       end

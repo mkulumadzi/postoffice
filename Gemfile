@@ -22,7 +22,6 @@ gem 'dragonfly-s3_data_store'
 gem 'factory_girl'
 gem 'aws-sdk', '~> 2'
 gem 'jwt'
-gem "sinatra-cross_origin", "~> 0.3.1"
 
 group :test do
 	gem 'turn'

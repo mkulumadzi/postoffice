@@ -75,10 +75,9 @@ get '/' do
 end
 
 options "*" do
-  response.headers["Allow"] = "HEAD,GET,PUT,POST,DELETE,OPTIONS"
+  response.headers["Allow"] = "GET,POST,OPTIONS"
   response.headers["Access-Control-Allow-Headers"] = "X-Requested-With, X-HTTP-Method-Override, Content-Type, Cache-Control, Accept, Authorization"
   response.headers["Access-Control-Allow-Origin"] = "*"
-  response.status = 200
 end
 
 # Create a new person
@@ -209,7 +208,6 @@ end
 # Reset password using a temporary token, via a webapp
 post '/reset_password' do
   content_type :json
-  cross_origin
 
   begin
 
