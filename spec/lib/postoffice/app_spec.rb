@@ -167,9 +167,9 @@ describe app do
 
       describe 'unauthorized request' do
 
-        it 'must return a 403 status' do
+        it 'must return a 401 status' do
           get "/available?username=user"
-          last_response.status.must_equal 403
+          last_response.status.must_equal 401
         end
       end
 
@@ -373,11 +373,11 @@ describe app do
 
     describe 'unauthorized request' do
 
-      it 'must return a 403 status if the request is not authorized' do
+      it 'must return a 401 status if the request is not authorized' do
         username = random_username
         data = '{"username": "' + username + '", "phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
         post "/person/new", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 403
+        last_response.status.must_equal 401
       end
     end
 
@@ -418,9 +418,9 @@ describe app do
 
       describe "unauthorized request" do
 
-        it 'must return a 403 status if the request is not authorized' do
+        it 'must return a 401 status if the request is not authorized' do
           get "/person/id/#{@person1.id}"
-          last_response.status.must_equal 403
+          last_response.status.must_equal 401
         end
 
       end
@@ -454,7 +454,7 @@ describe app do
 
 			it 'must return a 403 status if the username is attempted to be updated' do
 				data = '{"username": "new_username"}'
-				post "person/id/#{@person1.id}", data
+				post "person/id/#{@person1.id}", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 				last_response.status.must_equal 403
 			end
 
@@ -462,10 +462,10 @@ describe app do
 
     describe 'unauthorized request' do
 
-      it 'must return a 403 status if a user tries to update another person record' do
+      it 'must return a 401 status if a user tries to update another person record' do
         data = '{"city": "New York", "state": "NY"}'
         post "person/id/#{@person2.id}", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 403
+        last_response.status.must_equal 401
       end
 
     end
@@ -601,10 +601,10 @@ describe app do
 		end
 
     describe 'unauthorized request' do
-      it 'must return a 403 status if the request is not authorized' do
+      it 'must return a 401 status if the request is not authorized' do
         data = '{"old_password": "password", "new_password": "password123"}'
         post "/person/id/#{@person.id.to_s}/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 403
+        last_response.status.must_equal 401
       end
     end
 
@@ -634,35 +634,35 @@ describe app do
 
     describe 'error conditions' do
 
-      it 'must return a 403 status if the token has expired' do
+      it 'must return a 401 status if the token has expired' do
         payload = Postoffice::AuthService.generate_payload_for_password_reset @person1
         payload[:exp] = Time.now.to_i - 60
         token = Postoffice::AuthService.generate_token payload
         data = '{"password": "password123"}'
         post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
 
-        last_response.status.must_equal 403
+        last_response.status.must_equal 401
       end
 
-      it 'must return a 403 status if the token does not have the reset-password scope' do
+      it 'must return a 401 status if the token does not have the reset-password scope' do
         data = '{"password": "password123"}'
         post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 403
+        last_response.status.must_equal 401
       end
 
-      it 'must return a 403 status if the same token is used twice' do
+      it 'must return a 401 status if the same token is used twice' do
         token = Postoffice::AuthService.generate_password_reset_token @person1
         data = '{"password": "password123"}'
         post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
         post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
-        last_response.status.must_equal 403
+        last_response.status.must_equal 401
       end
 
-      it 'must return a 404 status if the data does not include a "password" field' do
+      it 'must return a 403 status if the data does not include a "password" field' do
         token = Postoffice::AuthService.generate_password_reset_token @person2
         data = '{"wrong": "password123"}'
         post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
-        last_response.status.must_equal 404
+        last_response.status.must_equal 403
       end
 
     end
@@ -722,8 +722,9 @@ describe app do
     end
 
     describe 'unauthorized request' do
-      it 'must return a 404 status if the request is not authorized' do
+      it 'must return a 401 status if the request is not authorized' do
         get "/people", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
+        last_response.status.must_equal 401
       end
     end
 
@@ -774,8 +775,9 @@ describe app do
 
     describe 'unauthorized request' do
 
-      it 'must return a 403 error if a person tries to create mail for another user id' do
+      it 'must return a 401 error if a person tries to create mail for another user id' do
         post "/person/id/#{@person2.id}/mail/new", @mail_data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 401
       end
 
     end
@@ -816,8 +818,9 @@ describe app do
 
     describe 'unauthorized request' do
 
-      it 'must return a 403 error if a person tries to create mail for another user id' do
+      it 'must return a 401 error if a person tries to create mail for another user id' do
         post "/person/id/#{@person2.id}/mail/new", @mail_data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 401
       end
 
     end
@@ -874,7 +877,7 @@ describe app do
         it 'must not allow a person to get the mail if they did not send or receive it' do
           mail = create(:mail, from: @person2.username, to: @person3.username)
           get "/mail/id/#{mail.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-          last_response.status.must_equal 403
+          last_response.status.must_equal 401
         end
 
       end
@@ -941,9 +944,9 @@ describe app do
 
     describe 'unauthorized request' do
 
-      it 'must return a 403 status if a person tries to send a piece of mail that does not belong to them' do
+      it 'must return a 401 status if a person tries to send a piece of mail that does not belong to them' do
         post "/mail/id/#{@mail1.id}/send", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
-        last_response.status.must_equal 403
+        last_response.status.must_equal 401
       end
     end
 
@@ -1137,12 +1140,12 @@ describe app do
 		describe 'error cases' do
 
 			it 'must return a 403 status code if mail does not have DELIVERED status' do
-				post "mail/id/#{@mail2.id}/read"
+				post "mail/id/#{@mail2.id}/read", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
 				last_response.status.must_equal 403
 			end
 
 			it 'must return a 404 status code if the mail cannot be found' do
-				post "mail/id/abc/read"
+				post "mail/id/abc/read", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
 				last_response.status.must_equal 404
 			end
 
@@ -1436,7 +1439,7 @@ describe app do
 
       it 'must fail if the token does not hae admin scope' do
         get "/image/#{@uid}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 403
+        last_response.status.must_equal 401
       end
 
     end

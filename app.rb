@@ -87,7 +87,7 @@ post '/person/new' do
   content_type :json
 
   if unauthorized(request, "create-person")
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -115,7 +115,7 @@ get '/available' do
   content_type :json
 
   if unauthorized(request, "create-person")
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -150,7 +150,7 @@ get '/person/id/:id' do
   content_type :json
 
   if unauthorized(request, "can-read")
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -170,7 +170,7 @@ post '/person/id/:id' do
     data = JSON.parse request.body.read
 
     if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", params[:id])
-      return [403, nil, nil]
+      return [401, nil, nil]
     end
 
     Postoffice::PersonService.update_person params[:id], data
@@ -190,7 +190,7 @@ post '/person/id/:id/reset_password' do
   content_type :json
 
   if unauthorized(request, "reset-password")
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -215,17 +215,17 @@ post '/reset_password' do
 
     # Check the token
     if unauthorized(request, "reset-password")
-      return [403, nil]
+      return [401, nil]
     else
 
       token = get_token_from_authorization_header request
       if Postoffice::AuthService.token_is_invalid(token)
-        return [403, nil]
+        return [401, nil]
       end
 
       data = JSON.parse(request.body.read)
       if data["password"] == nil
-        return [404, nil]
+        return [403, nil]
       end
 
       payload = get_payload_from_authorization_header request
@@ -247,7 +247,7 @@ end
 get '/people' do
 
   if unauthorized(request, "admin")
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   content_type :json
@@ -263,7 +263,7 @@ get '/people/search' do
   content_type :json
 
   if unauthorized(request, "can-read")
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -288,7 +288,7 @@ post '/people/bulk_search' do
   content_type :json
 
   if unauthorized(request, "can-read")
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -315,7 +315,7 @@ post '/person/id/:id/mail/new' do
   data = JSON.parse request.body.read
 
   if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", params[:id])
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -337,7 +337,7 @@ post '/person/id/:id/mail/send' do
   data = JSON.parse request.body.read
 
   if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", params[:id])
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -366,7 +366,7 @@ get '/mail/id/:id' do
     to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
 
     if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", from_id) && not_authorized_owner(request, "can-read", to_id)
-      return [403, nil, nil]
+      return [401, nil, nil]
     end
 
     response_body = mail.as_document.to_json
@@ -390,7 +390,7 @@ get '/mail/id/:id/image' do
       to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
 
       if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", from_id) && not_authorized_owner(request, "can-read", to_id)
-        return [403, nil, nil]
+        return [401, nil, nil]
       end
 
       Postoffice::FileService.fetch_image(mail.image_uid, params).to_response
@@ -408,7 +408,7 @@ get '/mail' do
   content_type :json
 
   if unauthorized(request, "admin")
-    return [403, nil]
+    return [401, nil]
   end
 
   add_since_to_request_parameters self
@@ -426,7 +426,7 @@ post '/mail/id/:id/send' do
 
     from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
     if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", from_id)
-      return [403, nil]
+      return [401, nil]
     end
 
     mail.mail_it
@@ -448,7 +448,7 @@ post '/mail/id/:id/deliver' do
 
     from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
     if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", from_id)
-      return [403, nil]
+      return [401, nil]
     end
 
     mail.deliver_now
@@ -471,7 +471,7 @@ post '/mail/id/:id/read' do
 
     to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
     if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", to_id)
-      return [403, nil]
+      return [401, nil]
     end
 
     mail.read
@@ -492,7 +492,7 @@ get '/person/id/:id/mailbox' do
   add_since_to_request_parameters self
 
   if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", params[:id])
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -512,7 +512,7 @@ get '/person/id/:id/outbox' do
 
   begin
     if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", params[:id])
-      return [403, nil, nil]
+      return [401, nil, nil]
     end
 
     response_body = Postoffice::MailService.outbox(params).to_json
@@ -529,7 +529,7 @@ get '/person/id/:id/contacts' do
   content_type :json
 
   if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", params[:id])
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -549,7 +549,7 @@ post '/upload' do
   data = JSON.parse request.body.read.gsub("\n", "")
 
   if unauthorized(request, "can-write")
-    return [403, nil, nil]
+    return [401, nil, nil]
   end
 
   begin
@@ -572,7 +572,7 @@ get '/cards' do
   content_type :json
 
   if unauthorized(request, "can-read")
-    return [403, nil]
+    return [401, nil]
   end
 
   response_body = Postoffice::FileService.get_cards.to_json
@@ -588,9 +588,9 @@ get '/image/*' do
     uid = params['splat'][0]
 
     if uid.include?("resources") == false && unauthorized(request, "admin")
-      return [403, nil]
+      return [401, nil]
     elsif unauthorized(request, "can-read")
-      return [403, nil]
+      return [401, nil]
     end
 
     name = uid.split('/').last
