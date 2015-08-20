@@ -165,6 +165,47 @@ describe Postoffice::AuthService do
 
     end
 
+		describe 'temporary password reset token' do
+
+			describe 'payload' do
+
+				before do
+					@payload = Postoffice::AuthService.generate_payload_for_password_reset @person
+				end
+
+				it 'must include the person id' do
+					@payload[:id].must_equal @person.id.to_s
+				end
+
+				it 'must be limited to the reset-password scope' do
+					@payload[:scope].must_equal "reset-password"
+				end
+
+				it 'must expire in 24 hours' do
+					@payload[:exp].must_equal Time.now.to_i + 3600 * 24
+				end
+
+			end
+
+			describe 'token' do
+
+				before do
+					token = Postoffice::AuthService.generate_password_reset_token @person
+					@token_payload = Postoffice::AuthService.decode_token token
+				end
+
+				it 'must generate a JWT token' do
+					@token_payload[1]["typ"].must_equal "JWT"
+				end
+
+				it 'must include the password_reset_payload for the person, including a token that will expire in 24 hours' do
+					@token_payload[0]["exp"].must_equal Time.now.to_i + 3600 * 24
+				end
+
+			end
+
+		end
+
 	end
 
 end

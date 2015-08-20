@@ -56,7 +56,14 @@ module Postoffice
 			response
 		end
 
-		def self.reset_password id, data
+		def self.reset_password person, password
+			salt = Postoffice::LoginService.salt
+			person.salt = salt
+			person.hashed_password = Postoffice::LoginService.hash_password password, salt
+			person.save
+		end
+
+		def self.password_reset_by_user id, data
 
 			person = Postoffice::Person.find(id)
 
@@ -67,10 +74,7 @@ module Postoffice
 			elsif person.hashed_password != self.hash_password(data["old_password"], person.salt)
 				raise "Existing password is incorrect"
 			else
-				salt = Postoffice::LoginService.salt
-				person.salt = salt
-				person.hashed_password = Postoffice::LoginService.hash_password data["new_password"], salt
-				person.save
+				self.reset_password person, data["new_password"]
 			end
 
 		end

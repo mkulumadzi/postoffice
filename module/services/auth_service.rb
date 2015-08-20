@@ -20,10 +20,49 @@ module Postoffice
 			Time.now.to_i + 3600 * 24 * 72
 		end
 
+		def self.get_scopes_for_user_type user_type
+			case user_type
+			when "person"
+				"can-read can-write"
+			when "app"
+				"create-person reset-password"
+			when "admin"
+				"admin can-read can-write create-person reset-password bulk-search can-upload get-image"
+			else
+				nil
+			end
+		end
+
+		def self.generate_payload_for_user_type user_type
+			raise "Unrecognized user type" unless user_type == "app" || user_type == "admin"
+			scope = self.get_scopes_for_user_type user_type
+			payload = {:scope => scope }
+		end
+
 		def self.generate_payload_for_person person
 			exp = self.generate_expiration_date_for_token
-      scope = self.get_scopes_for_user_type "person"
+			scope = self.get_scopes_for_user_type "person"
 			{:id => person.id.to_s, :exp => exp, :scope => scope}
+		end
+
+		def self.generate_payload_for_password_reset person
+			exp = Time.now.to_i + 3600 * 24
+			{:id => person.id.to_s, :exp => exp, :scope => "reset-password"}
+		end
+
+		def self.generate_token payload
+			rsa_private = self.get_private_key
+			token = JWT.encode payload, rsa_private, 'RS256'
+		end
+
+		def self.get_admin_token
+			payload = self.generate_payload_for_user_type "admin"
+			self.generate_token payload
+		end
+
+		def self.get_app_token
+			payload = self.generate_payload_for_user_type "app"
+			self.generate_token payload
 		end
 
 		def self.generate_token_for_person person
@@ -32,39 +71,11 @@ module Postoffice
 			token
 		end
 
-    def self.generate_token payload
-      rsa_private = self.get_private_key
-      token = JWT.encode payload, rsa_private, 'RS256'
-    end
-
-    def self.get_scopes_for_user_type user_type
-      case user_type
-      when "person"
-        "can-read can-write"
-      when "app"
-        "create-person reset-password"
-      when "admin"
-        "admin can-read can-write create-person reset-password bulk-search can-upload get-image"
-      else
-        nil
-      end
-    end
-
-    def self.generate_payload_for_user_type user_type
-      raise "Unrecognized user type" unless user_type == "app" || user_type == "admin"
-      scope = self.get_scopes_for_user_type user_type
-      payload = {:scope => scope }
-    end
-
-    def self.get_admin_token
-      payload = self.generate_payload_for_user_type "admin"
-      self.generate_token payload
-    end
-
-    def self.get_app_token
-      payload = self.generate_payload_for_user_type "app"
-      self.generate_token payload
-    end
+		def self.generate_password_reset_token person
+			payload = self.generate_payload_for_password_reset person
+			token = self.generate_token payload
+			token
+		end
 
     def self.decode_token token
       public_key = Postoffice::AuthService.get_public_key

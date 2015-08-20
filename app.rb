@@ -184,13 +184,32 @@ post '/person/id/:id/reset_password' do
 
   begin
     data = JSON.parse(request.body.read)
-    Postoffice::LoginService.reset_password params[:id], data
+    Postoffice::LoginService.password_reset_by_user params[:id], data
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
   rescue RuntimeError => error
     response_body = Hash["message", error.to_s].to_json
     [403, response_body]
+  end
+
+end
+
+# Reset password using a temporary token, via a webapp
+post '/reset_password' do
+  content_type :json
+
+  begin
+    # Check the token
+    if unauthorized(request, "reset-password")
+      return [403, nil]
+    else
+      payload = get_payload_from_authorization_header request
+      person = Postoffice::Person.find(payload["id"])
+      data = JSON.parse(request.body.read)
+      Postoffice::LoginService.reset_password person, data["password"]
+      [204, nil]
+    end
   end
 
 end
@@ -442,6 +461,7 @@ end
 # Scope: admin OR (can-read, is person)
 get '/person/id/:id/mailbox' do
   content_type :json
+
   add_since_to_request_parameters self
 
   if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", params[:id])

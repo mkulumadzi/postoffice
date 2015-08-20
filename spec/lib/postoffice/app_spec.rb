@@ -601,13 +601,53 @@ describe app do
 		end
 
     describe 'unauthorized request' do
-      it 'must return a 404 status if the request is not authorized' do
+      it 'must return a 403 status if the request is not authorized' do
         data = '{"old_password": "password", "new_password": "password123"}'
         post "/person/id/#{@person.id.to_s}/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 403
       end
     end
 
 	end
+
+  describe '/reset_password' do
+
+    before do
+      token = Postoffice::AuthService.generate_password_reset_token @person1
+      data = '{"password": "password123"}'
+      post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+    end
+
+    it 'must return a 204 status' do
+      last_response.status.must_equal 204
+    end
+
+    it 'must reset the password' do
+      new_person_record = Postoffice::Person.find(@person1.id)
+      new_person_record.hashed_password.must_equal Postoffice::LoginService.hash_password "password123", new_person_record.salt
+    end
+
+    describe 'error conditions' do
+
+      it 'must return a 403 status if the token has expired' do
+        payload = Postoffice::AuthService.generate_payload_for_password_reset @person1
+        payload[:exp] = Time.now.to_i - 60
+        token = Postoffice::AuthService.generate_token payload
+        data = '{"password": "password123"}'
+        post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+
+        last_response.status.must_equal 403
+      end
+
+      it 'must return a 403 status if the token does not have the reset-password scope' do
+        data = '{"password": "password123"}'
+        post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 403
+      end
+
+    end
+
+  end
 
 	describe '/people' do
 

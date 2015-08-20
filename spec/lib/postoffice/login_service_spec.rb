@@ -114,11 +114,23 @@ describe Postoffice::LoginService do
 
 		end
 
-		describe 'reset password' do
+		describe 'reset password for a person' do
+
+			it 'must set the hashed password using the new password and a salt' do
+				new_password = "password123"
+				Postoffice::LoginService.reset_password @person, new_password
+				updated_record = Postoffice::Person.find(@person.id)
+				updated_record.hashed_password.must_equal Postoffice::LoginService.hash_password new_password, updated_record.salt
+			end
+
+
+		end
+
+		describe 'user resets the password' do
 
 			it 'must store the new hashed password and salt if the correct old password is submitted' do
 				data = Hash["old_password", "password", "new_password", "password123"]
-				Postoffice::LoginService.reset_password @person.id, data
+				Postoffice::LoginService.password_reset_by_user @person.id, data
 
 				person = Postoffice::Person.find(@person.id)
 				person.hashed_password.must_equal Postoffice::LoginService.hash_password "password123", person.salt
@@ -128,7 +140,7 @@ describe Postoffice::LoginService do
 				data = Hash["old_password", "wrongpassword", "new_password", "password123"]
 
 				assert_raises RuntimeError do
-					Postoffice::LoginService.reset_password @person.id, data
+					Postoffice::LoginService.password_reset_by_user @person.id, data
 				end
 			end
 
@@ -136,7 +148,7 @@ describe Postoffice::LoginService do
 				data = Hash["old_password", "password", "new_password", ""]
 
 				assert_raises RuntimeError do
-					Postoffice::LoginService.reset_password @person.id, data
+					Postoffice::LoginService.password_reset_by_user @person.id, data
 				end
 			end
 
@@ -144,7 +156,7 @@ describe Postoffice::LoginService do
 				data = Hash["old_password", "password"]
 
 				assert_raises RuntimeError do
-					Postoffice::LoginService.reset_password @person.id, data
+					Postoffice::LoginService.password_reset_by_user @person.id, data
 				end
 			end
 
@@ -152,7 +164,7 @@ describe Postoffice::LoginService do
 				data = Hash["old_password", "password", "new_password", ""]
 
 				assert_raises RuntimeError do
-					Postoffice::LoginService.reset_password @person.id, data
+					Postoffice::LoginService.password_reset_by_user @person.id, data
 				end
 			end
 
