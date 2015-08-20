@@ -613,9 +613,9 @@ describe app do
   describe '/reset_password' do
 
     before do
-      token = Postoffice::AuthService.generate_password_reset_token @person1
+      @token = Postoffice::AuthService.generate_password_reset_token @person1
       data = '{"password": "password123"}'
-      post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+      post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@token}"}
     end
 
     it 'must return a 204 status' do
@@ -625,6 +625,11 @@ describe app do
     it 'must reset the password' do
       new_person_record = Postoffice::Person.find(@person1.id)
       new_person_record.hashed_password.must_equal Postoffice::LoginService.hash_password "password123", new_person_record.salt
+    end
+
+    it 'must flag the token as invalid so that it cannot be used again' do
+      db_token = Postoffice::Token.find_by(value: @token)
+      db_token.is_invalid.must_equal true
     end
 
     describe 'error conditions' do
@@ -643,6 +648,21 @@ describe app do
         data = '{"password": "password123"}'
         post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
         last_response.status.must_equal 403
+      end
+
+      it 'must return a 403 status if the same token is used twice' do
+        token = Postoffice::AuthService.generate_password_reset_token @person1
+        data = '{"password": "password123"}'
+        post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+        post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+        last_response.status.must_equal 403
+      end
+
+      it 'must return a 404 status if the data does not include a "password" field' do
+        token = Postoffice::AuthService.generate_password_reset_token @person2
+        data = '{"wrong": "password123"}'
+        post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+        last_response.status.must_equal 404
       end
 
     end

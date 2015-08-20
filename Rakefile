@@ -19,6 +19,7 @@ task :create_indexes do
 
 	Mongoid.load!("config/mongoid.yml")
 	Postoffice::Person.create_indexes
+	Postoffice::Token.create_indexes
 
 end
 
@@ -26,6 +27,7 @@ task :remove_indexes do
 
   Mongoid.load!("config/mongoid.yml")
   Postoffice::Person.remove_indexes
+	Postoffice::Token.remove_indexes
 
 end
 

@@ -206,6 +206,35 @@ describe Postoffice::AuthService do
 
 		end
 
+		describe 'check if a token is invalid' do
+
+			before do
+				@token1 = Postoffice::AuthService.generate_password_reset_token @person
+				db_token1 = Postoffice::Token.new(value: @token1)
+				db_token1.save
+				db_token1.mark_as_invalid
+			end
+
+			it 'must return true if the token is invalid' do
+				Postoffice::AuthService.token_is_invalid(@token1).must_equal true
+			end
+
+			it 'must return false if the token is valid' do
+				person2 = build(:person, username: random_username)
+				token2 = Postoffice::AuthService.generate_password_reset_token person2
+				db_token2 = Postoffice::Token.new(value: token2)
+				db_token2.save
+				Postoffice::AuthService.token_is_invalid(token2).must_equal false
+			end
+
+			it 'must return false if the token has not been saved to the database yet' do
+				person3 = build(:person, username: random_username)
+				token3 = Postoffice::AuthService.generate_password_reset_token person3
+				Postoffice::AuthService.token_is_invalid(token3).must_equal false
+			end
+
+		end
+
 	end
 
 end

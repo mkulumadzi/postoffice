@@ -8,11 +8,15 @@ def add_since_to_request_parameters app
   end
 end
 
+def get_token_from_authorization_header request
+  token_header = request.env["HTTP_AUTHORIZATION"]
+  token_header.split(' ')[1]
+end
+
 def get_payload_from_authorization_header request
   if request.env["HTTP_AUTHORIZATION"] != nil
     begin
-      token_header = request.env["HTTP_AUTHORIZATION"]
-      token = token_header.split(' ')[1]
+      token = get_token_from_authorization_header request
       decoded_token = Postoffice::AuthService.decode_token token
       payload = decoded_token[0]
     rescue JWT::ExpiredSignature
@@ -204,10 +208,24 @@ post '/reset_password' do
     if unauthorized(request, "reset-password")
       return [403, nil]
     else
+
+      token = get_token_from_authorization_header request
+      if Postoffice::AuthService.token_is_invalid(token)
+        return [403, nil]
+      end
+
+      data = JSON.parse(request.body.read)
+      if data["password"] == nil
+        return [404, nil]
+      end
+
       payload = get_payload_from_authorization_header request
       person = Postoffice::Person.find(payload["id"])
-      data = JSON.parse(request.body.read)
       Postoffice::LoginService.reset_password person, data["password"]
+
+      db_token = Postoffice::Token.new(value: token)
+      db_token.mark_as_invalid
+
       [204, nil]
     end
   end

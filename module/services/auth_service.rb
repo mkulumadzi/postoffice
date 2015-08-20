@@ -83,6 +83,19 @@ module Postoffice
       decoded_token
     end
 
+		def self.token_is_invalid token
+			begin
+				db_token = Postoffice::Token.find_by(value: token)
+				if db_token.is_invalid
+					true
+				else
+					false
+				end
+			rescue Mongoid::Errors::DocumentNotFound
+				false
+			end
+		end
+
 	end
 
 end
