@@ -28,14 +28,14 @@ module Postoffice
 			self.save
 		end
 
-		def deliver_now
+		def make_it_arrive_now
 			raise ArgumentError, "Mail must be in SENT state to deliver" unless self.status == "SENT"
 			self.scheduled_to_arrive = Time.now
 			self.save
 		end
 
 		def update_delivery_status
-			if self.scheduled_to_arrive && self.scheduled_to_arrive <= Time.now &&self.status == "SENT"
+			if self.scheduled_to_arrive && self.scheduled_to_arrive <= Time.now && self.status == "SENT"
 				self.status = "DELIVERED"
 				self.save
 			end

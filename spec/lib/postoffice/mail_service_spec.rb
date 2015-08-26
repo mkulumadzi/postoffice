@@ -98,7 +98,7 @@ describe Postoffice::MailService do
 		before do
 
 			@mail1.mail_it
-			@mail1.deliver_now
+			@mail1.make_it_arrive_now
 
 			@mail2.mail_it
 			@mail2.save
@@ -126,7 +126,7 @@ describe Postoffice::MailService do
 			before do
 				@mail4 = create(:mail, from: @person1.username, to: @person2.username)
 				@mail4.mail_it
-				@mail4.deliver_now
+				@mail4.make_it_arrive_now
 
 				@params[:updated_at] = { "$gt" => @mail2.updated_at }
 			end
@@ -150,7 +150,7 @@ describe Postoffice::MailService do
 			@params1 = Hash[:id, @person1.id]
 			@params2 = Hash[:id, @person2.id]
 
-			@mail1.deliver_now
+			@mail1.make_it_arrive_now
 			Postoffice::MailService.outbox(@params1)
 		end
 
@@ -167,7 +167,7 @@ describe Postoffice::MailService do
 			before do
 				@mail4 = create(:mail, from: @person1.username, to: @person2.username)
 				@mail4.mail_it
-				@mail4.deliver_now
+				@mail4.make_it_arrive_now
 
 				@params1[:updated_at] = { "$gt" => @mail1.updated_at }
 			end
@@ -187,7 +187,7 @@ describe Postoffice::MailService do
 		before do
 
 			@mail1.mail_it
-			@mail1.deliver_now
+			@mail1.make_it_arrive_now
 			@mail2.mail_it
 
 			@mail_to_deliver = Postoffice::MailService.find_mail_to_deliver
@@ -218,7 +218,7 @@ describe Postoffice::MailService do
 		before do
 
 			@mail1.mail_it
-			@mail1.deliver_now
+			@mail1.make_it_arrive_now
 			@mail2.mail_it
 
 			@mail_to_deliver = Postoffice::MailService.find_mail_to_deliver

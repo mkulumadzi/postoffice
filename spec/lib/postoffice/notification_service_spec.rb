@@ -29,12 +29,12 @@ describe APNS do
 			@mail2 = create(:mail, from: @person1.username, to: @person2.username)
 
 			@mail1.mail_it
-			@mail1.deliver_now
+			@mail1.make_it_arrive_now
 			@mail1.update_delivery_status
 			@mail1.read
 
 			@mail2.mail_it
-			@mail2.deliver_now
+			@mail2.make_it_arrive_now
 			@mail2.update_delivery_status
 		end
 

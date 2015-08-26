@@ -97,7 +97,7 @@ describe Postoffice::Mail do
 
 		before do
 			@mail1.mail_it
-			@mail1.deliver_now
+			@mail1.make_it_arrive_now
 		end
 
 		it 'must not be scheduled to arrive in the future' do
@@ -112,7 +112,7 @@ describe Postoffice::Mail do
 		before do
 
 			@mail1.mail_it
-			@mail1.deliver_now
+			@mail1.make_it_arrive_now
 
 			@mail2.mail_it
 
@@ -129,7 +129,7 @@ describe Postoffice::Mail do
 		end
 
 		it 'must not change mail that has been read back to delivered' do
-			@mail2.deliver_now
+			@mail2.make_it_arrive_now
 			@mail2.update_delivery_status
 			@mail2.read
 			@mail2.update_delivery_status
@@ -142,7 +142,7 @@ describe Postoffice::Mail do
 
 		before do
 			@mail1.mail_it
-			@mail1.deliver_now
+			@mail1.make_it_arrive_now
 			@mail1.update_delivery_status
 
 			@mail2.mail_it

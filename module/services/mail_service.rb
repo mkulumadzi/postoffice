@@ -74,7 +74,7 @@ module Postoffice
 			})
 
 			mail.mail_it
-			mail.deliver_now
+			mail.make_it_arrive_now
 
 		end
 
@@ -109,19 +109,12 @@ module Postoffice
 
 		#To Do: Write automated tests for this method (it is working based on manual tests)
 		def self.deliver_mail_and_notify_recipients
-
 			mails = self.find_mail_to_deliver
-
 			self.deliver_mail mails
-
 			people = self.people_to_notify mails
-
 			notifications = Postoffice::NotificationService.create_notification_for_people people, "You've received new mail!", "New Mail"
-
 			puts "Sending notifications: #{notifications}"
-
 			APNS.send_notifications(notifications)
-
 		end
 
 		# Get people who have sent or received mail to the person
@@ -143,11 +136,9 @@ module Postoffice
 			end
 
 			list_of_people
-
 		end
 
 		def self.get_contacts username
-
 			recipients = self.get_people_who_received_mail_from username
 			senders = self.get_people_who_sent_mail_to username
 

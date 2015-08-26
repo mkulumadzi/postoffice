@@ -80,7 +80,7 @@ task :setup_demo_data do
     })
 
     mail1.mail_it
-    mail1.deliver_now
+    mail1.make_it_arrive_now
     mail1.update_delivery_status
     mail1.read
 
@@ -92,7 +92,7 @@ task :setup_demo_data do
     })
 
     mail2.mail_it
-    mail2.deliver_now
+    mail2.make_it_arrive_now
     mail1.update_delivery_status
 
     mail3 = Postoffice::Mail.create!({
@@ -112,7 +112,7 @@ task :setup_demo_data do
 		})
 
 		mail4.mail_it
-		mail4.deliver_now
+		mail4.make_it_arrive_now
 		mail4.update_delivery_status
 
 		mail5 = Postoffice::Mail.create!({
@@ -145,4 +145,9 @@ end
 
 task :give_me_binding do
 	binding.pry
+end
+
+task :export_analytics do
+	filepath = "/Users/bigedubs/Desktop"
+	Postoffice::AnalyticsService.export_stats filepath
 end

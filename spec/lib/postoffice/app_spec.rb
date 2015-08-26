@@ -972,11 +972,11 @@ describe app do
 
   end
 
-	describe 'post /mail/id/:id/deliver' do
+	describe 'post /mail/id/:id/arrive_now' do
 
 		before do
 			post "/mail/id/#{@mail1.id}/send", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-			post "/mail/id/#{@mail1.id}/deliver", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+			post "/mail/id/#{@mail1.id}/arrive_now", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 		end
 
 		it 'must be scheduled to arrive in the past' do
@@ -995,7 +995,7 @@ describe app do
 		describe 'try to deliver mail that has not been sent' do
 
 			before do
-				post "/mail/id/#{@mail2.id}/deliver", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+				post "/mail/id/#{@mail2.id}/arrive_now", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must return a 403 status' do
@@ -1011,7 +1011,7 @@ describe app do
 		describe 'send to a missing piece of mail' do
 
 			before do
-				post "/mail/id/abc/deliver", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+				post "/mail/id/abc/arrive_now", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must return 404 if the mail is not found' do
@@ -1082,11 +1082,9 @@ describe app do
 		before do
 
 			@mail1.mail_it
-			@mail1.deliver_now
-			@mail1.save
+			@mail1.make_it_arrive_now
 
 			@mail2.mail_it
-			@mail2.save
 
       get "/person/id/#{@person2.id}/mailbox", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
 
@@ -1137,7 +1135,7 @@ describe app do
 
 		before do
 			@mail1.mail_it
-			@mail1.deliver_now
+			@mail1.make_it_arrive_now
 			@mail1.update_delivery_status
 
 			post "/mail/id/#{@mail1.id}/read", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}

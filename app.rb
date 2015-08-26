@@ -439,18 +439,15 @@ end
 
 # Deliver a piece of mail
 # Scope: admin
-post '/mail/id/:id/deliver' do
+post '/mail/id/:id/arrive_now' do
 
    begin
     mail = Postoffice::Mail.find(params[:id])
-
     from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
     if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", from_id)
       return [401, nil]
     end
-
-    mail.deliver_now
-
+    mail.make_it_arrive_now
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
