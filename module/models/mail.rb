@@ -14,7 +14,7 @@ module Postoffice
 		field :scheduled_to_arrive, type: DateTime
 
 		def days_to_arrive
-			(2..3).to_a.sample
+			(1..2).to_a.sample
 		end
 
 		def arrive_when

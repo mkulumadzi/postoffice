@@ -341,6 +341,7 @@ post '/person/id/:id/mail/send' do
   begin
     mail = Postoffice::MailService.create_mail params[:id], data
     mail.mail_it
+    Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent mail
     mail_link = "#{ENV['POSTOFFICE_BASE_URL']}/mail/id/#{mail.id}"
     headers = { "location" => mail_link }
     [201, headers, nil]

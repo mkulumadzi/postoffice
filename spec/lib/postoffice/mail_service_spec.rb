@@ -68,6 +68,37 @@ describe Postoffice::MailService do
 
 	end
 
+	describe 'ensure mail arrives in order in which it was sent' do
+		before do
+			@personA = create(:person, username: random_username)
+			@personB = create(:person, username: random_username)
+
+			@mailA = create(:mail, from: @personA.username, to: @personB.username)
+			@mailB = create(:mail, from: @personA.username, to: @personB.username)
+
+			@mailA.mail_it
+			@mailB.mail_it
+		end
+
+		it 'must make the arrival date of a mail at least 5 minutes after the latest arriving mail, if the former mail was sent later' do
+			@mailA.scheduled_to_arrive = Time.now + 4.days
+			@mailA.save
+			Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent @mailB
+			updated_mail_record = Postoffice::Mail.find(@mailB.id)
+			updated_mail_record.scheduled_to_arrive.to_i.must_equal (@mailA.scheduled_to_arrive + 5.minutes).to_i
+		end
+
+		it 'must leave the mail arrival date as is if it is already scheduled to arrive later than the other mail' do
+			@mailA.scheduled_to_arrive = Time.now
+			@mailA.save
+			original_scheduled_date = @mailB.scheduled_to_arrive
+			Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent @mailB
+			updated_mail_record = Postoffice::Mail.find(@mailB.id)
+			updated_mail_record.scheduled_to_arrive.to_i.must_equal original_scheduled_date.to_i
+		end
+
+	end
+
 
 	describe 'get mail' do
 

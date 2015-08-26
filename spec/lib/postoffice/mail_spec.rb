@@ -59,22 +59,22 @@ describe Postoffice::Mail do
 			@mail1.mail_it
 		end
 
-		it 'must calculate the number of days to arrive as 3 or more' do
-			assert_operator @mail1.days_to_arrive, :>=, 2
+		it 'must calculate the number of days to arrive as 1 or more' do
+			assert_operator @mail1.days_to_arrive, :>=, 1
 		end
 
-		it 'must calculate the number of days to arrive as 5 or less' do
-			assert_operator @mail1.days_to_arrive, :<=, 3
+		it 'must calculate the number of days to arrive as 2 or less' do
+			assert_operator @mail1.days_to_arrive, :<=, 2
 		end
 
-		it 'must generate an arrival date that is three or more days in the future' do
+		it 'must generate an arrival date that is one or more days in the future' do
 			diff = (@mail1.arrive_when - Time.now).round
-			assert_operator diff, :>=, 2 * 86400
+			assert_operator diff, :>=, 1 * 86400
 		end
 
-		it 'must generate an arrival date that is less than 5 days away' do
+		it 'must generate an arrival date that is less than 2 days away' do
 			diff = (@mail1.arrive_when - Time.now).round
-			assert_operator diff, :<=, 3 * 86400
+			assert_operator diff, :<=, 2 * 86400
 		end
 
 		it 'must have status of SENT' do
@@ -108,14 +108,10 @@ describe Postoffice::Mail do
 
 	describe 'update delivery status' do
 
-
 		before do
-
 			@mail1.mail_it
 			@mail1.make_it_arrive_now
-
 			@mail2.mail_it
-
 		end
 
 		it 'must set the status of the mail to DELIVERED for mail that has arrived' do

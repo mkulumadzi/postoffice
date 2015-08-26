@@ -19,6 +19,15 @@ module Postoffice
 				mail
 		end
 
+		def self.ensure_mail_arrives_in_order_it_was_sent mail
+			latest_incoming_mail = Postoffice::Mail.where(to: mail.to, from: mail.from, status: "SENT").desc(:scheduled_to_arrive).limit(1).first
+
+			if mail.scheduled_to_arrive < latest_incoming_mail.scheduled_to_arrive
+				mail.scheduled_to_arrive = latest_incoming_mail.scheduled_to_arrive + 5.minutes
+				mail.save
+			end
+		end
+
 		def self.get_mail params = {}
 			mails = []
 			Postoffice::Mail.where(params).each do |mail|
