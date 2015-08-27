@@ -407,18 +407,61 @@ describe app do
 
 		describe 'get /person/id/:id' do
 
-			before do
-				get "/person/id/#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-				@response = JSON.parse(last_response.body)
-			end
+      describe 'record found' do
 
-			it 'must return a 200 status code' do
-				last_response.status.must_equal 200
-			end
+  			before do
+  				get "/person/id/#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+  				@response = JSON.parse(last_response.body)
+  			end
 
-			it 'must return the expected fields' do
-				@response.must_equal expected_json_fields_for_person(@person1)
-			end
+  			it 'must return a 200 status code' do
+  				last_response.status.must_equal 200
+  			end
+
+  			it 'must return the expected fields' do
+  				@response.must_equal expected_json_fields_for_person(@person1)
+  			end
+
+      end
+
+      describe 'handle IF_MODIFIED_SINCE' do
+
+        describe 'record has been modified since date specified' do
+
+          before do
+            if_modified_since = (@person1.updated_at - 5.days).to_s
+            get "/person/id/#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}", "HTTP_IF_MODIFIED_SINCE" => if_modified_since}
+            @response = JSON.parse(last_response.body)
+          end
+
+          it 'must have a 200 status code' do
+            last_response.status.must_equal 200
+          end
+
+          it 'must return the person record if the IF_MODIFIED_SINCE date is earlier' do
+            @response.must_equal expected_json_fields_for_person(@person1)
+          end
+
+        end
+
+        describe 'record has not been modified since date specified' do
+
+          before do
+            if_modified_since = (@person1.updated_at).to_s
+            get "/person/id/#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}", "HTTP_IF_MODIFIED_SINCE" => if_modified_since}
+          end
+
+          it 'must have a 304 status code' do
+            last_response.status.must_equal 304
+          end
+
+          it 'must return an empty response body' do
+            last_response.body.must_equal ""
+          end
+
+        end
+
+      end
 
   		describe 'resource not found' do
 
@@ -726,11 +769,11 @@ describe app do
         person_record = Postoffice::Person.find(@person3.id)
         @timestamp = person_record.updated_at
         @timestamp_string = JSON.parse(person_record.as_document.to_json)["updated_at"]
-        get "/people", nil, {"HTTP_SINCE" => @timestamp_string, "HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+        get "/people", nil, {"HTTP_IF_MODIFIED_SINCE" => @timestamp_string, "HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
       end
 
       it 'must include the timestamp in the header' do
-        last_request.env["HTTP_SINCE"].must_equal @timestamp
+        last_request.env["HTTP_IF_MODIFIED_SINCE"].must_equal @timestamp
       end
 
       it 'must only return records that were created or updated after the timestamp' do
@@ -1060,11 +1103,11 @@ describe app do
         mail_record = Postoffice::Mail.find(@mail1.id)
         @timestamp = mail_record.updated_at
         @timestamp_string = JSON.parse(mail_record.as_document.to_json)["updated_at"]
-        get "/mail", nil, {"HTTP_SINCE" => @timestamp_string, "HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+        get "/mail", nil, {"HTTP_IF_MODIFIED_SINCE" => @timestamp_string, "HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
       end
 
       it 'must include the timestamp in the header' do
-        last_request.env["HTTP_SINCE"].must_equal @timestamp
+        last_request.env["HTTP_IF_MODIFIED_SINCE"].must_equal @timestamp
       end
 
       it 'must only return records that were created or updated after the timestamp' do

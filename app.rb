@@ -1,9 +1,9 @@
 require_relative 'module/postoffice'
 
 # Convenience Methods
-def add_since_to_request_parameters app
-  if app.request.env["HTTP_SINCE"]
-    utc_date = Time.parse(env["HTTP_SINCE"])
+def add_if_modified_since_to_request_parameters app
+  if app.request.env["HTTP_IF_MODIFIED_SINCE"]
+    utc_date = Time.parse(env["HTTP_IF_MODIFIED_SINCE"])
     app.params[:updated_at] = { "$gt" => utc_date }
   end
 end
@@ -154,8 +154,19 @@ get '/person/id/:id' do
 
   begin
     person = Postoffice::Person.find(params[:id])
-    response_body = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
-    [200, response_body]
+    person_response = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
+
+    if request.env["HTTP_IF_MODIFIED_SINCE"] == nil
+      [200, person_response]
+    else
+      modified_since = Time.parse(env["HTTP_IF_MODIFIED_SINCE"])
+      ## Converting to integer because the fractions of a second tend to mess this up, even for datetimes that are otherwise equivalent
+      if person.updated_at.to_i > modified_since.to_i
+        [200, person_response]
+      else
+        [304, nil]
+      end
+    end
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
   end
@@ -249,7 +260,7 @@ get '/people' do
   end
 
   content_type :json
-  add_since_to_request_parameters self
+  add_if_modified_since_to_request_parameters self
   response_body = Postoffice::PersonService.get_people(params).to_json( :except => ["salt", "hashed_password", "device_token"] )
   [200, response_body]
 
@@ -410,7 +421,7 @@ get '/mail' do
     return [401, nil]
   end
 
-  add_since_to_request_parameters self
+  add_if_modified_since_to_request_parameters self
   response_body = Postoffice::MailService.get_mail(params).to_json
   [200, response_body]
 end
@@ -485,7 +496,7 @@ end
 get '/person/id/:id/mailbox' do
   content_type :json
 
-  add_since_to_request_parameters self
+  add_if_modified_since_to_request_parameters self
 
   if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", params[:id])
     return [401, nil, nil]
@@ -504,7 +515,7 @@ end
 # Scope: admin OR (can-read, is person)
 get '/person/id/:id/outbox' do
   content_type :json
-  add_since_to_request_parameters self
+  add_if_modified_since_to_request_parameters self
 
   begin
     if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", params[:id])
