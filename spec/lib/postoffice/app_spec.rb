@@ -27,136 +27,6 @@ describe app do
     @person2_token = Postoffice::AuthService.generate_token_for_person @person2
 	end
 
-  describe 'convenience methods' do
-
-    describe 'get payload from request bearer' do
-
-      describe 'get a valid token' do
-
-        before do
-          get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
-          @payload = get_payload_from_authorization_header last_request
-        end
-
-        it 'must get return the payload of the auth token included in the header as a hash' do
-          @payload.must_be_instance_of Hash
-        end
-
-        it 'must include the scope in the payload' do
-          @payload["scope"].must_equal Postoffice::AuthService.get_scopes_for_user_type "admin"
-        end
-
-      end
-
-      describe 'invalid tokens' do
-
-        it 'must return a message if the token has expired' do
-          expiring_payload = { :data => "test", :exp => Time.now.to_i - 60 }
-          expiring_token = Postoffice::AuthService.generate_token expiring_payload
-          get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{expiring_token}"}
-
-          get_payload_from_authorization_header(last_request).must_equal "Token expired"
-        end
-
-        it 'must return an error message if the token is invalid' do
-          invalid_token = "abc.123.def"
-          get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{invalid_token}"}
-
-          get_payload_from_authorization_header(last_request).must_equal "Token is invalid"
-        end
-
-        it 'must raise an error message if the token is not signed by the correct certificate' do
-          rsa_private = OpenSSL::PKey::RSA.generate 2048
-          payload = { :data => "test" }
-          token = JWT.encode payload, rsa_private, 'RS256'
-          get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
-
-          get_payload_from_authorization_header(last_request).must_equal "Invalid token signature"
-        end
-
-        it 'must return an error message if the Authorization header is not provided' do
-          get "/"
-          get_payload_from_authorization_header(last_request).must_equal "No token provided"
-        end
-
-      end
-
-    end
-
-    describe 'check options' do
-
-      before do
-        options "/"
-      end
-
-      it 'must indicate that any origin is allowed' do
-        last_response.headers["Access-Control-Allow-Origin"].must_equal "*"
-      end
-
-      it 'must indicate that GET, POST and OPTIONS are allowed' do
-        last_response.headers["Allow"].must_equal "GET,POST,OPTIONS"
-      end
-
-      it 'must indicate which headers are allowed' do
-          last_response.headers["Access-Control-Allow-Headers"].must_equal "X-Requested-With, X-HTTP-Method-Override, Content-Type, Cache-Control, Accept, Authorization"
-      end
-
-    end
-
-    describe 'check authorization' do
-
-      it 'must return false if the request Authorization includes the required scope' do
-        get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
-        unauthorized(last_request, "admin").must_equal false
-      end
-
-      it 'must return true if the request Authorization does not include the required scope' do
-        get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
-        unauthorized(last_request, "admin").must_equal true
-      end
-
-      it 'must return true if no Authorization header is submitted' do
-        get "/"
-        unauthorized(last_request, "admin").must_equal true
-      end
-
-    end
-
-    describe 'check authorized ownership' do
-
-      it 'must return false if the person_id is in the payload and it has the required scope' do
-        get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        not_authorized_owner(last_request, "can-read", @person1.id.to_s).must_equal false
-      end
-
-      it 'must return true if the person_id is in the payload but it does not have the required scope' do
-        get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        not_authorized_owner(last_request, "create-person", @person1.id.to_s).must_equal true
-      end
-
-      it 'must return true if the person_id is not in the payload' do
-        get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        not_authorized_owner(last_request, "can-read", @person2.id.to_s).must_equal true
-      end
-
-    end
-
-    describe 'get API version from content-type header' do
-
-      it 'must parse the version from the CONTENT_TYPE header if the header begins with application/vnd.postoffice' do
-          get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}", "CONTENT_TYPE" => "application/vnd.postoffice.v2+json"}
-          get_api_version_from_content_type(last_request).must_equal "v2"
-      end
-
-      it 'must return V1 if the version is not included in the CONTENT_TYPE header' do
-        get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
-        get_api_version_from_content_type(last_request).must_equal "v1"
-      end
-
-    end
-
-  end
-
 	describe 'app_root' do
 
 		describe 'get /' do
@@ -180,6 +50,26 @@ describe app do
 		end
 
 	end
+
+  describe 'check options' do
+
+    before do
+      options "/"
+    end
+
+    it 'must indicate that any origin is allowed' do
+      last_response.headers["Access-Control-Allow-Origin"].must_equal "*"
+    end
+
+    it 'must indicate that GET, POST and OPTIONS are allowed' do
+      last_response.headers["Allow"].must_equal "GET,POST,OPTIONS"
+    end
+
+    it 'must indicate which headers are allowed' do
+        last_response.headers["Access-Control-Allow-Headers"].must_equal "X-Requested-With, X-HTTP-Method-Override, Content-Type, Cache-Control, Accept, Authorization"
+    end
+
+  end
 
   describe 'get /available' do
 
@@ -734,33 +624,37 @@ describe app do
 
 	describe '/people' do
 
-    before do
-    	get '/people', nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+    describe 'get all people' do
+
+      before do
+      	get '/people', nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+      end
+
+  		it 'must return a 200 status code' do
+  			last_response.status.must_equal 200
+  		end
+
+  		it 'must return a collection with all of the people if no parameters are entered' do
+  			collection = JSON.parse(last_response.body)
+  			num_people = Postoffice::Person.count
+  			collection.length.must_equal num_people
+  		end
+
+  		it 'must return a filtered collection if parameters are given' do
+  			get "/people?name=Evan", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+  			expected_number = Postoffice::Person.where(name: "Evan").count
+  			actual_number = JSON.parse(last_response.body).count
+  			actual_number.must_equal expected_number
+  		end
+
+  		it 'must return the expected information for a person record' do
+  			get "/people?id=#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+  			people_response = JSON.parse(last_response.body)
+
+  			people_response[0].must_equal expected_json_fields_for_person(@person1)
+  		end
+
     end
-
-		it 'must return a 200 status code' do
-			last_response.status.must_equal 200
-		end
-
-		it 'must return a collection with all of the people if no parameters are entered' do
-			collection = JSON.parse(last_response.body)
-			num_people = Postoffice::Person.count
-			collection.length.must_equal num_people
-		end
-
-		it 'must return a filtered collection if parameters are given' do
-			get "/people?name=Evan", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
-			expected_number = Postoffice::Person.where(name: "Evan").count
-			actual_number = JSON.parse(last_response.body).count
-			actual_number.must_equal expected_number
-		end
-
-		it 'must return the expected information for a person record' do
-			get "/people?id=#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
-			people_response = JSON.parse(last_response.body)
-
-			people_response[0].must_equal expected_json_fields_for_person(@person1)
-		end
 
     describe 'get only records that were created or updated after a specific date and time' do
 
@@ -776,7 +670,7 @@ describe app do
         last_request.env["HTTP_IF_MODIFIED_SINCE"].must_equal @timestamp
       end
 
-      it 'must only return records that were created or updated after the timestamp' do
+      it 'must only return people records that were created or updated after the timestamp' do
         num_returned = JSON.parse(last_response.body).count
         expected_number = Postoffice::Person.where({updated_at: { "$gt" => @timestamp } }).count
         num_returned.must_equal expected_number

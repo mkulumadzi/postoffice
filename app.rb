@@ -1,72 +1,7 @@
 require_relative 'module/postoffice'
 
-# Convenience Methods
-def add_if_modified_since_to_request_parameters app
-  if app.request.env["HTTP_IF_MODIFIED_SINCE"]
-    utc_date = Time.parse(env["HTTP_IF_MODIFIED_SINCE"])
-    app.params[:updated_at] = { "$gt" => utc_date }
-  end
-end
-
-def get_token_from_authorization_header request
-  token_header = request.env["HTTP_AUTHORIZATION"]
-  token_header.split(' ')[1]
-end
-
-def get_payload_from_authorization_header request
-  if request.env["HTTP_AUTHORIZATION"] != nil
-    begin
-      token = get_token_from_authorization_header request
-      decoded_token = Postoffice::AuthService.decode_token token
-      payload = decoded_token[0]
-    rescue JWT::ExpiredSignature
-      "Token expired"
-    rescue JWT::VerificationError
-      "Invalid token signature"
-    rescue JWT::DecodeError
-      "Token is invalid"
-    end
-  else
-    "No token provided"
-  end
-end
-
-def unauthorized request, required_scope
-  payload = get_payload_from_authorization_header request
-  if payload["scope"] == nil
-    return true
-  elsif payload["scope"].include? required_scope
-    return false
-  else
-    return true
-  end
-end
-
-def not_authorized_owner request, required_scope, person_id
-  payload = get_payload_from_authorization_header request
-  id = payload["id"]
-
-  if payload["scope"] == nil
-    return true
-  elsif payload["scope"].include?(required_scope) && id == person_id
-    return false
-  else
-    return true
-  end
-end
-
-def get_api_version_from_content_type request
-  content_type = request.env["CONTENT_TYPE"]
-  if content_type && content_type.include?("application/vnd.postoffice")
-    version = content_type.split('.').last.split('+')[0]
-  else
-    version = "v1"
-  end
-  version
-end
-
 get '/' do
-  version = get_api_version_from_content_type request
+  version = Postoffice::AppService.get_api_version_from_content_type request
   if version == "v2"
     "What a Beautiful Morning"
   else
@@ -84,13 +19,11 @@ end
 # Scope: create-person
 post '/person/new' do
   content_type :json
+  data = JSON.parse request.body.read
 
-  if unauthorized(request, "create-person")
-    return [401, nil, nil]
-  end
+  if Postoffice::AppService.unauthorized?(request, "create-person") then return [401, nil] end
 
   begin
-    data = JSON.parse request.body.read
     person = Postoffice::PersonService.create_person data
     Postoffice::MailService.generate_welcome_message person
     person_link = "#{ENV['POSTOFFICE_BASE_URL']}/person/id/#{person.id}"
@@ -105,7 +38,6 @@ post '/person/new' do
     response_body = Hash["message", error.to_s].to_json
     [403, nil, response_body]
   end
-
 end
 
 # Check if a registration field such as username is available
@@ -113,9 +45,7 @@ end
 get '/available' do
   content_type :json
 
-  if unauthorized(request, "create-person")
-    return [401, nil, nil]
-  end
+  if Postoffice::AppService.unauthorized?(request, "create-person") then return [401, nil] end
 
   begin
     response_body = Postoffice::PersonService.check_field_availability(params).to_json
@@ -129,8 +59,8 @@ end
 # Scope: nil
 post '/login' do
   content_type :json
+  data = JSON.parse request.body.read
   begin
-    data = JSON.parse request.body.read
     person = Postoffice::LoginService.check_login data
     if person
       response_body = Postoffice::LoginService.response_for_successful_login person
@@ -147,10 +77,7 @@ end
 # Scope: can-read
 get '/person/id/:id' do
   content_type :json
-
-  if unauthorized(request, "can-read")
-    return [401, nil, nil]
-  end
+  if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
 
   begin
     person = Postoffice::Person.find(params[:id])
@@ -176,13 +103,9 @@ end
 # Update a person record
 # Scope: admin or (can_write & is person)
 post '/person/id/:id' do
+  data = JSON.parse request.body.read
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
   begin
-    data = JSON.parse request.body.read
-
-    if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", params[:id])
-      return [401, nil, nil]
-    end
-
     Postoffice::PersonService.update_person params[:id], data
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
@@ -198,13 +121,10 @@ end
 # Scope: reset-password
 post '/person/id/:id/reset_password' do
   content_type :json
-
-  if unauthorized(request, "reset-password")
-    return [401, nil, nil]
-  end
+  data = JSON.parse(request.body.read)
+  if Postoffice::AppService.unauthorized?(request, "reset-password") then return [401, nil] end
 
   begin
-    data = JSON.parse(request.body.read)
     Postoffice::LoginService.password_reset_by_user params[:id], data
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
@@ -219,34 +139,24 @@ end
 # Reset password using a temporary token, via a webapp
 post '/reset_password' do
   content_type :json
+  data = JSON.parse(request.body.read)
 
-  begin
+  # Check the token
+  if Postoffice::AppService.unauthorized?(request, "reset-password") then return [401, nil] end
 
-    # Check the token
-    if unauthorized(request, "reset-password")
-      return [401, nil]
-    else
+  token = Postoffice::AppService.get_token_from_authorization_header request
+  if Postoffice::AuthService.token_is_invalid(token) then return [401, nil] end
 
-      token = get_token_from_authorization_header request
-      if Postoffice::AuthService.token_is_invalid(token)
-        return [401, nil]
-      end
+  if data["password"] == nil then return [403, nil] end
 
-      data = JSON.parse(request.body.read)
-      if data["password"] == nil
-        return [403, nil]
-      end
+  payload = Postoffice::AppService.get_payload_from_authorization_header request
+  person = Postoffice::Person.find(payload["id"])
+  Postoffice::LoginService.reset_password person, data["password"]
 
-      payload = get_payload_from_authorization_header request
-      person = Postoffice::Person.find(payload["id"])
-      Postoffice::LoginService.reset_password person, data["password"]
+  db_token = Postoffice::Token.new(value: token)
+  db_token.mark_as_invalid
 
-      db_token = Postoffice::Token.new(value: token)
-      db_token.mark_as_invalid
-
-      [204, nil]
-    end
-  end
+  [204, nil]
 
 end
 
@@ -254,13 +164,10 @@ end
 # Filtering implemented, for example: /people?username=bigedubs
 # Scope: admin
 get '/people' do
-
-  if unauthorized(request, "admin")
-    return [401, nil, nil]
-  end
-
   content_type :json
-  add_if_modified_since_to_request_parameters self
+  if Postoffice::AppService.unauthorized?(request, "admin") then return [401, nil] end
+
+  Postoffice::AppService.add_if_modified_since_to_request_parameters self
   response_body = Postoffice::PersonService.get_people(params).to_json( :except => ["salt", "hashed_password", "device_token"] )
   [200, response_body]
 
@@ -270,10 +177,7 @@ end
 # Scope: can-read
 get '/people/search' do
   content_type :json
-
-  if unauthorized(request, "can-read")
-    return [401, nil, nil]
-  end
+  if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
 
   begin
     people_returned = Postoffice::PersonService.search_people params
@@ -295,13 +199,10 @@ end
 # Scope: can-read
 post '/people/bulk_search' do
   content_type :json
-
-  if unauthorized(request, "can-read")
-    return [401, nil, nil]
-  end
+  data = JSON.parse request.body.read
+  if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
 
   begin
-    data = JSON.parse request.body.read
     people = Postoffice::PersonService.bulk_search data
 
     people_bson = []
@@ -322,10 +223,7 @@ end
 # Scope: admin OR (can-write, is the person)
 post '/person/id/:id/mail/new' do
   data = JSON.parse request.body.read
-
-  if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", params[:id])
-    return [401, nil, nil]
-  end
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
 
   begin
     mail = Postoffice::MailService.create_mail params[:id], data
@@ -344,10 +242,7 @@ end
 # Scope: admin OR (can-write, is person)
 post '/person/id/:id/mail/send' do
   data = JSON.parse request.body.read
-
-  if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", params[:id])
-    return [401, nil, nil]
-  end
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
 
   begin
     mail = Postoffice::MailService.create_mail params[:id], data
@@ -371,13 +266,7 @@ get '/mail/id/:id' do
 
   begin
     mail = Postoffice::Mail.find(params[:id])
-
-    from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
-    to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
-
-    if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", from_id) && not_authorized_owner(request, "can-read", to_id)
-      return [401, nil, nil]
-    end
+    if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
 
     response_body = mail.as_document.to_json
     [200, response_body]
@@ -394,15 +283,9 @@ get '/mail/id/:id/image' do
   begin
     mail = Postoffice::Mail.find(params[:id])
     if mail.image_uid == nil
-      [404, nil, nil]
+      [404, nil]
     else
-      from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
-      to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
-
-      if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", from_id) && not_authorized_owner(request, "can-read", to_id)
-        return [401, nil, nil]
-      end
-
+      if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
       Postoffice::FileService.fetch_image(mail.image_uid, params).to_response
     end
   rescue ArgumentError
@@ -427,13 +310,7 @@ get '/mail/id/:id/thumbnail' do
   if mail.thumbnail_uid == nil
     [404, nil, nil]
   else
-    from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
-    to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
-
-    if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", from_id) && not_authorized_owner(request, "can-read", to_id)
-      return [401, nil, nil]
-    end
-
+    if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
     Postoffice::FileService.fetch_image(mail.thumbnail_uid).to_response
   end
 
@@ -443,12 +320,8 @@ end
 # Scope: admin
 get '/mail' do
   content_type :json
-
-  if unauthorized(request, "admin")
-    return [401, nil]
-  end
-
-  add_if_modified_since_to_request_parameters self
+  if Postoffice::AppService.unauthorized?(request, "admin") then return [401, nil] end
+  Postoffice::AppService.add_if_modified_since_to_request_parameters self
   response_body = Postoffice::MailService.get_mail(params).to_json
   [200, response_body]
 end
@@ -460,12 +333,8 @@ post '/mail/id/:id/send' do
 
   begin
     mail = Postoffice::Mail.find(params[:id])
-
     from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
-    if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", from_id)
-      return [401, nil]
-    end
-
+    if Postoffice::AppService.not_admin_or_owner?(request, "can-write", from_id) then return [401, nil] end
     mail.mail_it
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
@@ -483,9 +352,7 @@ post '/mail/id/:id/arrive_now' do
    begin
     mail = Postoffice::Mail.find(params[:id])
     from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
-    if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", from_id)
-      return [401, nil]
-    end
+    if Postoffice::AppService.not_admin_or_owner?(request, "can-write", from_id) then return [401, nil] end
     mail.make_it_arrive_now
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
@@ -502,12 +369,8 @@ post '/mail/id/:id/read' do
 
   begin
     mail = Postoffice::Mail.find(params[:id])
-
     to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
-    if unauthorized(request, "admin") && not_authorized_owner(request, "can-write", to_id)
-      return [401, nil]
-    end
-
+    if Postoffice::AppService.not_admin_or_owner?(request, "can-write", to_id) then return [401, nil] end
     mail.read
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
@@ -522,12 +385,8 @@ end
 # Scope: admin OR (can-read, is person)
 get '/person/id/:id/mailbox' do
   content_type :json
-
-  add_if_modified_since_to_request_parameters self
-
-  if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", params[:id])
-    return [401, nil, nil]
-  end
+  Postoffice::AppService.add_if_modified_since_to_request_parameters self
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
     response_body = Postoffice::MailService.mailbox(params).to_json
@@ -542,13 +401,10 @@ end
 # Scope: admin OR (can-read, is person)
 get '/person/id/:id/outbox' do
   content_type :json
-  add_if_modified_since_to_request_parameters self
+  Postoffice::AppService.add_if_modified_since_to_request_parameters self
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
-    if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", params[:id])
-      return [401, nil, nil]
-    end
-
     response_body = Postoffice::MailService.outbox(params).to_json
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
@@ -561,10 +417,7 @@ end
 # Scope: admin OR (can-read, is person)
 get '/person/id/:id/contacts' do
   content_type :json
-
-  if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", params[:id])
-    return [401, nil, nil]
-  end
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
     person = Postoffice::Person.find(params["id"])
@@ -579,12 +432,8 @@ end
 # Upload a File
 # Scope: can-write
 post '/upload' do
-
   data = JSON.parse request.body.read.gsub("\n", "")
-
-  if unauthorized(request, "can-write")
-    return [401, nil, nil]
-  end
+  if Postoffice::AppService.unauthorized?(request, "can-write") then return [401, nil] end
 
   begin
     uid = Postoffice::FileService.upload_file data
@@ -604,14 +453,9 @@ end
 # Scope: can-read
 get '/cards' do
   content_type :json
-
-  if unauthorized(request, "can-read")
-    return [401, nil]
-  end
-
+  if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
   response_body = Postoffice::FileService.get_cards.to_json
   [200, response_body]
-
 end
 
 # Get a specific image
@@ -620,15 +464,13 @@ get '/image/*' do
 
   begin
     uid = params['splat'][0]
-
-    if uid.include?("resources") == false && unauthorized(request, "admin")
+    if uid.include?("resources") == false && Postoffice::AppService.unauthorized?(request, "admin")
       return [401, nil]
-    elsif unauthorized(request, "can-read")
+    elsif Postoffice::AppService.unauthorized?(request, "can-read")
       return [401, nil]
     end
 
     name = uid.split('/').last
-
     image = Dragonfly.app.fetch(uid).encode('jpg')
     image.name = name
     image.to_response
