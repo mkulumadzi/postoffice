@@ -286,7 +286,11 @@ get '/mail/id/:id/image' do
       [404, nil]
     else
       if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
-      Postoffice::FileService.fetch_image(mail.image_uid, params).to_response
+      if params["thumb"]
+        Postoffice::FileService.fetch_image(mail.image_uid, params).to_response
+      else
+        redirect Postoffice::FileService.get_presigned_url mail.image_uid
+      end
     end
   rescue ArgumentError
     response_body = Hash["message", "Could not process thumbnail parameter."].to_json

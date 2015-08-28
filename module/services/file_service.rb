@@ -25,16 +25,22 @@ module Postoffice
 			end
 		end
 
-		def self.get_bucket
-			s3 = Aws::S3::Resource.new
-			s3.bucket(ENV['AWS_BUCKET'])
-		end
-
 		def self.get_cards
 			bucket = self.get_bucket
 			cards = bucket.objects(prefix: 'resources/cards').collect(&:key)
 			cards.delete('resources/cards/')
 			cards
+		end
+
+		def self.get_bucket
+			s3 = Aws::S3::Resource.new
+			s3.bucket(ENV['AWS_BUCKET'])
+		end
+
+		# Might not need this, if Cloudfront can do the trick...
+		def self.get_presigned_url key
+			presigner = Aws::S3::Presigner.new
+			presigner.presigned_url(:get_object, bucket: ENV['AWS_BUCKET'], key: key, expires_in: 60)
 		end
 
 	end

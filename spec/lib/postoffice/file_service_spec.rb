@@ -127,4 +127,39 @@ describe Postoffice::FileService do
 
   end
 
+  describe 'get AWS S3 bucket' do
+
+    it 'must return an S3 bucket instance' do
+      Postoffice::FileService.get_bucket.must_be_instance_of Aws::S3::Bucket
+    end
+
+    it 'must point to the bucket specified in the environment variable' do
+      bucket = Postoffice::FileService.get_bucket
+      bucket.name.must_equal ENV['AWS_BUCKET']
+    end
+
+  end
+
+
+  describe 'get presigned URL from AWS for a key' do
+
+    before do
+      @key = 'resources/SlowpostPostman.png'
+      @url = Postoffice::FileService.get_presigned_url @key
+    end
+
+    it 'must return a presigned url as a String' do
+      @url.must_be_instance_of String
+    end
+
+    it 'must include the key' do
+      assert_operator @url.index(@key), :>, 0
+    end
+
+    it 'must expire in 60 seconds' do
+      assert_operator @url.index('Expires=60'), :>, 0
+    end
+
+  end
+
 end

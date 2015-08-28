@@ -1267,16 +1267,12 @@ describe app do
       @image.close
     end
 
-    it 'must return a 200 status code if the image is found' do
-      last_response.status.must_equal 200
-    end
+    describe 'redirect to AWS for basic image_uid' do
 
-    it 'must show that the content length matches the size of the original image' do
-      last_response.headers["Content-Length"].must_equal @image.size.to_s
-    end
+      it 'must redirect the request and return a 302 status' do
+        last_response.status.must_equal 302
+      end
 
-    it 'must return the filename in a header' do
-      last_response.headers["Content-Disposition"].must_equal "filename=\"image2.jpg\""
     end
 
     describe 'resize image with thumbnail parameter' do
