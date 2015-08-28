@@ -20,4 +20,11 @@ FactoryGirl.define do
     content "I love this app"
   end
 
+  factory :contact, class: Postoffice::Contact do
+    person_id "abc"
+    contact_person_id "def"
+    in_address_book false
+    is_penpal true
+  end
+
 end
