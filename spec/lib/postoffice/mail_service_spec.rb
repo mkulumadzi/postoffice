@@ -66,6 +66,14 @@ describe Postoffice::MailService do
 			@mail4.image.mime_type.must_equal "image/jpeg"
 		end
 
+		it 'must add a thumbnail' do
+			@mail4.thumbnail.mime_type.must_equal "image/jpeg"
+		end
+
+		it 'must compress the thumbnail to a height of 96 px' do
+			@mail4.thumbnail.height.must_equal 96
+		end
+
 	end
 
 	describe 'ensure mail arrives in order in which it was sent' do

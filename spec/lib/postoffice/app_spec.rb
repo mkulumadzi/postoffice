@@ -1429,6 +1429,59 @@ describe app do
 
   end
 
+  describe '/mail/id/:id/thumbnail' do
+
+    before do
+      @image = File.open('spec/resources/image2.jpg')
+      @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
+
+      data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
+      @mail5 = Postoffice::MailService.create_mail @person1.id, data
+    end
+
+    after do
+      @image.close
+    end
+
+    describe 'get thumbnail' do
+
+      before do
+        get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+      end
+
+      it 'must return a 200 status code if the image is found' do
+        last_response.status.must_equal 200
+      end
+
+      it 'must return the filename in a header' do
+        last_response.headers["Content-Disposition"].must_equal "filename=\"image2.jpg\""
+      end
+
+    end
+
+    describe 'get thumbnail that does not already exist' do
+
+      before do
+        @mail5.thumbnail = nil
+        @mail5.save
+      end
+
+      it 'must return a 404 status if the mail does not have an image' do
+        @mail5.image = nil
+        @mail5.save
+        get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 404
+      end
+
+      it 'must create the thumbnail while fulfilling the request and returning status 200, if the image exists' do
+        get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 200
+      end
+
+    end
+
+  end
+
   describe 'get a list of cards available' do
 
     before do

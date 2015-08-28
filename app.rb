@@ -412,6 +412,33 @@ get '/mail/id/:id/image' do
 
 end
 
+# Retrieve image for a piece of mail
+# Scope: admin OR (can-read, is to or from person)
+get '/mail/id/:id/thumbnail' do
+
+  mail = Postoffice::Mail.find(params[:id])
+
+  ## For legacy purposes, creating the thumbnail if it does not already exist
+  if mail.thumbnail_uid == nil && mail.image_uid != nil
+    mail.thumbnail = mail.image.thumb('x96')
+    mail.save
+  end
+
+  if mail.thumbnail_uid == nil
+    [404, nil, nil]
+  else
+    from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
+    to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
+
+    if unauthorized(request, "admin") && not_authorized_owner(request, "can-read", from_id) && not_authorized_owner(request, "can-read", to_id)
+      return [401, nil, nil]
+    end
+
+    Postoffice::FileService.fetch_image(mail.thumbnail_uid).to_response
+  end
+
+end
+
 # View all mail in the system
 # Scope: admin
 get '/mail' do
@@ -601,6 +628,7 @@ get '/image/*' do
     end
 
     name = uid.split('/').last
+
     image = Dragonfly.app.fetch(uid).encode('jpg')
     image.name = name
     image.to_response

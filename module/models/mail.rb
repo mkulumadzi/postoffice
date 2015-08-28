@@ -5,11 +5,13 @@ module Postoffice
 
 		extend Dragonfly::Model
 		dragonfly_accessor :image
+		dragonfly_accessor :thumbnail
 
 		field :from, type: String
 		field :to, type: String
 		field :content, type: String
 		field :image_uid, type: String
+		field :thumbnail_uid
 		field :status, type: String, default: "DRAFT"
 		field :scheduled_to_arrive, type: DateTime
 

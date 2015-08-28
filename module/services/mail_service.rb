@@ -13,6 +13,7 @@ module Postoffice
 
 				if data["image_uid"]
 					mail.image = Dragonfly.app.fetch(data["image_uid"]).apply
+					mail.thumbnail = mail.image.thumb('x96')
 					mail.save
 				end
 
