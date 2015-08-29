@@ -1359,9 +1359,9 @@ describe app do
         last_response.status.must_equal 404
       end
 
-      it 'must create the thumbnail while fulfilling the request and returning status 200, if the image exists' do
+      it 'must create the thumbnail while fulfilling the request and then redirecting, returning status 200, if the image exists' do
         get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 200
+        last_response.status.must_equal 302
       end
 
     end
@@ -1393,34 +1393,8 @@ describe app do
         get "/image/resources/cards/Dhow.jpg", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
       end
 
-      it 'must return a 200 status' do
-        last_response.status.must_equal 200
-      end
-
-      it 'must return the image data as a base64 string' do
-        last_response.body.must_be_instance_of String
-      end
-
-      it 'must set the mime type to jpg' do
-        last_response.headers["Content-Type"].must_equal "image/jpeg"
-      end
-
-      it 'must return the filename' do
-        content_disposition = last_response.headers["Content-Disposition"]
-        filename = content_disposition.split('=')[1].gsub('"', '')
-        filename.must_equal 'Dhow.jpg'
-      end
-
-    end
-
-    describe 'get an image that does not exist' do
-
-      before do
-        get "/image/resources/foo.jpg", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-      end
-
-      it 'must return a 404 status' do
-        last_response.status.must_equal 404
+      it 'must redirect and return a 302 status' do
+        last_response.status.must_equal 302
       end
 
     end
@@ -1434,7 +1408,7 @@ describe app do
 
       it 'must succeed if the token has admin scope' do
         get "/image/#{@uid}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
-        last_response.status.must_equal 200
+        last_response.status.must_equal 302
       end
 
       it 'must fail if the token does not have admin scope' do

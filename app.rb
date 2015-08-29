@@ -465,8 +465,6 @@ end
 # Get a specific image
 # Scope: can-read can get images in /resources only, admin can get any image
 get '/image/*' do
-
-  begin
     uid = params['splat'][0]
     if uid.include?("resources") == false && Postoffice::AppService.unauthorized?(request, "admin")
       return [401, nil]
@@ -474,11 +472,5 @@ get '/image/*' do
       return [401, nil]
     end
 
-    name = uid.split('/').last
-    image = Dragonfly.app.fetch(uid).encode('jpg')
-    image.name = name
-    image.to_response
-  rescue Dragonfly::Job::Fetch::NotFound
-    [404, nil, nil]
-  end
+    redirect Postoffice::FileService.get_presigned_url uid
 end
