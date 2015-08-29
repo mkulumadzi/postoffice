@@ -315,7 +315,7 @@ get '/mail/id/:id/thumbnail' do
     [404, nil, nil]
   else
     if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
-    Postoffice::FileService.fetch_image(mail.thumbnail_uid).to_response
+    redirect Postoffice::FileService.get_presigned_url mail.thumbnail_uid
   end
 
 end

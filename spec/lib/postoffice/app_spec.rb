@@ -1275,7 +1275,7 @@ describe app do
 
     end
 
-    describe 'resize image with thumbnail parameter' do
+    describe 'resize image with thumb parameter' do
 
       it 'must resize the image if a thumbnail parameter is given' do
         get "/mail/id/#{@mail5.id}/image?thumb=400x", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
@@ -1339,12 +1339,8 @@ describe app do
         get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
       end
 
-      it 'must return a 200 status code if the image is found' do
-        last_response.status.must_equal 200
-      end
-
-      it 'must return the filename in a header' do
-        last_response.headers["Content-Disposition"].must_equal "filename=\"image2.jpg\""
+      it 'must redirect and return a 302 status if the image is found' do
+        last_response.status.must_equal 302
       end
 
     end
