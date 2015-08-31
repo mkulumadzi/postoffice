@@ -5,23 +5,28 @@ module Postoffice
 		def self.create_mail person_id, data
 			person = Postoffice::Person.find(person_id)
 
-		    mail = Postoffice::Mail.create!({
-		      from: person.username,
-		      to: data["to"],
-		      content: data["content"]
-		    })
+	    mail = Postoffice::Mail.create!({
+	      from: person.username,
+	      to: data["to"],
+	      content: data["content"]
+	    })
 
-				if data["image_uid"]
-					mail.image = Dragonfly.app.fetch(data["image_uid"]).apply
-					mail.thumbnail = mail.image.thumb('x96')
-					mail.save
-				end
+			if data["image_uid"]
+				mail.image = Dragonfly.app.fetch(data["image_uid"]).apply
+				mail.thumbnail = mail.image.thumb('x96')
+				mail.save
+			end
 
-				mail
+			if data["type"]
+				mail.type = data["type"]
+				mail.save
+			end
+
+			mail
 		end
 
 		def self.ensure_mail_arrives_in_order_it_was_sent mail
-			latest_incoming_mail = Postoffice::Mail.where(to: mail.to, from: mail.from, status: "SENT").desc(:scheduled_to_arrive).limit(1).first
+			latest_incoming_mail = Postoffice::Mail.where(to: mail.to, from: mail.from, status: "SENT", type: "STANDARD").desc(:scheduled_to_arrive).limit(1).first
 
 			if mail.scheduled_to_arrive < latest_incoming_mail.scheduled_to_arrive
 				mail.scheduled_to_arrive = latest_incoming_mail.scheduled_to_arrive + 5.minutes

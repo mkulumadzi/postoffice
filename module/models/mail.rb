@@ -13,6 +13,7 @@ module Postoffice
 		field :image_uid, type: String
 		field :thumbnail_uid
 		field :status, type: String, default: "DRAFT"
+		field :type, type: String, default: "STANDARD"
 		field :scheduled_to_arrive, type: DateTime
 
 		def days_to_arrive

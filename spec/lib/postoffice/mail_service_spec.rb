@@ -45,6 +45,16 @@ describe Postoffice::MailService do
 			@mail4.status.must_equal 'DRAFT'
 		end
 
+		it 'must have a default type of "STANDARD"' do
+			@mail4.type.must_equal 'STANDARD'
+		end
+
+		it 'must allow a different type to be specified' do
+			data = Hash["to", @person2.username, "content", @expected_attrs[:content], "type", "SCHEDULED"]
+			mail = Postoffice::MailService.create_mail @person1.id, data
+			mail.type.must_equal "SCHEDULED"
+		end
+
 	end
 
 	describe 'create mail with image' do
@@ -105,8 +115,17 @@ describe Postoffice::MailService do
 			updated_mail_record.scheduled_to_arrive.to_i.must_equal original_scheduled_date.to_i
 		end
 
-	end
+		it 'must ignore other mail if it does not have a type of "STANDARD"' do
+			@mailA.scheduled_to_arrive = Time.now + 4.days
+			@mailA.type = "SCHEDULED"
+			@mailA.save
+			original_scheduled_date = @mailB.scheduled_to_arrive
+			Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent @mailB
+			updated_mail_record = Postoffice::Mail.find(@mailB.id)
+			updated_mail_record.scheduled_to_arrive.to_i.must_equal original_scheduled_date.to_i
+		end
 
+	end
 
 	describe 'get mail' do
 

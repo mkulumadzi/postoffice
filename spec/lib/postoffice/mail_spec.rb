@@ -31,6 +31,10 @@ describe Postoffice::Mail do
 			@mail1.content.must_equal @expected_attrs[:content]
 		end
 
+		it 'must record the type of the mail' do
+			@mail1.type.must_equal "STANDARD"
+		end
+
 		describe 'add mail image' do
 
 			before do
