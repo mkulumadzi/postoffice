@@ -27,7 +27,9 @@ module Postoffice
 		def mail_it
 			raise ArgumentError, "Mail must be in DRAFT state to send" unless self.status == "DRAFT"
 			self.status = "SENT"
-			self.scheduled_to_arrive = arrive_when
+			unless self.scheduled_to_arrive?
+				self.scheduled_to_arrive = arrive_when
+			end
 			self.save
 		end
 

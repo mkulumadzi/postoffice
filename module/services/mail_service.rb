@@ -17,8 +17,9 @@ module Postoffice
 				mail.save
 			end
 
-			if data["type"]
-				mail.type = data["type"]
+			if data["scheduled_to_arrive"]
+				mail.scheduled_to_arrive = data["scheduled_to_arrive"]
+				mail.type = "SCHEDULED"
 				mail.save
 			end
 

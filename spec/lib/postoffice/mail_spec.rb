@@ -97,6 +97,28 @@ describe Postoffice::Mail do
 
 	end
 
+	describe 'send mail that has alredy been scheduled' do
+
+		before do
+			@scheduled_to_arrive = Time.now + 5.days
+
+			@scheduled_mail = build(:mail)
+			@scheduled_mail.type = "SCHEDULED"
+			@scheduled_mail.scheduled_to_arrive = @scheduled_to_arrive
+
+			@scheduled_mail.mail_it
+		end
+
+		it 'must have status of "SENT"' do
+			@scheduled_mail.status.must_equal "SENT"
+		end
+
+		it 'must still have the same date it was scheduled to arrive' do
+			@scheduled_mail.scheduled_to_arrive.must_equal @scheduled_to_arrive
+		end
+
+	end
+
 	describe 'deliver mail now' do
 
 		before do

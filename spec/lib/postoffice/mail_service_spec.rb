@@ -49,12 +49,6 @@ describe Postoffice::MailService do
 			@mail4.type.must_equal 'STANDARD'
 		end
 
-		it 'must allow a different type to be specified' do
-			data = Hash["to", @person2.username, "content", @expected_attrs[:content], "type", "SCHEDULED"]
-			mail = Postoffice::MailService.create_mail @person1.id, data
-			mail.type.must_equal "SCHEDULED"
-		end
-
 	end
 
 	describe 'create mail with image' do
@@ -82,6 +76,24 @@ describe Postoffice::MailService do
 
 		it 'must compress the thumbnail to a height of 96 px' do
 			@mail4.thumbnail.height.must_equal 96
+		end
+
+	end
+
+	describe 'schedule when mail will arrive' do
+
+		before do
+			@scheduled_to_arrive = Time.now + 5.days
+			data = Hash["to", @person2.username, "content", @expected_attrs[:content], "scheduled_to_arrive", @scheduled_to_arrive]
+			@scheduled_mail = Postoffice::MailService.create_mail @person1.id, data
+		end
+
+		it 'must have the date and time it is scheduled_to_arrive' do
+			@scheduled_mail.scheduled_to_arrive.must_equal @scheduled_to_arrive
+		end
+
+		it 'must have type "SCHEDULED"' do
+			@scheduled_mail.type.must_equal "SCHEDULED"
 		end
 
 	end
