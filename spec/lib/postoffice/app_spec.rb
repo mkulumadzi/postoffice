@@ -1068,6 +1068,41 @@ describe app do
 
 	end
 
+  describe '/person/id/:id/conversations' do
+
+    before do
+      @mail1.mail_it
+      @mail1.make_it_arrive_now
+    end
+
+    describe 'get conversation metadata' do
+
+      before do
+        get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
+        @metadata = JSON.parse(last_response.body)
+      end
+
+      it 'must return a 200 status' do
+        last_response.status.must_equal 200
+      end
+
+      it 'must return an array of conversation metadata' do
+        @metadata[0].keys.must_equal ["username", "name", "num_unread", "latest_update"]
+      end
+
+    end
+
+    describe 'error conditions' do
+
+      it 'must return a 401 status if the request is not properly authorized' do
+        get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 401
+      end
+
+    end
+
+  end
+
   describe '/person/id/:id/conversation/:conversation_id' do
 
     before do

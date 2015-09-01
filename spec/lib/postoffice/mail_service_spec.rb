@@ -311,6 +311,60 @@ describe Postoffice::MailService do
 
 	end
 
+	describe 'get conversation metadata' do
+
+		before do
+			@mail1.mail_it
+			@mail1.make_it_arrive_now
+			@mail2.mail_it
+			@mail2.make_it_arrive_now
+			@another_mail = create(:mail, from: @person2.username, to: @person1.username)
+
+			@params = Hash[:id, @person2.id]
+			@person2_penpals = Postoffice::MailService.get_contacts @person2.username
+			@conversation_metadata = Postoffice::MailService.conversation_metadata @params
+		end
+
+		it 'must return an array of Hashes' do
+			@conversation_metadata[0].must_be_instance_of Hash
+		end
+
+		it 'it must return a Hash for each penpal' do
+			@conversation_metadata.count.must_equal @person2_penpals.count
+		end
+
+		describe 'the metadata' do
+
+			before do
+				@metadata_for_person1 = @conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
+			end
+
+			it 'must include the username' do
+				@metadata_for_person1[:username].must_equal @person1.username
+			end
+
+			it 'must include the person name' do
+				@metadata_for_person1[:name].must_equal @person2.name
+			end
+
+			it 'must include the number of unread mail' do
+				mailbox = Postoffice::MailService.mailbox @params
+				num_unread = mailbox.select {|mail| mail[:status] != "READ"}.count
+				@metadata_for_person1[:num_unread].must_equal num_unread
+			end
+
+			it 'must include the datetime that the most recent mail was updated' do
+				@another_mail.updated_at = Time.now + 5.seconds
+				@another_mail.save
+				conversation_metadata = Postoffice::MailService.conversation_metadata @params
+				metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
+				metadata_for_person1[:latest_update].to_i.must_equal @another_mail.updated_at.to_i
+			end
+
+		end
+
+	end
+
 	describe 'conversation' do
 
 		before do

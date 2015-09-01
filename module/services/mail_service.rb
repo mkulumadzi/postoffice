@@ -76,6 +76,29 @@ module Postoffice
 
 		end
 
+		def self.conversation_metadata params
+			mailbox = Postoffice::MailService.mailbox params
+			outbox = Postoffice::MailService.outbox params
+			all_mail = mailbox + outbox
+			username = Postoffice::Person.find(params[:id]).username
+			penpals = self.get_contacts username
+			conversations = []
+
+			penpals.each do |person|
+				metadata = Hash.new
+				num_unread = mailbox.select {|mail| mail[:status] != "READ"}.count
+				mail_from_person = all_mail.select {|mail| mail[:to] == person[:username] || mail[:from] == person[:username]}
+				most_recent_mail = mail_from_person.sort! {|a,b| b[:updated_at] <=> a[:updated_at]}[0]
+				metadata[:username] = person[:username]
+				metadata[:name] = person[:name]
+				metadata[:num_unread] = num_unread
+				metadata[:latest_update] = most_recent_mail[:updated_at]
+				conversations << metadata
+			end
+
+			conversations
+		end
+
 		def self.conversation params
 			params[:conversation_username] = Postoffice::Person.find(params[:conversation_id]).username
 			from_conversation = self.outbox params
