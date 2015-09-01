@@ -349,7 +349,7 @@ describe Postoffice::MailService do
 
 			it 'must include the number of unread mail' do
 				mailbox = Postoffice::MailService.mailbox @params
-				num_unread = mailbox.select {|mail| mail[:status] != "READ"}.count
+				num_unread = mailbox.select {|mail| mail[:status] != "READ" && mail[:from] == @person1.username}.count
 				@metadata_for_person1[:num_unread].must_equal num_unread
 			end
 
