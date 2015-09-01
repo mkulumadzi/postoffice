@@ -1068,6 +1068,49 @@ describe app do
 
 	end
 
+  describe '/person/id/:id/conversation/:conversation_id' do
+
+    before do
+      @mail1.mail_it
+      @mail1.make_it_arrive_now
+    end
+
+    describe 'get conversation' do
+
+      before do
+        get "/person/id/#{@person2.id}/conversation/id/#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
+      end
+
+      it 'must return a 200 status if the request is successful' do
+        last_response.status.must_equal 200
+      end
+
+      it 'must include mail to or from person2' do
+        last_response.body.match(/#{@person2.username}/).must_be_instance_of MatchData
+      end
+
+      it 'must not include mail to or from person3' do
+        last_response.body.match(/#{@person3.username}/).must_equal nil
+      end
+
+    end
+
+    describe 'error conditions' do
+
+      it 'must return a 404 status if the resource is not found' do
+        get "/person/id/#{@person2.id}/conversation/id/foo", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
+        last_response.status.must_equal 404
+      end
+
+      it 'must return a 401 status if the request is not properly authorized' do
+        get "/person/id/#{@person2.id}/conversation/id/#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 401
+      end
+
+    end
+
+  end
+
 	describe '/mail/id/:id/read' do
 
 		before do

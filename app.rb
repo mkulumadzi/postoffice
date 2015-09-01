@@ -417,6 +417,22 @@ get '/person/id/:id/outbox' do
 
 end
 
+# View a conversation with another person
+# Scope: admin OR (can-read, is person)
+get '/person/id/:id/conversation/id/:conversation_id' do
+  content_type :json
+  Postoffice::AppService.add_if_modified_since_to_request_parameters self
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
+
+  begin
+    response_body = Postoffice::MailService.conversation(params).to_json
+    [200, response_body]
+  rescue Mongoid::Errors::DocumentNotFound
+    [404, nil]
+  end
+
+end
+
 # Get a list of people a person has sent mail to or received mail from
 # Scope: admin OR (can-read, is person)
 get '/person/id/:id/contacts' do

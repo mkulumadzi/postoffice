@@ -48,10 +48,8 @@ module Postoffice
 			mails = []
 
 			query = {to: username, scheduled_to_arrive: { "$lte" => Time.now } }
-
-			if params[:updated_at]
-				query[:updated_at] = params[:updated_at]
-			end
+			if params[:updated_at] then query[:updated_at] = params[:updated_at] end
+			if params[:conversation_username] then query[:from] = params[:conversation_username] end
 
 			Postoffice::Mail.where(query).each do |mail|
 				mail.update_delivery_status
@@ -67,9 +65,8 @@ module Postoffice
 
 			query = {from: username}
 
-			if params[:updated_at]
-				query[:updated_at] = params[:updated_at]
-			end
+			if params[:updated_at] then query[:updated_at] = params[:updated_at] end
+			if params[:conversation_username] then query[:to] = params[:conversation_username] end
 
 			Postoffice::Mail.where(query).each do |mail|
 				mails << mail.as_document
@@ -77,6 +74,14 @@ module Postoffice
 
 			mails
 
+		end
+
+		def self.conversation params
+			params[:conversation_username] = Postoffice::Person.find(params[:conversation_id]).username
+			from_conversation = self.outbox params
+			to_conversation = self.mailbox params
+			mails = from_conversation + to_conversation
+			mails.sort! {|a,b| b[:created_at] <=> a[:created_at]}
 		end
 
 		def self.generate_welcome_message person

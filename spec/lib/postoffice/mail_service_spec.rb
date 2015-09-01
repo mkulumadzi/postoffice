@@ -171,24 +171,29 @@ describe Postoffice::MailService do
 			@mail1.make_it_arrive_now
 
 			@mail2.mail_it
-			@mail2.save
 
 			@params = Hash[:id, @person2.id]
 
-			Postoffice::MailService.mailbox(@params)
-
 		end
 
-		it 'must get mail that has arrived' do
-			Postoffice::MailService.mailbox(@params).to_s.must_include @mail1.id.to_s
-		end
+		describe 'get mailbox' do
 
-		it 'must not show mail that has not arrived' do
-			Postoffice::MailService.mailbox(@params).to_s.match(/#{@mail2.id.to_s}/).must_equal nil
-		end
+			before do
+				@mailbox = Postoffice::MailService.mailbox(@params)
+			end
 
-		it 'must have updated the delivery status if necessary' do
-			Postoffice::Mail.find(@mail1.id).status.must_equal "DELIVERED"
+			it 'must get mail that has arrived' do
+				@mailbox.to_s.must_include @mail1.id.to_s
+			end
+
+			it 'must not show mail that has not arrived' do
+				@mailbox.to_s.match(/#{@mail2.id.to_s}/).must_equal nil
+			end
+
+			it 'must have updated the delivery status if necessary' do
+				Postoffice::Mail.find(@mail1.id).status.must_equal "DELIVERED"
+			end
+
 		end
 
 		describe 'get only mailbox updates since a datetime' do
@@ -209,6 +214,30 @@ describe Postoffice::MailService do
 
 		end
 
+		describe 'filter by from person' do
+
+			before do
+				@exclude_mail = create(:mail, from: @person3.username, to: @person2.username)
+				@exclude_mail.mail_it
+				@exclude_mail.make_it_arrive_now
+
+				@params[:conversation_username] = @person1.username
+
+				@mailbox = Postoffice::MailService.mailbox(@params)
+			end
+
+			it 'must return mail from person 1' do
+				filtered_mail = @mailbox.select {|mail| mail[:from] == @person1.username}
+				assert_operator filtered_mail.count, :>=, 1
+			end
+
+			it 'must not return mail from person 2' do
+				filtered_mail = @mailbox.select {|mail| mail[:from] == @person3.username}
+				filtered_mail.count.must_equal 0
+			end
+
+		end
+
 	end
 
 	describe 'outbox' do
@@ -221,18 +250,25 @@ describe Postoffice::MailService do
 			@params2 = Hash[:id, @person2.id]
 
 			@mail1.make_it_arrive_now
-			Postoffice::MailService.outbox(@params1)
 		end
 
-		it 'must get mail that has been sent by the user' do
-			Postoffice::MailService.outbox(@params1).to_s.must_include @mail1.id.to_s
+		describe 'get outbox' do
+
+			before do
+				@outbox = Postoffice::MailService.outbox(@params1)
+			end
+
+			it 'must get mail that has been sent by the user' do
+				@outbox.to_s.must_include @mail1.id.to_s
+			end
+
+			it 'must not get mail that has been sent by another user' do
+				Postoffice::MailService.outbox(@params2).to_s.match(/#{@mail1.id.to_s}/).must_equal nil
+			end
+
 		end
 
-		it 'must not get mail that has been sent by another user' do
-			Postoffice::MailService.outbox(@params2).to_s.match(/#{@mail1.id.to_s}/).must_equal nil
-		end
-
-		describe 'get only mailbox updates since a datetime' do
+		describe 'get only outbox updates since a datetime' do
 
 			before do
 				@mail4 = create(:mail, from: @person1.username, to: @person2.username)
@@ -248,6 +284,71 @@ describe Postoffice::MailService do
 				number_returned.must_equal expected_number
 			end
 
+		end
+
+		describe 'filter by to person' do
+
+			before do
+				@exclude_mail = create(:mail, from: @person1.username, to: @person3.username)
+				@exclude_mail.mail_it
+
+				@params1[:conversation_username] = @person2.username
+
+				@outbox = Postoffice::MailService.outbox(@params1)
+			end
+
+			it 'must return mail to person 2' do
+				filtered_mail = @outbox.select {|mail| mail[:to] == @person2.username}
+				assert_operator filtered_mail.count, :>=, 1
+			end
+
+			it 'must not return mail to person 3' do
+				filtered_mail = @outbox.select {|mail| mail[:to] == @person3.username}
+				filtered_mail.count.must_equal 0
+			end
+
+		end
+
+	end
+
+	describe 'conversation' do
+
+		before do
+			@mail1.mail_it
+			@mail1.make_it_arrive_now
+
+			@mail2.mail_it
+
+			@include_mail = create(:mail, from: @person2.username, to: @person1.username)
+
+			@exclude_mail1 = create(:mail, from: @person2.username, to: @person3.username)
+			@exclude_mail2 = create(:mail, from: @person3.username, to: @person2.username)
+			@exclude_mail2.mail_it
+			@exclude_mail2.make_it_arrive_now
+
+			@params = Hash[:id, @person2.id, :conversation_id, @person1.id]
+			@conversation = Postoffice::MailService.conversation @params
+		end
+
+		it 'must include mail from person2 to person 1' do
+			filtered_mail = @conversation.select {|mail| mail[:from] == @person2.username && mail[:to] == @person1.username}
+			assert_operator filtered_mail.count, :>=, 1
+		end
+
+		it 'must include mail from person 2 to person 1' do
+			filtered_mail = @conversation.select {|mail| mail[:from] == @person1.username && mail[:to] == @person2.username}
+			assert_operator filtered_mail.count, :>=, 1
+		end
+
+		it 'must not include mail from or to person 3' do
+			filtered_mail = @conversation.select {|mail| mail[:to] == @person3.username || mail[:from] == @person3.username}
+			filtered_mail.count.must_equal 0
+		end
+
+		it 'must sort the mail in descending order based on the date it was created' do
+			@mail1.created_at = Time.now - 5.days
+			sorted_conversation = Postoffice::MailService.conversation @params
+			sorted_conversation.pop[:_id].to_s.must_equal @mail1.id.to_s
 		end
 
 	end
