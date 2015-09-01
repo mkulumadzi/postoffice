@@ -1087,7 +1087,7 @@ describe app do
       end
 
       it 'must return an array of conversation metadata' do
-        @metadata[0].keys.must_equal ["username", "name", "num_unread", "latest_update"]
+        @metadata[0].keys.must_equal ["username", "name", "num_unread", "updated_at"]
       end
 
     end

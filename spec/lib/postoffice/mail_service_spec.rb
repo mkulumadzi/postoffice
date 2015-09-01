@@ -358,7 +358,7 @@ describe Postoffice::MailService do
 				@another_mail.save
 				conversation_metadata = Postoffice::MailService.conversation_metadata @params
 				metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
-				metadata_for_person1[:latest_update].to_i.must_equal @another_mail.updated_at.to_i
+				metadata_for_person1[:updated_at].to_i.must_equal @another_mail.updated_at.to_i
 			end
 
 		end

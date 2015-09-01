@@ -92,7 +92,7 @@ module Postoffice
 				metadata[:username] = person[:username]
 				metadata[:name] = person[:name]
 				metadata[:num_unread] = num_unread
-				metadata[:latest_update] = most_recent_mail[:updated_at]
+				metadata[:updated_at] = most_recent_mail[:updated_at]
 				conversations << metadata
 			end
 
