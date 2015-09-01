@@ -89,11 +89,14 @@ module Postoffice
 				num_unread = mailbox.select {|mail| mail[:status] != "READ" && mail[:from] == person[:username]}.count
 				mail_from_person = all_mail.select {|mail| mail[:to] == person[:username] || mail[:from] == person[:username]}
 				most_recent_mail = mail_from_person.sort! {|a,b| b[:updated_at] <=> a[:updated_at]}[0]
-				metadata[:username] = person[:username]
-				metadata[:name] = person[:name]
-				metadata[:num_unread] = num_unread
-				metadata[:updated_at] = most_recent_mail[:updated_at]
-				conversations << metadata
+
+				if most_recent_mail != nil
+					metadata[:username] = person[:username]
+					metadata[:name] = person[:name]
+					metadata[:num_unread] = num_unread
+					metadata[:updated_at] = most_recent_mail[:updated_at]
+					conversations << metadata
+				end
 			end
 
 			conversations

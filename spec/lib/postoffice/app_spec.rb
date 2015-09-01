@@ -1101,6 +1101,27 @@ describe app do
 
     end
 
+    describe 'get recently modified data only' do
+
+      before do
+        @another_mail = create(:mail, from: @person2.username, to: @person3.username)
+        @another_mail.updated_at = Time.now + 5.minutes
+        @another_mail.save
+        if_modified_since = (Time.now + 4.minutes).to_s
+        get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}", "HTTP_IF_MODIFIED_SINCE" => if_modified_since}
+      end
+
+      it 'must return a 200 status code' do
+        last_response.status.must_equal 200
+      end
+
+      it 'must only conversations that have been modified since the date specified' do
+        response_body = JSON.parse(last_response.body)
+        response_body.count.must_equal 1
+      end
+
+    end
+
   end
 
   describe '/person/id/:id/conversation/:conversation_id' do
