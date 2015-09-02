@@ -319,6 +319,7 @@ describe Postoffice::MailService do
 			@mail2.mail_it
 			@mail2.make_it_arrive_now
 			@another_mail = create(:mail, from: @person2.username, to: @person1.username)
+			@another_mail.mail_it
 
 			@params = Hash[:id, @person2.id]
 			@person2_penpals = Postoffice::MailService.get_contacts @person2.username
@@ -351,6 +352,12 @@ describe Postoffice::MailService do
 				mailbox = Postoffice::MailService.mailbox @params
 				num_unread = mailbox.select {|mail| mail[:status] != "READ" && mail[:from] == @person1.username}.count
 				@metadata_for_person1[:num_unread].must_equal num_unread
+			end
+
+			it 'must include the number of undelivered mail' do
+				outbox = Postoffice::MailService.outbox @params
+				num_undelivered = outbox.select {|mail| mail[:status] == "SENT" && mail[:to] == @person1.username}.count
+				@metadata_for_person1[:num_undelivered].must_equal num_undelivered
 			end
 
 			it 'must include the datetime that the most recent mail was updated' do
