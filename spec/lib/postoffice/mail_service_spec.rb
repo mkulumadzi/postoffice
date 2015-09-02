@@ -368,6 +368,22 @@ describe Postoffice::MailService do
 				metadata_for_person1[:updated_at].to_i.must_equal @another_mail.updated_at.to_i
 			end
 
+			it 'must include the most recent status of a mail' do
+				@another_mail.updated_at = Time.now + 5.seconds
+				@another_mail.save
+				conversation_metadata = Postoffice::MailService.conversation_metadata @params
+				metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
+				metadata_for_person1[:most_recent_status].must_equal @another_mail.status
+			end
+
+			it 'must include the most recent sender of a mail' do
+				@another_mail.updated_at = Time.now + 5.seconds
+				@another_mail.save
+				conversation_metadata = Postoffice::MailService.conversation_metadata @params
+				metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
+				metadata_for_person1[:most_recent_sender].must_equal @another_mail.from
+			end
+
 		end
 
 	end

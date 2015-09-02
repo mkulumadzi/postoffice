@@ -97,6 +97,8 @@ module Postoffice
 					metadata[:num_unread] = num_unread
 					metadata[:num_undelivered] = num_undelivered
 					metadata[:updated_at] = most_recent_mail[:updated_at]
+					metadata[:most_recent_status] = most_recent_mail[:status]
+					metadata[:most_recent_sender] = most_recent_mail[:from]
 					conversations << metadata
 				end
 			end
