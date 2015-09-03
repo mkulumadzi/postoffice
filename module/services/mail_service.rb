@@ -77,30 +77,29 @@ module Postoffice
 		end
 
 		def self.conversation_metadata params
-			mailbox = Postoffice::MailService.mailbox params
-			outbox = Postoffice::MailService.outbox params
-			all_mail = mailbox + outbox
-			username = Postoffice::Person.find(params[:id]).username
-			penpals = self.get_contacts username
+			penpals = self.get_contacts params
 			conversations = []
+			username = Postoffice::Person.find(params[:id]).username
 
 			penpals.each do |person|
-				metadata = Hash.new
-				num_unread = mailbox.select {|mail| mail[:status] != "READ" && mail[:from] == person[:username]}.count
-				num_undelivered = outbox.select{|mail| mail[:status] == "SENT" && mail[:to] == person[:username]}.count
-				mail_from_person = all_mail.select {|mail| mail[:to] == person[:username] || mail[:from] == person[:username]}
-				most_recent_mail = mail_from_person.sort! {|a,b| b[:updated_at] <=> a[:updated_at]}[0]
 
-				if most_recent_mail != nil
-					metadata[:username] = person[:username]
-					metadata[:name] = person[:name]
-					metadata[:num_unread] = num_unread
-					metadata[:num_undelivered] = num_undelivered
-					metadata[:updated_at] = most_recent_mail[:updated_at]
-					metadata[:most_recent_status] = most_recent_mail[:status]
-					metadata[:most_recent_sender] = most_recent_mail[:from]
-					conversations << metadata
-				end
+				num_unread = Postoffice::Mail.where({from: person[:username], to: username, status: "DELIVERED"}).count
+				num_undelivered = Postoffice::Mail.where({from: username, to: person[:username], status: "SENT"}).count
+				all_mail_query = Postoffice::Mail.or({from: username, to: person[:username]},{from: person[:username], to: username, status: {:$in => ["DELIVERED", "READ"]}})
+
+				most_recent_updated_mail = all_mail_query.sort! {|a,b| b[:updated_at] <=> a[:updated_at]}[0]
+				most_recent_arrived_mail = all_mail_query.where(scheduled_to_arrive: {:$ne => nil}).sort! {|a,b| b[:scheduled_to_arrive] <=> a[:scheduled_to_arrive]}[0]
+
+				metadata = Hash.new
+				metadata[:username] = person[:username]
+				metadata[:name] = person[:name]
+				metadata[:num_unread] = num_unread
+				metadata[:num_undelivered] = num_undelivered
+				metadata[:updated_at] = most_recent_updated_mail[:updated_at]
+				metadata[:most_recent_status] = most_recent_arrived_mail[:status]
+				metadata[:most_recent_sender] = most_recent_arrived_mail[:from]
+				conversations << metadata
+
 			end
 
 			conversations
@@ -169,36 +168,41 @@ module Postoffice
 		end
 
 		# Get people who have sent or received mail to the person
-		def self.get_people_who_received_mail_from username
-			list_of_people = []
+		def self.get_people_who_received_mail_from params
+			username = Postoffice::Person.find(params[:id]).username
+			query = Hash[:from, username]
+			if params[:updated_at] != nil then query[:updated_at] = params[:updated_at] end
 
-			Postoffice::Mail.where(from: username).each do |mail|
+			list_of_people = []
+			Postoffice::Mail.where(query).each do |mail|
 				list_of_people << Postoffice::Person.find_by(username: mail.to)
 			end
 
-			list_of_people
+			list_of_people.uniq
 		end
 
-		def self.get_people_who_sent_mail_to username
-			list_of_people = []
+		def self.get_people_who_sent_mail_to params
+			username = Postoffice::Person.find(params[:id]).username
+			query = Hash[to: username, status: Hash[:$in, ["DELIVERED", "READ"]]]
+			if params[:updated_at] != nil then query[:updated_at] = params[:updated_at] end
 
-			Postoffice::Mail.where(to: username).each do |mail|
+			list_of_people = []
+			Postoffice::Mail.where(query).each do |mail|
 				list_of_people << Postoffice::Person.find_by(username: mail.from)
 			end
 
-			list_of_people
+			list_of_people.uniq
 		end
 
-		def self.get_contacts username
-			recipients = self.get_people_who_received_mail_from username
-			senders = self.get_people_who_sent_mail_to username
-
-			contacts = []
-			recipients.concat(senders).uniq.each do |person|
-				contacts << person.as_document
+		def self.get_contacts params
+			recipients = self.get_people_who_received_mail_from params
+			senders = self.get_people_who_sent_mail_to params
+			contacts = (recipients + senders).uniq
+			contacts_as_documents = []
+			contacts.each do |person|
+				contacts_as_documents << person.as_document
 			end
-
-			contacts
+			contacts_as_documents
 		end
 
 	end

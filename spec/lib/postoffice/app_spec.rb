@@ -1073,30 +1073,50 @@ describe app do
     before do
       @mail1.mail_it
       @mail1.make_it_arrive_now
+      @mail1.update_delivery_status
     end
 
     describe 'get conversation metadata' do
 
-      before do
-        get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
-        @metadata = JSON.parse(last_response.body)
+      describe 'get the metadata' do
+
+        before do
+          get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
+          @metadata = JSON.parse(last_response.body)
+        end
+
+        it 'must return a 200 status' do
+          last_response.status.must_equal 200
+        end
+
+        it 'must return an array of conversation metadata' do
+          @metadata[0].keys.must_equal ["username", "name", "num_unread", "num_undelivered", "updated_at", "most_recent_status", "most_recent_sender"]
+        end
+
       end
 
-      it 'must return a 200 status' do
-        last_response.status.must_equal 200
+      describe 'error conditions' do
+
+        it 'must return a 401 status if the request is not properly authorized' do
+          get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+          last_response.status.must_equal 401
+        end
+
       end
 
-      it 'must return an array of conversation metadata' do
-        @metadata[0].keys.must_equal ["username", "name", "num_unread", "num_undelivered", "updated_at", "most_recent_status", "most_recent_sender"]
-      end
+      describe 'get metadata since a date' do
+        before do
+          another_mail = build(:mail, from: @person2.username, to: @person3.username)
+          another_mail.updated_at = Time.now + 5.minutes
+          another_mail.mail_it
+          get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}", "HTTP_IF_MODIFIED_SINCE" => (Time.now + 4.minutes).to_s}
+          @metadata = JSON.parse(last_response.body)
+        end
 
-    end
+        it 'must only include people whose conversations were updated since the date specified' do
+          @metadata.count.must_equal 1
+        end
 
-    describe 'error conditions' do
-
-      it 'must return a 401 status if the request is not properly authorized' do
-        get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 401
       end
 
     end
@@ -1105,20 +1125,41 @@ describe app do
 
       before do
         @another_mail = create(:mail, from: @person2.username, to: @person3.username)
+        @another_mail.mail_it
         @another_mail.updated_at = Time.now + 5.minutes
         @another_mail.save
+
+        @one_more_mail = create(:mail, from: @person2.username, to: @person3.username)
+        @one_more_mail.mail_it
+
+        @an_unread_mail = create(:mail, from: @person3.username, to: @person2.username)
+        @an_unread_mail.mail_it
+        @an_unread_mail.make_it_arrive_now
+        @an_unread_mail.update_delivery_status
+
         if_modified_since = (Time.now + 4.minutes).to_s
         get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}", "HTTP_IF_MODIFIED_SINCE" => if_modified_since}
+        @parsed_response = JSON.parse(last_response.body)
       end
 
       it 'must return a 200 status code' do
         last_response.status.must_equal 200
       end
 
-      it 'must only conversations that have been modified since the date specified' do
-        response_body = JSON.parse(last_response.body)
-        response_body.count.must_equal 1
+      it 'must only include conversations that have been modified since the date specified' do
+        @parsed_response.count.must_equal 1
       end
+
+      it 'must still return the total number of undelivered mail' do
+        num_undelivered = Postoffice::Mail.where({from: @person2.username, to: @person3.username, status: "SENT"}).count
+        @parsed_response[0]["num_undelivered"].must_equal num_undelivered
+      end
+
+      it 'must still return the total number of unread mail' do
+        num_unread = Postoffice::Mail.where({from: @person3.username, to: @person2.username, status: "DELIVERED"}).count
+        @parsed_response[0]["num_unread"].must_equal num_unread
+      end
+
 
     end
 
@@ -1220,7 +1261,8 @@ describe app do
 
 		## This test should be improved...
 		it 'must return all of the users contacts' do
-			contacts = Postoffice::MailService.get_contacts @person1.username
+      params = Hash[:id, @person1.id.to_s]
+			contacts = Postoffice::MailService.get_contacts params
 			@response.length.must_equal contacts.length
 		end
 
@@ -1237,6 +1279,25 @@ describe app do
 			end
 
 		end
+
+    describe 'get records modified since a date' do
+
+      before do
+        @mail3.mail_it
+        @mail3.make_it_arrive_now
+        @mail3.update_delivery_status
+        @mail3.updated_at = Time.now + 5.minutes
+        @mail3.save
+
+        get "/person/id/#{@person1.id}/contacts", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}", "HTTP_IF_MODIFIED_SINCE" => (Time.now + 4.minutes).to_s}
+  			@response = JSON.parse(last_response.body)
+      end
+
+      it 'must only include people who sent mail to the person since the date' do
+        @response.count.must_equal 1
+      end
+
+    end
 
 	end
 

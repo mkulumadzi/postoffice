@@ -316,13 +316,15 @@ describe Postoffice::MailService do
 		before do
 			@mail1.mail_it
 			@mail1.make_it_arrive_now
+			@mail1.update_delivery_status
 			@mail2.mail_it
 			@mail2.make_it_arrive_now
+			@mail2.update_delivery_status
 			@another_mail = create(:mail, from: @person2.username, to: @person1.username)
 			@another_mail.mail_it
 
 			@params = Hash[:id, @person2.id]
-			@person2_penpals = Postoffice::MailService.get_contacts @person2.username
+			@person2_penpals = Postoffice::MailService.get_contacts @params
 			@conversation_metadata = Postoffice::MailService.conversation_metadata @params
 		end
 
@@ -382,6 +384,41 @@ describe Postoffice::MailService do
 				conversation_metadata = Postoffice::MailService.conversation_metadata @params
 				metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
 				metadata_for_person1[:most_recent_sender].must_equal @another_mail.from
+			end
+
+		end
+
+		describe 'get only recent metadata' do
+
+			before do
+				recently_updated_mail = create(:mail, from: @person2.username, to: @person3.username)
+				recently_updated_mail.mail_it
+				recently_updated_mail.updated_at = Time.now + 5.minutes
+				recently_updated_mail.save
+
+				one_more_mail = create(:mail, from: @person2.username, to: @person3.username)
+				one_more_mail.mail_it
+
+				another_mail = create(:mail, from: @person3.username, to: @person2.username)
+				another_mail.mail_it
+				another_mail.make_it_arrive_now
+				another_mail.update_delivery_status
+
+				params = Hash[:id, @person2.id, :updated_at, { "$gt" => Time.now + 4.minutes }]
+				@conversation_metadata = Postoffice::MailService.conversation_metadata params
+
+			end
+
+			it 'must only include people who sent mail or received mail after the date' do
+				@conversation_metadata.count.must_equal 1
+			end
+
+			it 'must include the total number of unread mail, not just the mail unread since the date' do
+				@conversation_metadata[0][:num_unread].must_equal 1
+			end
+
+			it 'must include the total number of undelivered mail, not just the mail undelivered since the date' do
+				@conversation_metadata[0][:num_undelivered].must_equal 2
 			end
 
 		end
@@ -510,12 +547,14 @@ describe Postoffice::MailService do
 			@mail1.mail_it
 			@mail2.mail_it
 			@mail3.mail_it
+
+			@params = Hash[:id, @person1.id.to_s]
 		end
 
 		describe 'get users the person has sent mail to' do
 
 			before do
-				@recipients = Postoffice::MailService.get_people_who_received_mail_from @person1.username
+				@recipients = Postoffice::MailService.get_people_who_received_mail_from @params
 			end
 
 			it 'must return an array of people' do
@@ -523,19 +562,31 @@ describe Postoffice::MailService do
 			end
 
 			it 'must include every user who has received mail from this person' do
-
-				not_in = 0
-
-				Postoffice::Mail.where(from: @person1.id).each do |mail|
-					person = Postoffice::Person.find_by(username: mail.to)
-
-					if @recipients.include? person == false
-						not_in += 1
-					end
-
+				sent_to = []
+				Postoffice::Mail.where(from: @person1.username).each do |mail|
+					sent_to << Postoffice::Person.find_by(username: mail.to)
 				end
+				(@recipients.uniq - sent_to.uniq).must_equal []
+			end
 
-				not_in.must_equal 0
+		end
+
+		describe 'get records where mail was sent since a date' do
+
+			before do
+				another_mail = create(:mail, from: @person1.username, to: @person3.username)
+				another_mail.updated_at = Time.now + 5.minutes
+				another_mail.save
+				@params[:updated_at] = { "$gt" => Time.now + 4.minutes }
+				@recipients = Postoffice::MailService.get_people_who_received_mail_from @params
+			end
+
+			it 'must include people who sent mail to the user after the date specified' do
+				@recipients.must_include @person3
+			end
+
+			it 'must not include people who sent mail to the user earlier than the date specified' do
+				(@recipients.include? @person2).must_equal false
 			end
 
 		end
@@ -543,51 +594,71 @@ describe Postoffice::MailService do
 		describe 'get users the person has received mail from' do
 
 			before do
-				@senders = Postoffice::MailService.get_people_who_sent_mail_to @person1.username
+				@mail3.make_it_arrive_now
+				@mail3.update_delivery_status
+
+				another_mail = create(:mail, from: @person2.username, to: @person1.username)
+				another_mail.mail_it
+				@senders = Postoffice::MailService.get_people_who_sent_mail_to @params
 			end
 
 			it 'must return an array of people' do
 				@senders[0].must_be_instance_of Postoffice::Person
 			end
 
-			it 'must include every user who has sent mail to this person' do
-				not_in = 0
-				Postoffice::Mail.where(to: @person1.id).each do |mail|
-					person = Postoffice::Person.find_by(username: mail.from)
-					if @recipients.include? person == false
-						not_in += 1
-					end
+			it 'must include every user who has sent mail to this person, if the mail has been delivered already' do
+				received_from = []
+				Postoffice::Mail.where(to: @person1.username).each do |mail|
+					received_from << Postoffice::Person.find_by(username: mail.from)
 				end
-				not_in.must_equal 0
+				(@senders.uniq - received_from.uniq).must_equal []
+			end
+
+			it 'must not include users who have sent mail to the person that has not been delivered' do
+				@senders.include?(@person2).must_equal false
+			end
+
+		end
+
+		describe 'get records where mail was sent since a date' do
+
+			before do
+				another_mail = create(:mail, from: @person2.username, to: @person1.username)
+				another_mail.mail_it
+				another_mail.make_it_arrive_now
+				another_mail.update_delivery_status
+				another_mail.updated_at = Time.now + 5.minutes
+				another_mail.save
+				@params[:updated_at] = { "$gt" => Time.now + 4.minutes }
+				@senders = Postoffice::MailService.get_people_who_sent_mail_to @params
+			end
+
+			it 'must include people who sent mail to the user after the date specified' do
+				@senders.must_include @person2
+			end
+
+			it 'must not include people who sent mail to the user earlier than the date specified' do
+				(@senders.include? @person3).must_equal false
 			end
 
 		end
 
 		it 'must return an array of bson documents' do
-			contacts = Postoffice::MailService.get_contacts @person1.username
+			contacts = Postoffice::MailService.get_contacts @params
 			contacts[0].must_be_instance_of BSON::Document
 		end
 
 		it 'must create a unique list of all senders and recipients' do
-
-			senders = Postoffice::MailService.get_people_who_sent_mail_to @person1.username
-			recipients = Postoffice::MailService.get_people_who_received_mail_from @person1.username
-
-			comparison_group = []
-			senders.concat(recipients).uniq.each do |person|
-				comparison_group << person.as_document
+			senders = Postoffice::MailService.get_people_who_sent_mail_to @params
+			recipients = Postoffice::MailService.get_people_who_received_mail_from @params
+			comparison_group = (senders + recipients).uniq
+			comparison_group_as_documents = []
+			comparison_group.each do |person|
+				comparison_group_as_documents << person.as_document
 			end
 
-			contacts = Postoffice::MailService.get_contacts @person1.username
-
-			not_in = 0
-			comparison_group.each do |doc|
-				if contacts.include? doc == false
-					not_in += 1
-				end
-			end
-
-			not_in.must_equal 0
+			contacts = Postoffice::MailService.get_contacts @params
+			(contacts - comparison_group_as_documents).must_equal []
 		end
 
 	end
