@@ -35,6 +35,11 @@ end
 
 task :setup_demo_data do
 
+	if ENV["RACK_ENV"] == "production"
+		puts "Cannot setup demo data on production environment"
+		return nil
+	end
+
 	Mongoid.load!("config/mongoid.yml")
 
 	Postoffice::Mail.delete_all
