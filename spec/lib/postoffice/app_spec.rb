@@ -622,6 +622,28 @@ describe app do
 
   end
 
+  describe 'request password reset token' do
+
+    describe 'successful request' do
+
+      before do
+        data = '{"email": "' + @person1.email + '"}'
+        post "/request_password_reset", data, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
+      end
+
+      it 'must return a 200 status' do
+        last_response.status.must_equal 200
+      end
+
+      it 'must include the token in the response' do
+        response = JSON.parse(last_response.body)
+        response["token"].must_be_instance_of String
+      end
+
+    end
+
+  end
+
 	describe '/people' do
 
     describe 'get all people' do

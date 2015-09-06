@@ -50,6 +50,12 @@ module Postoffice
 			{:id => person.id.to_s, :exp => exp, :scope => "reset-password"}
 		end
 
+		def self.get_response_for_requeseting_password_reset person
+			payload = self.generate_payload_for_password_reset person
+			token = self.generate_token payload
+			Hash["token", token]
+		end
+
 		def self.generate_token payload
 			rsa_private = self.get_private_key
 			token = JWT.encode payload, rsa_private, 'RS256'

@@ -160,6 +160,24 @@ post '/reset_password' do
 
 end
 
+#Request token for resetting user password
+post '/request_password_reset' do
+  content_type :json
+  data = JSON.parse(request.body.read)
+
+  # Check the token
+  if Postoffice::AppService.unauthorized?(request, "reset-password") then return [401, nil] end
+
+  begin
+    person = Postoffice::Person.find_by(email: data["email"])
+    response = Postoffice::AuthService.get_response_for_requeseting_password_reset(person).to_json
+    [200, response]
+  rescue Mongoid::Errors::DocumentNotFound
+    [403, nil]
+  end
+
+end
+
 # View records for all people in the database.
 # Filtering implemented, for example: /people?username=bigedubs
 # Scope: admin

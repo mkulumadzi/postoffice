@@ -237,4 +237,27 @@ describe Postoffice::AuthService do
 
 	end
 
+	describe 'get response for password reset request' do
+
+		before do
+			@app_token = Postoffice::AuthService.get_app_token
+			@response = Postoffice::AuthService.get_response_for_requeseting_password_reset @person
+		end
+
+		it 'must be a hash' do
+			@response.must_be_instance_of Hash
+		end
+
+		it 'must return a password reset token' do
+			token_decoded = Postoffice::AuthService.decode_token @response["token"]
+			token_decoded[0]["scope"].must_equal "reset-password"
+		end
+
+		it 'must contain the person id' do
+			token_decoded = Postoffice::AuthService.decode_token @response["token"]
+			token_decoded[0]["id"].must_equal @person.id.to_s
+		end
+
+	end
+
 end
