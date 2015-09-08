@@ -64,3 +64,5 @@ configure do
 	set :max_age, "1728000"
 	set :expose_headers, ['Content-Type']
 end
+
+## Configuring Postmark for sending emails

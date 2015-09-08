@@ -663,4 +663,33 @@ describe Postoffice::MailService do
 
 	end
 
+	describe 'send email' do
+
+		describe 'send a test email' do
+
+			before do
+				@email_hash = Hash[from: "postman@slowpost.me", to: "evan@slowpost.me", subject: "This is a test", html_body: "<strong>Hello</strong> Evan!", track_opens: false]
+				@result = Postoffice::MailService.send_email @email_hash, "POSTMARK_API_TEST"
+			end
+
+			it 'must not get an error' do
+				@result[:error_code].must_equal 0
+			end
+
+			it 'must be sent to the right person' do
+				@result[:to].must_equal @email_hash[:to]
+			end
+
+			it 'must have a unique id' do
+				@result[:message_id].must_be_instance_of String
+			end
+
+			it 'must indicate that the test job was accpepted' do
+				@result[:message].must_equal "Test job accepted"
+			end
+
+		end
+
+	end
+
 end

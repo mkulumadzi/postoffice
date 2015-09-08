@@ -205,6 +205,11 @@ module Postoffice
 			contacts_as_documents
 		end
 
+		def self.send_email email_hash, api_key
+			client = Postmark::ApiClient.new(api_key)
+			client.deliver(email_hash)
+		end
+
 	end
 
 end
