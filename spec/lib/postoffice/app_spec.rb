@@ -752,6 +752,38 @@ describe app do
 
 		end
 
+    describe 'create mail with email delivery options' do
+
+      describe 'invalid email' do
+
+        before do
+          data = '{"to": "foo", "content": "Yo what is up", "delivery_options": ["EMAIL"]}'
+          post "/person/id/#{@person1.id}/mail/new", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        end
+
+        it 'must return a 403 status if a person tries to send mail with an EMAIL delivery option, and the recipient does not have a valid email address' do
+          last_response.status.must_equal 403
+        end
+
+        it 'must include an error message in the response body' do
+          message = JSON.parse(last_response.body)["message"]
+          message.must_be_instance_of String
+        end
+
+      end
+
+      describe 'valid email' do
+
+        it 'must create the mail successfully and return a 201 status' do
+          data = '{"to": "foo@foo.com", "content": "Yo what is up", "delivery_options": ["EMAIL"]}'
+          post "/person/id/#{@person1.id}/mail/new", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+          last_response.status.must_equal 201
+        end
+
+      end
+
+    end
+
     describe 'unauthorized request' do
 
       it 'must return a 401 error if a person tries to create mail for another user id' do
@@ -795,10 +827,42 @@ describe app do
 
 		end
 
+    describe 'send mail with email delivery options' do
+
+      describe 'invalid email' do
+
+        before do
+          data = '{"to": "foo", "content": "Yo what is up", "delivery_options": ["EMAIL"]}'
+          post "/person/id/#{@person1.id}/mail/send", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        end
+
+        it 'must return a 403 status if a person tries to send mail with an EMAIL delivery option, and the recipient does not have a valid email address' do
+          last_response.status.must_equal 403
+        end
+
+        it 'must include an error message in the response body' do
+          message = JSON.parse(last_response.body)["message"]
+          message.must_be_instance_of String
+        end
+
+      end
+
+      describe 'valid email' do
+
+        it 'must send the mail successfully and return a 201 status' do
+          data = '{"to": "foo@foo.com", "content": "Yo what is up", "delivery_options": ["EMAIL"]}'
+          post "/person/id/#{@person1.id}/mail/send", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+          last_response.status.must_equal 201
+        end
+
+      end
+
+    end
+
     describe 'unauthorized request' do
 
       it 'must return a 401 error if a person tries to create mail for another user id' do
-        post "/person/id/#{@person2.id}/mail/new", @mail_data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        post "/person/id/#{@person2.id}/mail/send", @mail_data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
         last_response.status.must_equal 401
       end
 

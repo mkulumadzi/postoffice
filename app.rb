@@ -252,6 +252,9 @@ post '/person/id/:id/mail/new' do
     [404, nil, nil]
   rescue Moped::Errors::OperationFailure
     [403, nil, nil]
+  rescue RuntimeError => error
+    response_body = Hash["message", error.to_s].to_json
+    [403, nil, response_body]
   end
 
 end
@@ -260,6 +263,7 @@ end
 # Scope: admin OR (can-write, is person)
 post '/person/id/:id/mail/send' do
   data = JSON.parse request.body.read
+
   if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
 
   begin
@@ -273,6 +277,9 @@ post '/person/id/:id/mail/send' do
     [404, nil]
   rescue Moped::Errors::OperationFailure
     [403, nil]
+  rescue RuntimeError => error
+    response_body = Hash["message", error.to_s].to_json
+    [403, nil, response_body]
   end
 
 end
