@@ -10,6 +10,10 @@ module Postoffice
 			if data["scheduled_to_arrive"] then self.set_scheduled_to_arrive mail_hash, data end
 			if data["delivery_options"] then self.set_delivery_options mail_hash, data end
 
+			if mail_hash[:delivery_options] && mail_hash[:delivery_options].include?("EMAIL")
+				self.validate_ability_to_send_email_to_recipient mail_hash
+			end
+
 			mail = Postoffice::Mail.create!(mail_hash)
 
 			if data["image_uid"]
@@ -36,11 +40,28 @@ module Postoffice
 
 		def self.invalid_delivery_options? delivery_options
 			valid_delivery_options = ["SLOWPOST", "EMAIL"]
-
 			if (delivery_options - valid_delivery_options).count > 0
 				true
 			else
 				false
+			end
+		end
+
+		def self.validate_ability_to_send_email_to_recipient mail_hash
+			begin
+				person = Postoffice::Person.find_by(username: mail_hash[:to])
+				if self.invalid_email? person.email then raise "User does not have an email address" end
+			rescue Mongoid::Errors::DocumentNotFound
+				if self.invalid_email? mail_hash[:to] then raise "Invalid email address" end
+			end
+		end
+
+		def self.invalid_email? email
+			valid_email_regex = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/
+			if email && email.match(valid_email_regex) != nil
+				return false
+			else
+				return true
 			end
 		end
 

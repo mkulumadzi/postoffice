@@ -169,6 +169,75 @@ describe Postoffice::MailService do
 
 		end
 
+		describe 'validate the ability to send email to a recipient' do
+
+			describe 'validate email address' do
+
+				it 'must return true if the email address is invalid' do
+					Postoffice::MailService.invalid_email?("@foo").must_equal true
+				end
+
+				it 'must return true if the email address is nil' do
+					Postoffice::MailService.invalid_email?(nil).must_equal true
+				end
+
+				it 'must return false if the email address is valid' do
+					Postoffice::MailService.invalid_email?("test@test.com").must_equal false
+				end
+
+			end
+
+			it 'must raise an error if the recipient is a Slowpost user and that person does not have a valid email address' do
+				person = create(:person, username: random_username, email: "foo")
+				mail_hash = Hash[to: person.username, content: "Hey", delivery_options: ["EMAIL"]]
+				assert_raises RuntimeError do
+					Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
+				end
+			end
+
+			it 'must not raise an error if the recipient is Slowpost User a person who has a valid email address' do
+				person = create(:person, username: random_username, email: "foo@test.com")
+				mail_hash = Hash[to: person.username, content: "Hey", delivery_options: ["EMAIL"]]
+				Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
+			end
+
+			it 'must raise an error if the to field is not a Slowpost User and is not a valid email address' do
+				mail_hash = Hash[to: "foo", content: "Hey", delivery_options: ["EMAIL"]]
+				assert_raises RuntimeError do
+					Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
+				end
+			end
+
+			it 'must not raise an error if the to field is a valid email address' do
+				mail_hash = Hash[to: "foo@test.com", content: "Hey", delivery_options: ["EMAIL"]]
+				Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
+			end
+
+			describe 'call this method when creating mail' do
+
+				it 'must raise an error if the mail cannot be delivered by email' do
+					data = Hash["to", "foo", "content", @expected_attrs[:content], "delivery_options", ["EMAIL"]]
+					assert_raises RuntimeError do
+						Postoffice::MailService.create_mail @person1.id, data
+					end
+				end
+
+				it 'must not raise an error if delivery options are not specified' do
+					data = Hash["to", @person2.username, "content", @expected_attrs[:content]]
+					Postoffice::MailService.create_mail @person1.id, data
+				end
+
+				it 'must not raise an error if delivery options do not include email' do
+					person = create(:person, username: random_username, email: "foo")
+					data = Hash["to", @person2.username, "content", @expected_attrs[:content], "delivery_options", ["SLOWPOST"]]
+					Postoffice::MailService.create_mail @person1.id, data
+				end
+
+			end
+
+
+		end
+
 	end
 
 	describe 'ensure mail arrives in order in which it was sent' do
