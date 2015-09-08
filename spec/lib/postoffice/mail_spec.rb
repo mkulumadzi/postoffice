@@ -35,6 +35,19 @@ describe Postoffice::Mail do
 			@mail1.type.must_equal "STANDARD"
 		end
 
+		describe 'delivery options' do
+
+			it 'must set the default delivery option to ["SLOWPOST"]' do
+				@mail1.delivery_options.must_equal ["SLOWPOST"]
+			end
+
+			it 'must allow other values to be set' do
+				mail = build(:mail, delivery_options: ["EMAIL"])
+				mail.delivery_options.must_equal ["EMAIL"]
+			end
+
+		end
+
 		describe 'add mail image' do
 
 			before do

@@ -82,18 +82,91 @@ describe Postoffice::MailService do
 
 	describe 'schedule when mail will arrive' do
 
-		before do
-			@scheduled_to_arrive = Time.now + 5.days
-			data = Hash["to", @person2.username, "content", @expected_attrs[:content], "scheduled_to_arrive", @scheduled_to_arrive]
-			@scheduled_mail = Postoffice::MailService.create_mail @person1.id, data
+		describe 'set_scheduled_to_arrive' do
+
+			before do
+				@mail_hash = Hash[from: "person", to: "another person", content: "what is up"]
+				@data = Hash["scheduled_to_arrive", @scheduled_to_arrive]
+				Postoffice::MailService.set_scheduled_to_arrive @mail_hash, @data
+			end
+
+			it 'must set the date that the mail is scheduled_to_arrive' do
+				@mail_hash[:scheduled_to_arrive].must_equal @data["scheduled_to_arrive"]
+			end
+
+			it 'must set the type to SCHEDULED' do
+				@mail_hash[:type].must_equal "SCHEDULED"
+			end
+
 		end
 
-		it 'must have the date and time it is scheduled_to_arrive' do
-			@scheduled_mail.scheduled_to_arrive.must_equal @scheduled_to_arrive
+		describe 'call this method when creating mail' do
+
+			before do
+				@scheduled_to_arrive = Time.now + 5.days
+				data = Hash["to", @person2.username, "content", @expected_attrs[:content], "scheduled_to_arrive", @scheduled_to_arrive]
+				@scheduled_mail = Postoffice::MailService.create_mail @person1.id, data
+			end
+
+			it 'must have the date and time it is scheduled_to_arrive' do
+				@scheduled_mail.scheduled_to_arrive.must_equal @scheduled_to_arrive
+			end
+
+			it 'must have type "SCHEDULED"' do
+				@scheduled_mail.type.must_equal "SCHEDULED"
+			end
+
 		end
 
-		it 'must have type "SCHEDULED"' do
-			@scheduled_mail.type.must_equal "SCHEDULED"
+	end
+
+	describe 'include delivery options' do
+
+		describe 'invalid delivery options' do
+
+			it 'must return false if the delivery options are valid' do
+				Postoffice::MailService.invalid_delivery_options?(["EMAIL"]).must_equal false
+			end
+
+			it 'must return true if the delivery options are invalid' do
+				Postoffice::MailService.invalid_delivery_options?(["EMAIL", "SLOWPOST", "STAGECOACH"]).must_equal true
+			end
+
+		end
+
+		describe 'set delivery options' do
+
+			before do
+				@mail_hash = Hash[from: "person", to: "another person", content: "what is up"]
+			end
+
+			it 'must set the delivery options if they are given' do
+				data = Hash["delivery_options", ["EMAIL"]]
+				Postoffice::MailService.set_delivery_options @mail_hash, data
+				@mail_hash[:delivery_options].must_equal ["EMAIL"]
+			end
+
+			it 'must raise an error if the options are invalid' do
+				data = Hash["delivery_options", ["STAGECOACH"]]
+				assert_raises RuntimeError do
+					Postoffice::MailService.set_delivery_options @mail_hash, data
+				end
+			end
+
+			describe 'call this method when creating mail' do
+
+				before do
+					@delivery_options = ["SLOWPOST", "EMAIL"]
+					data = Hash["to", @person2.username, "content", @expected_attrs[:content], "delivery_options", @delivery_options]
+					@mail_with_opts = Postoffice::MailService.create_mail @person1.id, data
+				end
+
+				it 'must set the delivery options' do
+					@mail_with_opts[:delivery_options].must_equal @delivery_options
+				end
+
+			end
+
 		end
 
 	end

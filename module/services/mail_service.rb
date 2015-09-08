@@ -5,11 +5,12 @@ module Postoffice
 		def self.create_mail person_id, data
 			person = Postoffice::Person.find(person_id)
 
-	    mail = Postoffice::Mail.create!({
-	      from: person.username,
-	      to: data["to"],
-	      content: data["content"]
-	    })
+			mail_hash = Hash[from: person.username, to: data["to"], content: data["content"]]
+
+			if data["scheduled_to_arrive"] then self.set_scheduled_to_arrive mail_hash, data end
+			if data["delivery_options"] then self.set_delivery_options mail_hash, data end
+
+			mail = Postoffice::Mail.create!(mail_hash)
 
 			if data["image_uid"]
 				mail.image = Dragonfly.app.fetch(data["image_uid"]).apply
@@ -17,13 +18,30 @@ module Postoffice
 				mail.save
 			end
 
-			if data["scheduled_to_arrive"]
-				mail.scheduled_to_arrive = data["scheduled_to_arrive"]
-				mail.type = "SCHEDULED"
-				mail.save
-			end
-
 			mail
+		end
+
+		def self.set_scheduled_to_arrive mail_hash, data
+			mail_hash[:scheduled_to_arrive] = data["scheduled_to_arrive"]
+			mail_hash[:type] = "SCHEDULED"
+		end
+
+		def self.set_delivery_options mail_hash, data
+			if invalid_delivery_options? data["delivery_options"]
+				raise "Invalid delivery options"
+			else
+				mail_hash[:delivery_options] = data["delivery_options"]
+			end
+		end
+
+		def self.invalid_delivery_options? delivery_options
+			valid_delivery_options = ["SLOWPOST", "EMAIL"]
+
+			if (delivery_options - valid_delivery_options).count > 0
+				true
+			else
+				false
+			end
 		end
 
 		def self.ensure_mail_arrives_in_order_it_was_sent mail

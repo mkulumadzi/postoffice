@@ -14,6 +14,7 @@ module Postoffice
 		field :thumbnail_uid
 		field :status, type: String, default: "DRAFT"
 		field :type, type: String, default: "STANDARD"
+		field :delivery_options, type: Array, default: ["SLOWPOST"]
 		field :scheduled_to_arrive, type: DateTime
 
 		def days_to_arrive
