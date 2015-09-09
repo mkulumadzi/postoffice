@@ -242,7 +242,7 @@ module Postoffice
 
 			# Send emails for mail with email delivery options
 			emails_to_send.each do |mail|
-				self.send_email_for_mail mail
+				self.send_email_for_mail mail, email_api_key
 			end
 		end
 
