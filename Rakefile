@@ -11,13 +11,13 @@ Rake::TestTask.new do |t|
 	t.verbose = true
 end
 
-Mongoid.load!("config/mongoid.yml")
+Mongoid.load!("config/mongoid.yml", ENV['RACK_ENV'])
 
 task :default => :test
 
 task :create_indexes do
 
-	Mongoid.load!("config/mongoid.yml")
+	Mongoid.load!("config/mongoid.yml", ENV['RACK_ENV'])
 	Postoffice::Person.create_indexes
 	Postoffice::Token.create_indexes
 	Postoffice::Contact.create_indexes
@@ -26,7 +26,7 @@ end
 
 task :remove_indexes do
 
-  Mongoid.load!("config/mongoid.yml")
+  Mongoid.load!("config/mongoid.yml", ENV['RACK_ENV'])
   Postoffice::Person.remove_indexes
 	Postoffice::Token.remove_indexes
 	Postoffice::Contact.remove_indexes
@@ -40,10 +40,15 @@ task :setup_demo_data do
 		return nil
 	end
 
-	Mongoid.load!("config/mongoid.yml")
+	Mongoid.load!("config/mongoid.yml", ENV['RACK_ENV'])
+	Mongoid.logger.level = Logger::INFO
+	Mongo::Logger.logger.level = Logger::INFO
 
 	Postoffice::Mail.delete_all
 	Postoffice::Person.delete_all
+	Postoffice::Token.delete_all
+	Postoffice::Recipient.delete_all
+	Postoffice::Contact.delete_all
 
   data =  JSON.parse '{"name": "Evan Waters", "username": "evan.waters", "email": "evan.waters@gmail.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
   person = Postoffice::PersonService.create_person data

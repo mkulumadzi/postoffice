@@ -2,8 +2,6 @@ require_relative '../../spec_helper'
 
 describe Postoffice::Recipient do
 
-	Mongoid.load!('config/mongoid.yml')
-
 	before do
 		@person1 = create(:person, username: random_username)
     @mail1 = create(:mail, from: @person1.username)
@@ -37,8 +35,6 @@ describe Postoffice::Recipient do
 end
 
 describe Postoffice::SlowpostRecipient do
-
-  Mongoid.load!('config/mongoid.yml')
 
   before do
     @person1 = create(:person, username: random_username)
@@ -78,8 +74,6 @@ describe Postoffice::SlowpostRecipient do
 end
 
 describe Postoffice::EmailRecipient do
-
-  Mongoid.load!('config/mongoid.yml')
 
   before do
     @person1 = create(:person, username: random_username)

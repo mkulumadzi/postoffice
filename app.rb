@@ -30,7 +30,7 @@ post '/person/new' do
 
     headers = { "location" => person_link }
     [201, headers, nil]
-  rescue Moped::Errors::OperationFailure => error
+  rescue Mongo::Error::OperationFailure => error
     response_body = Hash["message", "An account with that username already exists!"].to_json
     [403, nil, response_body]
   rescue RuntimeError => error
@@ -110,7 +110,7 @@ post '/person/id/:id' do
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
-  rescue Moped::Errors::OperationFailure
+  rescue Mongo::Error::OperationFailure
     [403, nil]
   rescue ArgumentError
     [403, nil]
@@ -250,7 +250,7 @@ post '/person/id/:id/mail/new' do
     [201, headers, nil]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil, nil]
-  rescue Moped::Errors::OperationFailure
+  rescue Mongo::Error::OperationFailure
     [403, nil, nil]
   rescue RuntimeError => error
     response_body = Hash["message", error.to_s].to_json
@@ -275,7 +275,7 @@ post '/person/id/:id/mail/send' do
     [201, headers, nil]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
-  rescue Moped::Errors::OperationFailure
+  rescue Mongo::Error::OperationFailure
     [403, nil]
   rescue RuntimeError => error
     response_body = Hash["message", error.to_s].to_json

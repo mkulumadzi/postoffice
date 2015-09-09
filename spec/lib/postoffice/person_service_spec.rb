@@ -2,8 +2,6 @@ require_relative '../../spec_helper'
 
 describe Postoffice::PersonService do
 
-	Mongoid.load!('config/mongoid.yml')
-
 	describe 'create person' do
 
 		before do

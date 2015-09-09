@@ -1,11 +1,11 @@
 source 'https://rubygems.org'
 
-ruby '2.1.2'
+ruby '2.2.3'
 
 gem 'sinatra'
 gem 'rack'
 gem 'thin'
-gem 'mongoid', '~> 4.0.0'
+gem 'mongoid', '~> 5.0.0beta'
 gem 'bson_ext'
 gem 'pry'
 gem 'sinatra-assetpack', '0.1.5'

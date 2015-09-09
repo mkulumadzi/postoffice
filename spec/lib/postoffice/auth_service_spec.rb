@@ -2,8 +2,6 @@ require_relative '../../spec_helper'
 
 describe Postoffice::AuthService do
 
-	Mongoid.load!('config/mongoid.yml')
-
 	before do
 		@person = build(:person, username: random_username)
 	end

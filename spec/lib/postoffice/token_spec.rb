@@ -2,8 +2,6 @@ require_relative '../../spec_helper'
 
 describe Postoffice::Token do
 
-	Mongoid.load!('config/mongoid.yml')
-
   describe 'log token by saving it to the database' do
 
     before do
@@ -17,7 +15,7 @@ describe Postoffice::Token do
     end
 
     it 'must include a unique index for the token value' do
-      assert_raises Moped::Errors::OperationFailure do
+      assert_raises Mongo::Error::OperationFailure do
         @db_token.save
         new_token = Postoffice::Token.new(value: @token)
         new_token.save

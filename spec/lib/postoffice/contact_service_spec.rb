@@ -2,8 +2,6 @@ require_relative '../../spec_helper'
 
 describe Postoffice::ContactService do
 
-	Mongoid.load!('config/mongoid.yml')
-
   before do
     @person1 = create(:person, username: random_username)
     @person2 = create(:person, username: random_username)

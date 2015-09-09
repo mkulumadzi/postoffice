@@ -2,8 +2,6 @@ require_relative '../../spec_helper'
 
 describe Postoffice::Person do
 
-	Mongoid.load!('config/mongoid.yml')
-
 	before do
 		@person = build(:person)
 		@expected_attrs = attributes_for(:person)
@@ -23,7 +21,7 @@ describe Postoffice::Person do
 
 			it 'must thrown an error if a record is submitted with a duplicate username' do
 				person = create(:person, username: random_username)
-				assert_raises(Moped::Errors::OperationFailure) {
+				assert_raises(Mongo::Error::OperationFailure) {
 					Postoffice::Person.create!(
 						username: person.username,
 						name: "test",

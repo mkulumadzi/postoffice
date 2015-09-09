@@ -2,8 +2,6 @@ require_relative '../../spec_helper'
 
 describe Postoffice::Mail do
 
-	Mongoid.load!('config/mongoid.yml')
-
 	before do
 
 		@mail1 = build(:mail)

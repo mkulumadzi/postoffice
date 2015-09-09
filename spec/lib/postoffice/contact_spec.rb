@@ -2,8 +2,6 @@ require_relative '../../spec_helper'
 
 describe Postoffice::Contact do
 
-	Mongoid.load!('config/mongoid.yml')
-
 	before do
 		@person1 = create(:person, username: random_username)
     @person2 = create(:person, username: random_username)
@@ -46,7 +44,7 @@ describe Postoffice::Contact do
       end
 
       it 'must have a unique index for person_id and contact_person_id' do
-        assert_raises Moped::Errors::OperationFailure do
+        assert_raises Mongo::Error::OperationFailure do
           create(:contact, person_id: @person1.id, contact_person_id: @person2.id)
         end
       end

@@ -1,13 +1,14 @@
 development:
-  sessions:
+  clients:
     default:
       database: postoffice
+      logger: false
       hosts:
         - localhost:27017
 # mongoid 4.x
 #
 testing:
- sessions:
+ clients:
    default:
      # The standard MongoDB connection URI allows for easy
      # replica set connection setup.
@@ -45,7 +46,7 @@ testing:
        # to the number of threads you're running e.g.
        # poolsize: <%= ENV['NUM_THREADS'] %>
 staging:
- sessions:
+ clients:
    default:
      # The standard MongoDB connection URI allows for easy
      # replica set connection setup.
@@ -83,7 +84,7 @@ staging:
        # to the number of threads you're running e.g.
        # poolsize: <%= ENV['NUM_THREADS'] %>
 production:
- sessions:
+ clients:
    default:
      # The standard MongoDB connection URI allows for easy
      # replica set connection setup.
