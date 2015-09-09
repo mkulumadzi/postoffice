@@ -135,7 +135,7 @@ end
 
 task :notify_recipients do
   puts "Notifying recipients for #{ENV['RACK_ENV']} environment"
-  Postoffice::MailService.deliver_mail_and_notify_recipients
+  Postoffice::MailService.deliver_mail_and_notify_recipients ENV["POSTMARK_API_KEY"]
 end
 
 task :test_notification do

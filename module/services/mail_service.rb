@@ -74,6 +74,21 @@ module Postoffice
 			end
 		end
 
+		def self.generate_welcome_message person
+			text = File.open("templates/Welcome Message.txt").read
+
+			mail = Postoffice::Mail.create!({
+				from: ENV['POSTOFFICE_POSTMAN_USERNAME'],
+				to: person.username,
+				content: text,
+				image_uid: ENV['POSTOFFICE_WELCOME_IMAGE']
+			})
+
+			mail.mail_it
+			mail.make_it_arrive_now
+
+		end
+
 		def self.get_mail params = {}
 			mails = []
 			Postoffice::Mail.where(params).each do |mail|
@@ -86,7 +101,7 @@ module Postoffice
 			username = Postoffice::Person.find(params[:id]).username
 			mails = []
 
-			query = {to: username, scheduled_to_arrive: { "$lte" => Time.now } }
+			query = {to: username, delivery_options: "SLOWPOST", scheduled_to_arrive: { "$lte" => Time.now } }
 			if params[:updated_at] then query[:updated_at] = params[:updated_at] end
 			if params[:conversation_username] then query[:from] = params[:conversation_username] end
 
@@ -122,7 +137,7 @@ module Postoffice
 
 			penpals.each do |person|
 
-				num_unread = Postoffice::Mail.where({from: person[:username], to: username, status: "DELIVERED"}).count
+				num_unread = Postoffice::Mail.where({from: person[:username], to: username, status: "DELIVERED", delivery_options: "SLOWPOST"}).count
 				num_undelivered = Postoffice::Mail.where({from: username, to: person[:username], status: "SENT"}).count
 				all_mail_query = Postoffice::Mail.or({from: username, to: person[:username]},{from: person[:username], to: username, status: {:$in => ["DELIVERED", "READ"]}})
 
@@ -150,60 +165,6 @@ module Postoffice
 			to_conversation = self.mailbox params
 			mails = from_conversation + to_conversation
 			mails.sort! {|a,b| b[:created_at] <=> a[:created_at]}
-		end
-
-		def self.generate_welcome_message person
-			text = File.open("templates/Welcome Message.txt").read
-
-			mail = Postoffice::Mail.create!({
-				from: ENV['POSTOFFICE_POSTMAN_USERNAME'],
-				to: person.username,
-				content: text,
-				image_uid: ENV['POSTOFFICE_WELCOME_IMAGE']
-			})
-
-			mail.mail_it
-			mail.make_it_arrive_now
-
-		end
-
-		def self.find_mail_to_deliver
-			mails = []
-
-			Postoffice::Mail.where({status: "SENT", scheduled_to_arrive: { "$lte" => Time.now } }).each do |mail|
-				mails << mail
-			end
-
-			mails
-
-		end
-
-		def self.deliver_mail mails
-			mails.each do |mail|
-				mail.update_delivery_status
-			end
-
-		end
-
-		def self.people_to_notify mails
-			people = []
-
-			mails.each do |mail|
-				person = Postoffice::Person.where({username: mail.to})[0]
-				people << person
-			end
-
-			people.uniq
-		end
-
-		#To Do: Write automated tests for this method (it is working based on manual tests)
-		def self.deliver_mail_and_notify_recipients
-			mails = self.find_mail_to_deliver
-			self.deliver_mail mails
-			people = self.people_to_notify mails
-			notifications = Postoffice::NotificationService.create_notification_for_people people, "You've received new mail!", "New Mail"
-			puts "Sending notifications: #{notifications}"
-			APNS.send_notifications(notifications)
 		end
 
 		# Get people who have sent or received mail to the person
@@ -244,8 +205,90 @@ module Postoffice
 			contacts_as_documents
 		end
 
-		def self.send_email email_hash, api_key
-			client = Postmark::ApiClient.new(api_key)
+		def self.find_mail_to_deliver
+			Postoffice::Mail.where({status: "SENT", scheduled_to_arrive: { "$lte" => Time.now } }).to_a
+		end
+
+		def self.deliver_mail mails
+			mails.each do |mail|
+				mail.update_delivery_status
+			end
+
+		end
+
+		def self.people_to_notify mails
+			people = []
+
+			mails.each do |mail|
+				if mail.delivery_options.include? "SLOWPOST"
+					person = Postoffice::Person.where({username: mail.to})[0]
+					people << person
+				end
+			end
+
+			people.uniq
+		end
+
+		#To Do: Write automated tests for this method (it is working based on manual tests)
+		def self.deliver_mail_and_notify_recipients email_api_key = "POSTMARK_API_TEST"
+			# Deliver mail
+			mails = self.find_mail_to_deliver
+			emails_to_send = self.find_emails_to_send
+			self.deliver_mail mails
+
+			# Send notifications for mail that is delivered via Slowpost
+			people = self.people_to_notify mails
+			self.send_notifications_to_people_receiving_mail people
+
+			# Send emails for mail with email delivery options
+			emails_to_send.each do |mail|
+				self.send_email_for_mail mail
+			end
+		end
+
+		def self.send_notifications_to_people_receiving_mail people
+			notifications = Postoffice::NotificationService.create_notification_for_people people, "You've received new mail!", "New Mail"
+			APNS.send_notifications(notifications)
+		end
+
+		def self.find_emails_to_send
+			Postoffice::Mail.where({status: "SENT", delivery_options: "EMAIL", scheduled_to_arrive: { "$lte" => Time.now } }).to_a
+		end
+
+		def self.send_email_for_mail mail, email_api_key = "POSTMARK_API_TEST"
+			email_hash = self.create_email_hash mail
+			self.send_email email_hash, email_api_key
+		end
+
+		def self.create_email_hash mail
+			Hash[
+				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
+				to: self.get_email_to_send_mail_to(mail),
+				subject: "You've received a Slowpost!",
+				html_body: mail.content,
+				track_opens: true
+			]
+		end
+
+		def self.get_email_to_send_mail_to mail
+			begin
+				person = Postoffice::Person.find_by(username: mail.to)
+				if self.invalid_email?(person.email) == false
+					return person.email
+				else
+					raise "Person does not have a valid email address"
+				end
+			rescue Mongoid::Errors::DocumentNotFound
+				if self.invalid_email?(mail.to) == false
+					return mail.to
+				else
+					raise "Not addressed to a valid email address"
+				end
+			end
+		end
+
+		def self.send_email email_hash, email_api_key = "POSTMARK_API_TEST"
+			client = Postmark::ApiClient.new(email_api_key)
 			client.deliver(email_hash)
 		end
 
