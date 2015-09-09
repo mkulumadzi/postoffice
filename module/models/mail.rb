@@ -7,6 +7,8 @@ module Postoffice
 		dragonfly_accessor :image
 		dragonfly_accessor :thumbnail
 
+		has_many :recipients
+
 		field :from, type: String
 		field :to, type: String
 		field :content, type: String
@@ -16,6 +18,36 @@ module Postoffice
 		field :type, type: String, default: "STANDARD"
 		field :delivery_options, type: Array, default: ["SLOWPOST"]
 		field :scheduled_to_arrive, type: DateTime
+
+		# from: username,
+		# status: "DELIVERED",
+		# recipients: [
+		# 	{
+		# 		id: objectId,
+		# 		username: username,
+		# 		delivery_method: "SLOWPOST",
+		# 		notification_sent: xxx,
+		# 		read: xxx
+		# 	},
+		# 	{
+		# 		id: objectId,
+		# 		email: xxx,
+		# 		delivery_method: "EMAIL",
+		# 		email_sent: xxx
+		# 	}
+		# ],
+		# attachments: [
+		# 	{
+		# 		id: objectId,
+		# 		type: "TEXT",
+		# 		content: "blah"
+		# 	}
+		# 	{
+		# 		id: objectId,
+		# 		type: "IMAGE",
+		# 		image_uid: "xxxx"
+		# 	}
+		# ]
 
 		def days_to_arrive
 			(1..2).to_a.sample

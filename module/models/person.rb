@@ -15,6 +15,8 @@ module Postoffice
 		field :zip, type: String
 		field :device_token, type: String
 
+		has_many :slowpost_recipients
+
 		index({ username: 1 }, { unique: true })
 		index({ email: 1 })
 		index({ phone: 1 })
