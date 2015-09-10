@@ -62,9 +62,9 @@ describe Postoffice::SlowpostRecipient do
 		end
 
     it 'must be able to store the date and time that the notification was sent' do
-      @slowpost_recipient.date_notification_sent = Time.now
+      @slowpost_recipient.attempted_to_notify = true
       @slowpost_recipient.save
-      @slowpost_recipient.date_notification_sent.must_be_instance_of DateTime
+      @slowpost_recipient.attempted_to_notify.must_equal true
     end
 
 		describe 'recipient reads mail' do
@@ -114,9 +114,9 @@ describe Postoffice::EmailRecipient do
 		end
 
     it 'must be able to store the date and time that the email was sent' do
-      @email_recipient.date_email_sent = Time.now
+      @email_recipient.attempted_to_send = true
       @email_recipient.save
-      @email_recipient.date_email_sent.must_be_instance_of DateTime
+      @email_recipient.attempted_to_send.must_equal true
     end
 
   end
