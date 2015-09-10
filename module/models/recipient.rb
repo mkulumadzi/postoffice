@@ -2,18 +2,26 @@ module Postoffice
 	class Recipient
 		include Mongoid::Document
 		include Mongoid::Timestamps
-    belongs_to :mail
+    embedded_in :mail
   end
 
   class SlowpostRecipient < Recipient
-    belongs_to :person
-    field :notification_sent, type: DateTime
+		field :person_id, type: BSON::ObjectId
+    field :date_notification_sent, type: DateTime
     field :status, type: String
+		field :date_read, type: DateTime
+
+		def read
+			self.status = "READ"
+			self.date_read = Time.now
+			self.save
+		end
+
   end
 
   class EmailRecipient < Recipient
     field :email, type: String
-    field :email_sent, type: DateTime
+    field :date_email_sent, type: DateTime
   end
 
 end

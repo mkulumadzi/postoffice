@@ -15,9 +15,11 @@ FactoryGirl.define do
   end
 
   factory :mail, class: Postoffice::Mail do
+    person { build(:person) }
     from "a_user"
     to "a_different_user"
     content "I love this app"
+    recipients { [build(:email_recipient), build(:slowpost_recipient)] }
   end
 
   factory :contact, class: Postoffice::Contact do
@@ -25,6 +27,14 @@ FactoryGirl.define do
     contact_person_id "def"
     in_address_book false
     is_penpal true
+  end
+
+  factory :email_recipient, class: Postoffice::EmailRecipient do
+    email "test@test.com"
+  end
+
+  factory :slowpost_recipient, class: Postoffice::SlowpostRecipient do
+    person_id "abc"
   end
 
 end

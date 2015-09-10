@@ -4,8 +4,10 @@ describe Postoffice::Mail do
 
 	before do
 
-		@mail1 = build(:mail)
-		@mail2 = build(:mail)
+		@person1 = create(:person, username: random_username)
+		@person2 = create(:person, username: random_username)
+
+		@mail1 = create(:mail, person: @person1, recipients: [build(:slowpost_recipient, person_id: @person2.id.to_s), build(:email_recipient, email: "test@test.com")])
 
 		@expected_attrs = attributes_for(:mail)
 
@@ -15,6 +17,10 @@ describe Postoffice::Mail do
 
 		it 'must create a new piece of mail' do
 			@mail1.must_be_instance_of Postoffice::Mail
+		end
+
+		it 'must store a reference to the person_id who sent it' do
+			@mail1.from_person_id.must_be_instance_of BSON::ObjectId
 		end
 
 		it 'must store the person it is from' do
@@ -33,18 +39,26 @@ describe Postoffice::Mail do
 			@mail1.type.must_equal "STANDARD"
 		end
 
-		describe 'delivery options' do
-
-			it 'must set the default delivery option to ["SLOWPOST"]' do
-				@mail1.delivery_options.must_equal ["SLOWPOST"]
-			end
-
-			it 'must allow other values to be set' do
-				mail = build(:mail, delivery_options: ["EMAIL"])
-				mail.delivery_options.must_equal ["EMAIL"]
-			end
-
+		it 'must be able to store an email recipient' do
+			assert_operator @mail1.recipients.select{|recipient| recipient.class == Postoffice::EmailRecipient}.count, :>=, 1
 		end
+
+		it 'must be able to store a Slowpost Recipient' do
+			assert_operator @mail1.recipients.select{|recipient| recipient.class == Postoffice::SlowpostRecipient}.count, :>=, 1
+		end
+
+		# describe 'delivery options' do
+		#
+		# 	it 'must set the default delivery option to ["SLOWPOST"]' do
+		# 		@mail1.delivery_options.must_equal ["SLOWPOST"]
+		# 	end
+		#
+		# 	it 'must allow other values to be set' do
+		# 		mail = build(:mail, delivery_options: ["EMAIL"])
+		# 		mail.delivery_options.must_equal ["EMAIL"]
+		# 	end
+		#
+		# end
 
 		describe 'add mail image' do
 
@@ -64,6 +78,18 @@ describe Postoffice::Mail do
 
 		it 'must have a default status of "DRAFT"' do
 			@mail1.status.must_equal 'DRAFT'
+		end
+
+	end
+
+	describe 'query who the mail is from and to' do
+
+		it 'must be able to find the person that the mail is from' do
+			Postoffice::Mail.where(person: @person1).include?(@mail1).must_equal true
+		end
+
+		it 'must be able to find mail addressed to recipients by their id' do
+			Postoffice::Mail.where("recipients.person_id" => @person2.id.to_s).include?(@mail1).must_equal true
 		end
 
 	end
@@ -94,6 +120,10 @@ describe Postoffice::Mail do
 
 		it 'must have status of SENT' do
 			@mail1.status.must_equal "SENT"
+		end
+
+		it 'must indicate that it was sent at the current date and time' do
+			assert_operator (Time.now.to_i - @mail1.date_sent.to_i), :<=, 100
 		end
 
 		describe 'try to send mail that has already been sent' do
@@ -130,68 +160,76 @@ describe Postoffice::Mail do
 
 	end
 
-	describe 'deliver mail now' do
+	describe 'deliver mail' do
 
 		before do
 			@mail1.mail_it
-			@mail1.make_it_arrive_now
+			@mail1.deliver
 		end
 
-		it 'must not be scheduled to arrive in the future' do
-			assert_operator @mail1.scheduled_to_arrive, :<=, Time.now
-		end
-
-	end
-
-	describe 'update delivery status' do
-
-		before do
-			@mail1.mail_it
-			@mail1.make_it_arrive_now
-			@mail2.mail_it
-		end
-
-		it 'must set the status of the mail to DELIVERED for mail that has arrived' do
-			@mail1.update_delivery_status
+		it 'must update the status to delivered' do
 			@mail1.status.must_equal "DELIVERED"
 		end
 
-		it 'must not still list the mail status as SENT if the mail has not arrived yet' do
-			@mail2.update_delivery_status
-			@mail2.status.must_equal "SENT"
+		it 'must set the date and time it was delivered to the current date and time' do
+			assert_operator (Time.now.to_i - @mail1.date_delivered.to_i), :<=, 100
 		end
 
-		it 'must not change mail that has been read back to delivered' do
-			@mail2.make_it_arrive_now
-			@mail2.update_delivery_status
-			@mail2.read
-			@mail2.update_delivery_status
-			@mail2.status.must_equal "READ"
-		end
+		# it 'must not be scheduled to arrive in the future' do
+		# 	assert_operator @mail1.scheduled_to_arrive, :<=, Time.now
+		# end
 
 	end
 
-	describe 'read mail' do
+	# describe 'update delivery status' do
+	#
+	# 	before do
+	# 		@mail1.mail_it
+	# 		@mail1.make_it_arrive_now
+	# 		@mail2.mail_it
+	# 	end
+	#
+	# 	it 'must set the status of the mail to DELIVERED for mail that has arrived' do
+	# 		@mail1.update_delivery_status
+	# 		@mail1.status.must_equal "DELIVERED"
+	# 	end
+	#
+	# 	it 'must not still list the mail status as SENT if the mail has not arrived yet' do
+	# 		@mail2.update_delivery_status
+	# 		@mail2.status.must_equal "SENT"
+	# 	end
+	#
+	# 	it 'must not change mail that has been read back to delivered' do
+	# 		@mail2.make_it_arrive_now
+	# 		@mail2.update_delivery_status
+	# 		@mail2.read
+	# 		@mail2.update_delivery_status
+	# 		@mail2.status.must_equal "READ"
+	# 	end
+	#
+	# end
 
-		before do
-			@mail1.mail_it
-			@mail1.make_it_arrive_now
-			@mail1.update_delivery_status
-
-			@mail2.mail_it
-		end
-
-		it 'must mark status of READ' do
-			@mail1.read
-			@mail1.status.must_equal "READ"
-		end
-
-		it 'must throw an error if mail does not have status of DELIVERED' do
-			assert_raises(ArgumentError) {
-				@mail2.read
-			}
-		end
-
-	end
+	# describe 'read mail' do
+	#
+	# 	before do
+	# 		@mail1.mail_it
+	# 		@mail1.make_it_arrive_now
+	# 		@mail1.update_delivery_status
+	#
+	# 		@mail2.mail_it
+	# 	end
+	#
+	# 	it 'must mark status of READ' do
+	# 		@mail1.read
+	# 		@mail1.status.must_equal "READ"
+	# 	end
+	#
+	# 	it 'must throw an error if mail does not have status of DELIVERED' do
+	# 		assert_raises(ArgumentError) {
+	# 			@mail2.read
+	# 		}
+	# 	end
+	#
+	# end
 
 end

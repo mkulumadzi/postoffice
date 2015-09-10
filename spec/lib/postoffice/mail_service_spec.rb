@@ -8,18 +8,43 @@ describe Postoffice::MailService do
 		@person2 = create(:person, username: random_username)
 		@person3 = create(:person, username: random_username)
 
-		@mail1 = create(:mail, from: @person1.username, to: @person2.username)
-		@mail2 = create(:mail, from: @person1.username, to: @person2.username)
-		@mail3 = create(:mail, from: @person3.username, to: @person1.username)
+		# @mail1 = create(:mail, from: @person1.username, to: @person2.username)
+		# @mail2 = create(:mail, from: @person1.username, to: @person2.username)
+		# @mail3 = create(:mail, from: @person3.username, to: @person1.username)
+
+		@mail1 = create(:mail, person: @person1, recipients: [build(:slowpost_recipient, person_id: @person2.id)])
+		@mail2 = create(:mail, person: @person1, recipients: [build(:slowpost_recipient, person_id: @person2.id)])
+		@mail3 = create(:mail, person: @person3, recipients: [build(:slowpost_recipient, person_id: @person1.id)])
 
 		@expected_attrs = attributes_for(:mail)
+
+	end
+
+	describe 'get recipients' do
+
+		before do
+			recipient_array = [Hash["person_id", @person1.id], Hash["email", "test@test.com"]]
+			@recipients = Postoffice::MailService.get_recipients recipient_array
+		end
+
+		it 'must create a SlowpostRecipient if a person_id is included' do
+			slowpost_recipients = @recipients.select {|r| r._type == "Postoffice::SlowpostRecipient"}
+			slowpost_recipients[0].person_id.must_equal @person1.id
+		end
+
+		it 'must create an EmailRecipient if an email is included' do
+			email_recipients = @recipients.select {|r| r._type == "Postoffice::EmailRecipient"}
+			email_recipients[0].email.must_equal "test@test.com"
+		end
 
 	end
 
 	describe 'create mail' do
 
 		before do
-			data = Hash["to", @person2.username, "content", @expected_attrs[:content]]
+			recipient_array = [Hash["person_id", @person2.id], Hash["email", "test@test.com"]]
+			data = Hash["content", @expected_attrs[:content], "recipients", recipient_array]
+			# data = Hash["to", @person2.username, "content", @expected_attrs[:content]]
 			@mail4 = Postoffice::MailService.create_mail @person1.id, data
 		end
 
@@ -27,13 +52,22 @@ describe Postoffice::MailService do
 			@mail4.must_be_instance_of Postoffice::Mail
 		end
 
-		it 'must store the person it is from' do
-			@mail4.from.must_equal @person1.username
+		it 'must store who it is fron' do
+			@mail4.person.must_equal @person1
 		end
 
-		it 'must store person it is to' do
-			@mail4.to.must_equal @person2.username
+		it 'must store all of the recipients' do
+			binding.pry
+			@mail4.recipients.count.must_equal 2
 		end
+
+		# it 'must store the person it is from' do
+		# 	@mail4.from.must_equal @person1.username
+		# end
+
+		# it 'must store person it is to' do
+		# 	@mail4.to.must_equal @person2.username
+		# end
 
 		it 'must store the content' do
 			@mail4.content.must_equal @expected_attrs[:content]
@@ -56,7 +90,8 @@ describe Postoffice::MailService do
 			@uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
 			image.close
 
-			data = Hash["to", @person2.username, "content", @expected_attrs[:content], "image_uid", @uid]
+			recipient_array = [Hash["person_id", @person2.id]]
+			data = Hash["recipients", recipient_array, "content", @expected_attrs[:content], "image_uid", @uid]
 			@mail4 = Postoffice::MailService.create_mail @person1.id, data
 		end
 
@@ -83,7 +118,7 @@ describe Postoffice::MailService do
 		describe 'set_scheduled_to_arrive' do
 
 			before do
-				@mail_hash = Hash[from: "person", to: "another person", content: "what is up"]
+				@mail_hash = Hash[from: "person", content: "what is up"]
 				@data = Hash["scheduled_to_arrive", @scheduled_to_arrive]
 				Postoffice::MailService.set_scheduled_to_arrive @mail_hash, @data
 			end
@@ -102,7 +137,8 @@ describe Postoffice::MailService do
 
 			before do
 				@scheduled_to_arrive = Time.now + 5.days
-				data = Hash["to", @person2.username, "content", @expected_attrs[:content], "scheduled_to_arrive", @scheduled_to_arrive]
+				recipient_array = [Hash["person_id", @person2.id]]
+				data = Hash["recipients", recipient_array, "content", @expected_attrs[:content], "scheduled_to_arrive", @scheduled_to_arrive]
 				@scheduled_mail = Postoffice::MailService.create_mail @person1.id, data
 			end
 
@@ -118,133 +154,133 @@ describe Postoffice::MailService do
 
 	end
 
-	describe 'include delivery options' do
-
-		describe 'invalid delivery options' do
-
-			it 'must return false if the delivery options are valid' do
-				Postoffice::MailService.invalid_delivery_options?(["EMAIL"]).must_equal false
-			end
-
-			it 'must return true if the delivery options are invalid' do
-				Postoffice::MailService.invalid_delivery_options?(["EMAIL", "SLOWPOST", "STAGECOACH"]).must_equal true
-			end
-
-		end
-
-		describe 'set delivery options' do
-
-			before do
-				@mail_hash = Hash[from: "person", to: "another person", content: "what is up"]
-			end
-
-			it 'must set the delivery options if they are given' do
-				data = Hash["delivery_options", ["EMAIL"]]
-				Postoffice::MailService.set_delivery_options @mail_hash, data
-				@mail_hash[:delivery_options].must_equal ["EMAIL"]
-			end
-
-			it 'must raise an error if the options are invalid' do
-				data = Hash["delivery_options", ["STAGECOACH"]]
-				assert_raises RuntimeError do
-					Postoffice::MailService.set_delivery_options @mail_hash, data
-				end
-			end
-
-			describe 'call this method when creating mail' do
-
-				before do
-					@delivery_options = ["SLOWPOST", "EMAIL"]
-					data = Hash["to", @person2.username, "content", @expected_attrs[:content], "delivery_options", @delivery_options]
-					@mail_with_opts = Postoffice::MailService.create_mail @person1.id, data
-				end
-
-				it 'must set the delivery options' do
-					@mail_with_opts[:delivery_options].must_equal @delivery_options
-				end
-
-			end
-
-		end
-
-		describe 'validate the ability to send email to a recipient' do
-
-			describe 'validate email address' do
-
-				it 'must return true if the email address is invalid' do
-					Postoffice::MailService.invalid_email?("@foo").must_equal true
-				end
-
-				it 'must return true if the email address is nil' do
-					Postoffice::MailService.invalid_email?(nil).must_equal true
-				end
-
-				it 'must return false if the email address is valid' do
-					Postoffice::MailService.invalid_email?("test@test.com").must_equal false
-				end
-
-			end
-
-			it 'must raise an error if the recipient is a Slowpost user and that person does not have a valid email address' do
-				person = create(:person, username: random_username, email: "foo")
-				mail_hash = Hash[to: person.username, content: "Hey", delivery_options: ["EMAIL"]]
-				assert_raises RuntimeError do
-					Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
-				end
-			end
-
-			it 'must not raise an error if the recipient is Slowpost User a person who has a valid email address' do
-				person = create(:person, username: random_username, email: "foo@test.com")
-				mail_hash = Hash[to: person.username, content: "Hey", delivery_options: ["EMAIL"]]
-				Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
-			end
-
-			it 'must raise an error if the to field is not a Slowpost User and is not a valid email address' do
-				mail_hash = Hash[to: "foo", content: "Hey", delivery_options: ["EMAIL"]]
-				assert_raises RuntimeError do
-					Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
-				end
-			end
-
-			it 'must not raise an error if the to field is a valid email address' do
-				mail_hash = Hash[to: "foo@test.com", content: "Hey", delivery_options: ["EMAIL"]]
-				Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
-			end
-
-			describe 'call this method when creating mail' do
-
-				it 'must raise an error if the mail cannot be delivered by email' do
-					data = Hash["to", "foo", "content", @expected_attrs[:content], "delivery_options", ["EMAIL"]]
-					assert_raises RuntimeError do
-						Postoffice::MailService.create_mail @person1.id, data
-					end
-				end
-
-				it 'must not raise an error if delivery options are not specified' do
-					data = Hash["to", @person2.username, "content", @expected_attrs[:content]]
-					Postoffice::MailService.create_mail @person1.id, data
-				end
-
-				it 'must not raise an error if delivery options do not include email' do
-					person = create(:person, username: random_username, email: "foo")
-					data = Hash["to", @person2.username, "content", @expected_attrs[:content], "delivery_options", ["SLOWPOST"]]
-					Postoffice::MailService.create_mail @person1.id, data
-				end
-
-			end
-
-
-		end
-
-	end
+	# describe 'include delivery options' do
+	#
+	# 	describe 'invalid delivery options' do
+	#
+	# 		it 'must return false if the delivery options are valid' do
+	# 			Postoffice::MailService.invalid_delivery_options?(["EMAIL"]).must_equal false
+	# 		end
+	#
+	# 		it 'must return true if the delivery options are invalid' do
+	# 			Postoffice::MailService.invalid_delivery_options?(["EMAIL", "SLOWPOST", "STAGECOACH"]).must_equal true
+	# 		end
+	#
+	# 	end
+	#
+	# 	describe 'set delivery options' do
+	#
+	# 		before do
+	# 			@mail_hash = Hash[from: "person", to: "another person", content: "what is up"]
+	# 		end
+	#
+	# 		it 'must set the delivery options if they are given' do
+	# 			data = Hash["delivery_options", ["EMAIL"]]
+	# 			Postoffice::MailService.set_delivery_options @mail_hash, data
+	# 			@mail_hash[:delivery_options].must_equal ["EMAIL"]
+	# 		end
+	#
+	# 		it 'must raise an error if the options are invalid' do
+	# 			data = Hash["delivery_options", ["STAGECOACH"]]
+	# 			assert_raises RuntimeError do
+	# 				Postoffice::MailService.set_delivery_options @mail_hash, data
+	# 			end
+	# 		end
+	#
+	# 		describe 'call this method when creating mail' do
+	#
+	# 			before do
+	# 				@delivery_options = ["SLOWPOST", "EMAIL"]
+	# 				data = Hash["to", @person2.username, "content", @expected_attrs[:content], "delivery_options", @delivery_options]
+	# 				@mail_with_opts = Postoffice::MailService.create_mail @person1.id, data
+	# 			end
+	#
+	# 			it 'must set the delivery options' do
+	# 				@mail_with_opts[:delivery_options].must_equal @delivery_options
+	# 			end
+	#
+	# 		end
+	#
+	# 	end
+	#
+	# 	describe 'validate the ability to send email to a recipient' do
+	#
+	# 		describe 'validate email address' do
+	#
+	# 			it 'must return true if the email address is invalid' do
+	# 				Postoffice::MailService.invalid_email?("@foo").must_equal true
+	# 			end
+	#
+	# 			it 'must return true if the email address is nil' do
+	# 				Postoffice::MailService.invalid_email?(nil).must_equal true
+	# 			end
+	#
+	# 			it 'must return false if the email address is valid' do
+	# 				Postoffice::MailService.invalid_email?("test@test.com").must_equal false
+	# 			end
+	#
+	# 		end
+	#
+	# 		it 'must raise an error if the recipient is a Slowpost user and that person does not have a valid email address' do
+	# 			person = create(:person, username: random_username, email: "foo")
+	# 			mail_hash = Hash[to: person.username, content: "Hey", delivery_options: ["EMAIL"]]
+	# 			assert_raises RuntimeError do
+	# 				Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
+	# 			end
+	# 		end
+	#
+	# 		it 'must not raise an error if the recipient is Slowpost User a person who has a valid email address' do
+	# 			person = create(:person, username: random_username, email: "foo@test.com")
+	# 			mail_hash = Hash[to: person.username, content: "Hey", delivery_options: ["EMAIL"]]
+	# 			Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
+	# 		end
+	#
+	# 		it 'must raise an error if the to field is not a Slowpost User and is not a valid email address' do
+	# 			mail_hash = Hash[to: "foo", content: "Hey", delivery_options: ["EMAIL"]]
+	# 			assert_raises RuntimeError do
+	# 				Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
+	# 			end
+	# 		end
+	#
+	# 		it 'must not raise an error if the to field is a valid email address' do
+	# 			mail_hash = Hash[to: "foo@test.com", content: "Hey", delivery_options: ["EMAIL"]]
+	# 			Postoffice::MailService.validate_ability_to_send_email_to_recipient mail_hash
+	# 		end
+	#
+	# 		describe 'call this method when creating mail' do
+	#
+	# 			it 'must raise an error if the mail cannot be delivered by email' do
+	# 				data = Hash["to", "foo", "content", @expected_attrs[:content], "delivery_options", ["EMAIL"]]
+	# 				assert_raises RuntimeError do
+	# 					Postoffice::MailService.create_mail @person1.id, data
+	# 				end
+	# 			end
+	#
+	# 			it 'must not raise an error if delivery options are not specified' do
+	# 				data = Hash["to", @person2.username, "content", @expected_attrs[:content]]
+	# 				Postoffice::MailService.create_mail @person1.id, data
+	# 			end
+	#
+	# 			it 'must not raise an error if delivery options do not include email' do
+	# 				person = create(:person, username: random_username, email: "foo")
+	# 				data = Hash["to", @person2.username, "content", @expected_attrs[:content], "delivery_options", ["SLOWPOST"]]
+	# 				Postoffice::MailService.create_mail @person1.id, data
+	# 			end
+	#
+	# 		end
+	#
+	#
+	# 	end
+	#
+	# end
 
 	describe 'ensure mail arrives in order in which it was sent' do
 		before do
 			@personA = create(:person, username: random_username)
 			@personB = create(:person, username: random_username)
 
-			@mailA = create(:mail, from: @personA.username, to: @personB.username)
-			@mailB = create(:mail, from: @personA.username, to: @personB.username)
+			@mailA = create(:mail, person: @personA, recipients: [build(:slowpost_recipient, person: @personB)])
+			@mailB = create(:mail, person: @personA, recipients: [build(:slowpost_recipient, person: @personB)])
 
 			@mailA.mail_it
 			@mailB.mail_it
@@ -287,6 +323,7 @@ describe Postoffice::MailService do
 			mail.length.must_equal num_mail
 		end
 
+		# To Do: Come back to these after converting 'from' and 'to' to a dynamic attribute
 		it 'must filter the records by from when it is passed in as a parameter' do
 			num_mail = Postoffice::Mail.where({from: @person1.username}).count
 			params = Hash[:from, @person1.username]
@@ -308,11 +345,10 @@ describe Postoffice::MailService do
 		before do
 
 			@mail1.mail_it
-			@mail1.make_it_arrive_now
+			@mail1.deliver
 
 			@mail2.mail_it
-
-			@params = Hash[:id, @person2.id]
+			@params = Hash[:id, @person2.id.to_s]
 		end
 
 		describe 'get mailbox' do
@@ -321,33 +357,35 @@ describe Postoffice::MailService do
 				@mailbox = Postoffice::MailService.mailbox(@params)
 			end
 
-			it 'must get mail that has arrived' do
-				@mailbox.to_s.must_include @mail1.id.to_s
+			it 'must get mail for the person that has been delivered' do
+				filtered_mail = @mailbox.select {|mail| mail[:_id] == @mail1.id}
+				filtered_mail.count.must_equal 1
 			end
 
-			it 'must not show mail that has not arrived' do
-				@mailbox.to_s.match(/#{@mail2.id.to_s}/).must_equal nil
+			it 'must not show mail that has not been delivered yet' do
+				filtered_mail = @mailbox.select {|mail| mail[:_id] == @mail2.id}
+				filtered_mail.count.must_equal 05
 			end
 
-			it 'must have updated the delivery status if necessary' do
-				Postoffice::Mail.find(@mail1.id).status.must_equal "DELIVERED"
-			end
+			# it 'must have updated the delivery status if necessary' do
+			# 	Postoffice::Mail.find(@mail1.id).status.must_equal "DELIVERED"
+			# end
 
 		end
 
 		describe 'get only mailbox updates since a datetime' do
 
 			before do
-				@mail4 = create(:mail, from: @person1.username, to: @person2.username)
+				@mail4 = create(:mail, person: @person1, recipients: [build(:slowpost_recipient, person_id: @person2.id)])
 				@mail4.mail_it
-				@mail4.make_it_arrive_now
+				@mail4.deliver
 
 				@params[:updated_at] = { "$gt" => @mail2.updated_at }
 			end
 
 			it 'must get mailbox records that were updated after the date specified' do
 				number_returned = Postoffice::MailService.mailbox(@params).count
-				expected_number = Postoffice::Mail.where({to: @person2.username, scheduled_to_arrive: { "$lte" => Time.now }, updated_at: { "$gt" => @mail2.updated_at }}).count
+				expected_number = Postoffice::Mail.where({status: "DELIVERED", "recipients.person_id" => @person2.id, updated_at: { "$gt" => @mail2.updated_at }}).count
 				number_returned.must_equal expected_number
 			end
 
@@ -356,65 +394,61 @@ describe Postoffice::MailService do
 		describe 'filter by from person' do
 
 			before do
-				@exclude_mail = create(:mail, from: @person3.username, to: @person2.username)
+				@exclude_mail = create(:mail, person: @person3, recipients: [build(:slowpost_recipient, person_id: @person2.id)])
 				@exclude_mail.mail_it
-				@exclude_mail.make_it_arrive_now
+				@exclude_mail.deliver
 
-				@params[:conversation_username] = @person1.username
-
+				@params[:conversation_person_id] = @person1.id
 				@mailbox = Postoffice::MailService.mailbox(@params)
 			end
 
 			it 'must return mail from person 1' do
-				filtered_mail = @mailbox.select {|mail| mail[:from] == @person1.username}
+				filtered_mail = @mailbox.select {|mail| mail[:from_person_id] == @person1.id}
 				assert_operator filtered_mail.count, :>=, 1
 			end
 
-			it 'must not return mail from person 2' do
-				filtered_mail = @mailbox.select {|mail| mail[:from] == @person3.username}
+			it 'must not return mail from person 3' do
+				filtered_mail = @mailbox.select {|mail| mail[:from_person_id] == @person3.id}
 				filtered_mail.count.must_equal 0
 			end
 
 		end
 
-		describe 'handle delivery options' do
-
-			before do
-				@exclude_mail = create(:mail, from: @person1.username, to: @person2.username, delivery_options: ["EMAIL"])
-				@exclude_mail.mail_it
-				@exclude_mail.make_it_arrive_now
-
-				@include_mail = create(:mail, from: @person1.username, to: @person2.username, delivery_options: ["EMAIL", "SLOWPOST"])
-				@include_mail.mail_it
-				@include_mail.make_it_arrive_now
-
-				@mailbox = Postoffice::MailService.mailbox(@params)
-			end
-
-			it 'must include mail that has "SLOWPOST" as a delivery option' do
-				include_mail_document = Postoffice::Mail.find(@include_mail.id).as_document
-				@mailbox.select {|mail| mail["_id"] == include_mail_document["_id"]}.count.must_equal 1
-			end
-
-			it 'must not include mail that does not have "SLOWPOST" as a delivery option' do
-				exclude_mail_document = Postoffice::Mail.find(@exclude_mail.id).as_document
-				@mailbox.select {|mail| mail["_id"] == exclude_mail_document["_id"]}.count.must_equal 0
-			end
-
-		end
-
+	# 	describe 'handle delivery options' do
+	#
+	# 		before do
+	# 			@exclude_mail = create(:mail, from: @person1.username, to: @person2.username, delivery_options: ["EMAIL"])
+	# 			@exclude_mail.mail_it
+	# 			@exclude_mail.make_it_arrive_now
+	#
+	# 			@include_mail = create(:mail, from: @person1.username, to: @person2.username, delivery_options: ["EMAIL", "SLOWPOST"])
+	# 			@include_mail.mail_it
+	# 			@include_mail.make_it_arrive_now
+	#
+	# 			@mailbox = Postoffice::MailService.mailbox(@params)
+	# 		end
+	#
+	# 		it 'must include mail that has "SLOWPOST" as a delivery option' do
+	# 			include_mail_document = Postoffice::Mail.find(@include_mail.id).as_document
+	# 			@mailbox.select {|mail| mail["_id"] == include_mail_document["_id"]}.count.must_equal 1
+	# 		end
+	#
+	# 		it 'must not include mail that does not have "SLOWPOST" as a delivery option' do
+	# 			exclude_mail_document = Postoffice::Mail.find(@exclude_mail.id).as_document
+	# 			@mailbox.select {|mail| mail["_id"] == exclude_mail_document["_id"]}.count.must_equal 0
+	# 		end
+	#
+	# 	end
+	#
 	end
 
 	describe 'outbox' do
 
 		before do
-
 			@mail1.mail_it
-
 			@params1 = Hash[:id, @person1.id]
 			@params2 = Hash[:id, @person2.id]
-
-			@mail1.make_it_arrive_now
+			@mail1.deliver
 		end
 
 		describe 'get outbox' do
@@ -424,11 +458,13 @@ describe Postoffice::MailService do
 			end
 
 			it 'must get mail that has been sent by the user' do
-				@outbox.to_s.must_include @mail1.id.to_s
+				filtered_mail = @outbox.select {|mail| mail[:from_person_id] == @person1.id}
+				assert_operator filtered_mail.count, :>=, 1
 			end
 
 			it 'must not get mail that has been sent by another user' do
-				Postoffice::MailService.outbox(@params2).to_s.match(/#{@mail1.id.to_s}/).must_equal nil
+				filtered_mail = @outbox.select {|mail| mail[:from_person_id] == @person2.id}
+				filtered_mail.count.must_equal 0
 			end
 
 		end
@@ -436,16 +472,15 @@ describe Postoffice::MailService do
 		describe 'get only outbox updates since a datetime' do
 
 			before do
-				@mail4 = create(:mail, from: @person1.username, to: @person2.username)
+				@mail4 = create(:mail, person: @person1, recipients: [build(:slowpost_recipient, person_id: @person2.id)])
 				@mail4.mail_it
-				@mail4.make_it_arrive_now
-
+				@mail4.deliver
 				@params1[:updated_at] = { "$gt" => @mail1.updated_at }
 			end
 
 			it 'must get outbox records that were updated after the date specified' do
 				number_returned = Postoffice::MailService.outbox(@params1).count
-				expected_number = Postoffice::Mail.where({from: @person1.username, updated_at: { "$gt" => @mail1.updated_at }}).count
+				expected_number = Postoffice::Mail.where({from_person_id: @person1.id, updated_at: { "$gt" => @mail1.updated_at }}).count
 				number_returned.must_equal expected_number
 			end
 
@@ -454,22 +489,18 @@ describe Postoffice::MailService do
 		describe 'filter by to person' do
 
 			before do
-				@exclude_mail = create(:mail, from: @person1.username, to: @person3.username)
+				@exclude_mail = create(:mail, person: @person1, recipients: [build(:slowpost_recipient, person_id: @person3.id)])
 				@exclude_mail.mail_it
-
-				@params1[:conversation_username] = @person2.username
-
+				@params1[:conversation_person_id] = @person2.id
 				@outbox = Postoffice::MailService.outbox(@params1)
 			end
 
 			it 'must return mail to person 2' do
-				filtered_mail = @outbox.select {|mail| mail[:to] == @person2.username}
-				assert_operator filtered_mail.count, :>=, 1
+				@outbox.to_s.include?(@person2.id.to_s).must_equal true
 			end
 
 			it 'must not return mail to person 3' do
-				filtered_mail = @outbox.select {|mail| mail[:to] == @person3.username}
-				filtered_mail.count.must_equal 0
+				@outbox.to_s.include?(@person3.id.to_s).must_equal false
 			end
 
 		end

@@ -7,35 +7,27 @@ module Postoffice
 		dragonfly_accessor :image
 		dragonfly_accessor :thumbnail
 
-		has_many :recipients
+		belongs_to :person, foreign_key: :from_person_id
+		embeds_many :recipients
 
+
+		# These fields are going to be migrated, then deleted
 		field :from, type: String
 		field :to, type: String
 		field :content, type: String
 		field :image_uid, type: String
 		field :thumbnail_uid
-		field :status, type: String, default: "DRAFT"
+
 		field :type, type: String, default: "STANDARD"
-		field :delivery_options, type: Array, default: ["SLOWPOST"]
 		field :scheduled_to_arrive, type: DateTime
 
-		# from: username,
-		# status: "DELIVERED",
-		# recipients: [
-		# 	{
-		# 		id: objectId,
-		# 		username: username,
-		# 		delivery_method: "SLOWPOST",
-		# 		notification_sent: xxx,
-		# 		read: xxx
-		# 	},
-		# 	{
-		# 		id: objectId,
-		# 		email: xxx,
-		# 		delivery_method: "EMAIL",
-		# 		email_sent: xxx
-		# 	}
-		# ],
+		# Options include DRAFT, SENT, DELIVERED
+		field :status, type: String, default: "DRAFT"
+		field :date_sent, type: DateTime
+		field :date_delivered, type: DateTime
+
+		# field :delivery_options, type: Array, default: ["SLOWPOST"]
+
 		# attachments: [
 		# 	{
 		# 		id: objectId,
@@ -60,30 +52,32 @@ module Postoffice
 		def mail_it
 			raise ArgumentError, "Mail must be in DRAFT state to send" unless self.status == "DRAFT"
 			self.status = "SENT"
+			self.date_sent = Time.now
 			unless self.scheduled_to_arrive?
 				self.scheduled_to_arrive = arrive_when
 			end
 			self.save
 		end
 
-		def make_it_arrive_now
+		def deliver
 			raise ArgumentError, "Mail must be in SENT state to deliver" unless self.status == "SENT"
-			self.scheduled_to_arrive = Time.now
+			self.status = "DELIVERED"
+			self.date_delivered = Time.now
 			self.save
 		end
 
-		def update_delivery_status
-			if self.scheduled_to_arrive && self.scheduled_to_arrive <= Time.now && self.status == "SENT"
-				self.status = "DELIVERED"
-				self.save
-			end
-		end
+		# def update_delivery_status
+		# 	if self.scheduled_to_arrive && self.scheduled_to_arrive <= Time.now && self.status == "SENT"
+		# 		self.status = "DELIVERED"
+		# 		self.save
+		# 	end
+		# end
 
-		def read
-			raise ArgumentError, "Mail must be in DELIVERED state to read" unless self.status == "DELIVERED"
-			self.status = "READ"
-			self.save
-		end
+		# def read
+		# 	raise ArgumentError, "Mail must be in DELIVERED state to read" unless self.status == "DELIVERED"
+		# 	self.status = "READ"
+		# 	self.save
+		# end
 
 	end
 

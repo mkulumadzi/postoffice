@@ -3,6 +3,9 @@ module Postoffice
 		include Mongoid::Document
 		include Mongoid::Timestamps
 
+		has_many :mail
+		# has_many :slowpost_recipients
+
 		field :username, type: String
 		field :name, type: String
 		field :email, type: String
@@ -14,8 +17,6 @@ module Postoffice
 		field :state, type: String
 		field :zip, type: String
 		field :device_token, type: String
-
-		has_many :slowpost_recipients
 
 		index({ username: 1 }, { unique: true })
 		index({ email: 1 })

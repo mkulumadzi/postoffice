@@ -22,7 +22,7 @@ describe Postoffice::Recipient do
       @recipient.created_at.must_be_instance_of Time
     end
 
-    it 'must indicate the time it was update' do
+    it 'must indicate the time it was updated' do
       @recipient.updated_at.must_be_instance_of Time
     end
 
@@ -45,29 +45,43 @@ describe Postoffice::SlowpostRecipient do
   describe 'create a Slowpost recipient' do
 
     before do
-      @slowpost_recipient = Postoffice::SlowpostRecipient.new(person: @person2)
+      @slowpost_recipient = Postoffice::SlowpostRecipient.new(person_id: @person2.id)
       @mail1.recipients << @slowpost_recipient
     end
 
+		it 'must be of type Postoffice::SlowpostRecipient' do
+			@slowpost_recipient._type.must_equal "Postoffice::SlowpostRecipient"
+		end
+
     it 'must store the relationship for who the mail is to' do
-      @slowpost_recipient.person.must_equal @person2
+      @slowpost_recipient.person_id.must_equal @person2.id
     end
 
-    it 'must be able to be retrieved from the mail' do
-      @mail1.recipients.include?(@slowpost_recipient).must_equal true
-    end
+		it 'must store the relationshiop of which mail it belongs to' do
+			@slowpost_recipient.mail.must_equal @mail1
+		end
 
     it 'must be able to store the date and time that the notification was sent' do
-      @slowpost_recipient.notification_sent = Time.now
+      @slowpost_recipient.date_notification_sent = Time.now
       @slowpost_recipient.save
-      @slowpost_recipient.notification_sent.must_be_instance_of DateTime
+      @slowpost_recipient.date_notification_sent.must_be_instance_of DateTime
     end
 
-    it 'must be able to store the status' do
-      @slowpost_recipient.status = "READ"
-      @slowpost_recipient.save
-      @slowpost_recipient.status.must_equal "READ"
-    end
+		describe 'recipient reads mail' do
+
+			before do
+				@slowpost_recipient.read
+			end
+
+			it 'must set the status to READ' do
+				@slowpost_recipient.status.must_equal "READ"
+			end
+
+			it 'must set the date it was read to the current date and time' do
+				@slowpost_recipient.date_read.to_i.must_equal Time.now.to_i
+			end
+
+		end
 
   end
 
@@ -87,18 +101,22 @@ describe Postoffice::EmailRecipient do
       @mail1.recipients << @email_recipient
     end
 
+		it 'must be of type Postoffice::EmailRecipient' do
+			@email_recipient._type.must_equal "Postoffice::EmailRecipient"
+		end
+
     it 'must save the email' do
       @email_recipient.email.must_equal "test@test.com"
     end
 
-    it 'must be able to be retrieved by the mail' do
-      @mail1.recipients.include?(@email_recipient).must_equal true
-    end
+		it 'must store the mail it belongs to' do
+			@email_recipient.mail.must_equal @mail1
+		end
 
     it 'must be able to store the date and time that the email was sent' do
-      @email_recipient.email_sent = Time.now
+      @email_recipient.date_email_sent = Time.now
       @email_recipient.save
-      @email_recipient.email_sent.must_be_instance_of DateTime
+      @email_recipient.date_email_sent.must_be_instance_of DateTime
     end
 
   end

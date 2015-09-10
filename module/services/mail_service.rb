@@ -5,14 +5,17 @@ module Postoffice
 		def self.create_mail person_id, data
 			person = Postoffice::Person.find(person_id)
 
-			mail_hash = Hash[from: person.username, to: data["to"], content: data["content"]]
+			mail_hash = Hash[person: person, content: data["content"]]
+			# mail_hash = Hash[from: person.username, to: data["to"], content: data["content"]]
+
+			mail_hash[:recipients] = self.get_recipients(data["recipients"])
 
 			if data["scheduled_to_arrive"] then self.set_scheduled_to_arrive mail_hash, data end
-			if data["delivery_options"] then self.set_delivery_options mail_hash, data end
+			# if data["delivery_options"] then self.set_delivery_options mail_hash, data end
 
-			if mail_hash[:delivery_options] && mail_hash[:delivery_options].include?("EMAIL")
-				self.validate_ability_to_send_email_to_recipient mail_hash
-			end
+			# if mail_hash[:delivery_options] && mail_hash[:delivery_options].include?("EMAIL")
+			# 	self.validate_ability_to_send_email_to_recipient mail_hash
+			# end
 
 			mail = Postoffice::Mail.create!(mail_hash)
 
@@ -25,45 +28,58 @@ module Postoffice
 			mail
 		end
 
+		def self.get_recipients recipient_array
+			recipients = []
+			recipient_array.each do |r|
+				if r["person_id"]
+					person = Postoffice::Person.find(r["person_id"])
+					recipients << Postoffice::SlowpostRecipient.new(person_id: person.id)
+				elsif r["email"]
+					recipients << Postoffice::EmailRecipient.new(email: r["email"])
+				end
+			end
+			recipients
+		end
+
 		def self.set_scheduled_to_arrive mail_hash, data
 			mail_hash[:scheduled_to_arrive] = data["scheduled_to_arrive"]
 			mail_hash[:type] = "SCHEDULED"
 		end
 
-		def self.set_delivery_options mail_hash, data
-			if invalid_delivery_options? data["delivery_options"]
-				raise "Invalid delivery options"
-			else
-				mail_hash[:delivery_options] = data["delivery_options"]
-			end
-		end
-
-		def self.invalid_delivery_options? delivery_options
-			valid_delivery_options = ["SLOWPOST", "EMAIL"]
-			if (delivery_options - valid_delivery_options).count > 0
-				true
-			else
-				false
-			end
-		end
-
-		def self.validate_ability_to_send_email_to_recipient mail_hash
-			begin
-				person = Postoffice::Person.find_by(username: mail_hash[:to])
-				if self.invalid_email? person.email then raise "User does not have an email address" end
-			rescue Mongoid::Errors::DocumentNotFound
-				if self.invalid_email? mail_hash[:to] then raise "Invalid email address" end
-			end
-		end
-
-		def self.invalid_email? email
-			valid_email_regex = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/
-			if email && email.match(valid_email_regex) != nil
-				return false
-			else
-				return true
-			end
-		end
+		# def self.set_delivery_options mail_hash, data
+		# 	if invalid_delivery_options? data["delivery_options"]
+		# 		raise "Invalid delivery options"
+		# 	else
+		# 		mail_hash[:delivery_options] = data["delivery_options"]
+		# 	end
+		# end
+		#
+		# def self.invalid_delivery_options? delivery_options
+		# 	valid_delivery_options = ["SLOWPOST", "EMAIL"]
+		# 	if (delivery_options - valid_delivery_options).count > 0
+		# 		true
+		# 	else
+		# 		false
+		# 	end
+		# end
+		#
+		# def self.validate_ability_to_send_email_to_recipient mail_hash
+		# 	begin
+		# 		person = Postoffice::Person.find_by(username: mail_hash[:to])
+		# 		if self.invalid_email? person.email then raise "User does not have an email address" end
+		# 	rescue Mongoid::Errors::DocumentNotFound
+		# 		if self.invalid_email? mail_hash[:to] then raise "Invalid email address" end
+		# 	end
+		# end
+		#
+		# def self.invalid_email? email
+		# 	valid_email_regex = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/
+		# 	if email && email.match(valid_email_regex) != nil
+		# 		return false
+		# 	else
+		# 		return true
+		# 	end
+		# end
 
 		def self.ensure_mail_arrives_in_order_it_was_sent mail
 			latest_incoming_mail = Postoffice::Mail.where(to: mail.to, from: mail.from, status: "SENT", type: "STANDARD").desc(:scheduled_to_arrive).limit(1).first
@@ -97,16 +113,16 @@ module Postoffice
 			mails
 		end
 
+
 		def self.mailbox params
-			username = Postoffice::Person.find(params[:id]).username
 			mails = []
 
-			query = {to: username, delivery_options: "SLOWPOST", scheduled_to_arrive: { "$lte" => Time.now } }
+			id = BSON::ObjectId(params[:id])
+			query = {status: "DELIVERED", "recipients.person_id" => id}
 			if params[:updated_at] then query[:updated_at] = params[:updated_at] end
-			if params[:conversation_username] then query[:from] = params[:conversation_username] end
+			if params[:conversation_person_id] then query[:from_person_id] = params[:conversation_person_id] end
 
 			Postoffice::Mail.where(query).each do |mail|
-				mail.update_delivery_status
 				mails << mail.as_document
 			end
 
@@ -114,20 +130,18 @@ module Postoffice
 		end
 
 		def self.outbox params
-			username = Postoffice::Person.find(params[:id]).username
 			mails = []
 
-			query = {from: username}
+			query = {from_person_id: params[:id]}
 
 			if params[:updated_at] then query[:updated_at] = params[:updated_at] end
-			if params[:conversation_username] then query[:to] = params[:conversation_username] end
+			if params[:conversation_person_id] then query["recipients.person_id"] = params[:conversation_person_id] end
 
 			Postoffice::Mail.where(query).each do |mail|
 				mails << mail.as_document
 			end
 
 			mails
-
 		end
 
 		def self.conversation_metadata params
@@ -157,6 +171,17 @@ module Postoffice
 			end
 
 			conversations
+		end
+
+		def self.get_contacts params
+			recipients = self.get_people_who_received_mail_from params
+			senders = self.get_people_who_sent_mail_to params
+			contacts = (recipients + senders).uniq
+			contacts_as_documents = []
+			contacts.each do |person|
+				contacts_as_documents << person.as_document
+			end
+			contacts_as_documents
 		end
 
 		def self.conversation params
@@ -192,17 +217,6 @@ module Postoffice
 			end
 
 			list_of_people.uniq
-		end
-
-		def self.get_contacts params
-			recipients = self.get_people_who_received_mail_from params
-			senders = self.get_people_who_sent_mail_to params
-			contacts = (recipients + senders).uniq
-			contacts_as_documents = []
-			contacts.each do |person|
-				contacts_as_documents << person.as_document
-			end
-			contacts_as_documents
 		end
 
 		def self.find_mail_to_deliver
