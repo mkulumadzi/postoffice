@@ -7,7 +7,7 @@ describe Postoffice::Mail do
 		@person1 = create(:person, username: random_username)
 		@person2 = create(:person, username: random_username)
 
-		@mail1 = create(:mail, person: @person1, recipients: [build(:slowpost_recipient, person_id: @person2.id.to_s), build(:email_recipient, email: "test@test.com")])
+		@mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com")])
 
 		@expected_attrs = attributes_for(:mail)
 
@@ -19,17 +19,13 @@ describe Postoffice::Mail do
 			@mail1.must_be_instance_of Postoffice::Mail
 		end
 
-		it 'must store a reference to the person_id who sent it' do
-			@mail1.from_person_id.must_be_instance_of BSON::ObjectId
-		end
-
-		it 'must store the person it is from' do
-			@mail1.from.must_equal @expected_attrs[:from]
-		end
-
-		it 'must store person it is to' do
-			@mail1.to.must_equal @expected_attrs[:to]
-		end
+		# it 'must store the person it is from' do
+		# 	@mail1.from.must_equal @expected_attrs[:from]
+		# end
+		#
+		# it 'must store person it is to' do
+		# 	@mail1.to.must_equal @expected_attrs[:to]
+		# end
 
 		it 'must store the content' do
 			@mail1.content.must_equal @expected_attrs[:content]
@@ -39,26 +35,18 @@ describe Postoffice::Mail do
 			@mail1.type.must_equal "STANDARD"
 		end
 
-		it 'must be able to store an email recipient' do
-			assert_operator @mail1.recipients.select{|recipient| recipient.class == Postoffice::EmailRecipient}.count, :>=, 1
+		it 'must be able to store the person it is from' do
+			@mail1.correspondents.select{|correspondent| correspondent.class == Postoffice::FromPerson}.count.must_equal 1
 		end
 
-		it 'must be able to store a Slowpost Recipient' do
-			assert_operator @mail1.recipients.select{|recipient| recipient.class == Postoffice::SlowpostRecipient}.count, :>=, 1
+
+		it 'must be able to store a Slowpost correspondent' do
+			assert_operator @mail1.correspondents.select{|correspondent| correspondent.class == Postoffice::ToPerson}.count, :>=, 1
 		end
 
-		# describe 'delivery options' do
-		#
-		# 	it 'must set the default delivery option to ["SLOWPOST"]' do
-		# 		@mail1.delivery_options.must_equal ["SLOWPOST"]
-		# 	end
-		#
-		# 	it 'must allow other values to be set' do
-		# 		mail = build(:mail, delivery_options: ["EMAIL"])
-		# 		mail.delivery_options.must_equal ["EMAIL"]
-		# 	end
-		#
-		# end
+		it 'must be able to store an email correspondent' do
+			assert_operator @mail1.correspondents.select{|correspondent| correspondent.class == Postoffice::Email}.count, :>=, 1
+		end
 
 		describe 'add mail image' do
 
@@ -84,12 +72,123 @@ describe Postoffice::Mail do
 
 	describe 'query who the mail is from and to' do
 
-		it 'must be able to find the person that the mail is from' do
-			Postoffice::Mail.where(person: @person1).include?(@mail1).must_equal true
+		it 'must be able to find mail addressed to correspondents by their id' do
+			Postoffice::Mail.where("correspondents.person_id" => @person2.id).include?(@mail1).must_equal true
 		end
 
-		it 'must be able to find mail addressed to recipients by their id' do
-			Postoffice::Mail.where("recipients.person_id" => @person2.id.to_s).include?(@mail1).must_equal true
+		it 'must be able to find mail addressed to emails' do
+			Postoffice::Mail.where("correspondents.email" =>"test@test.com").include?(@mail1).must_equal true
+		end
+
+	end
+
+	describe 'get the conversation query from a mail' do
+
+		before do
+			@person3 = create(:person, username: random_username)
+			@person4 = create(:person, username: random_username)
+			@mail2 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person3.id), build(:to_person, person_id: @person2.id), build(:to_person, person_id: @person4.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
+		end
+
+		describe 'initialize conversation query' do
+
+			before do
+				@query = @mail2.initialize_conversation_query
+			end
+
+			it 'must return a Mongoid Criteria' do
+				@query.must_be_instance_of Mongoid::Criteria
+			end
+
+			it 'must specify the maximum number of correspondents' do
+				num_correspondents = @mail2.correspondents.count
+				@query.selector.must_equal Hash["correspondents.#{num_correspondents}", Hash["$exists", false]]
+			end
+
+		end
+
+		describe 'add people to conversation query' do
+
+			before do
+				@original_query = @mail2.initialize_conversation_query
+				@new_query = @mail2.add_people_to_conversation_query @original_query
+			end
+
+			it 'must append an all_in selector for the correspondent person_ids' do
+				@new_query.selector["correspondents.person_id"]["$all"].must_be_instance_of Array
+			end
+
+			it 'must include the FromPerson person_id in the array for that hash' do
+				@new_query.selector["correspondents.person_id"]["$all"].include?(@person1.id).must_equal true
+			end
+
+			it 'must also include all person_ids fro ToPerson correspondents' do
+				expected_array = [@person1.id, @person2.id, @person3.id, @person4.id]
+				(@new_query.selector["correspondents.person_id"]["$all"] - expected_array).must_equal []
+			end
+
+			it 'must append this query to the original query' do
+				num_correspondents = @mail2.correspondents.count
+				@new_query.selector.keys.must_equal ["correspondents.#{num_correspondents}", "correspondents.person_id"]
+			end
+
+		end
+
+		describe 'add emails to conversation query' do
+
+			before do
+				@original_query = @mail2.initialize_conversation_query
+				@people_query = @mail2.add_people_to_conversation_query @original_query
+				@email_query = @mail2.add_emails_to_conversation_query @people_query
+			end
+
+			it 'must append an all_in selector for the correspondent emails' do
+				@email_query.selector["correspondents.email"]["$all"].must_be_instance_of Array
+			end
+
+			it 'must include all emails' do
+				expected_array = ["test@test.com", "test2@test.com"]
+				(@email_query.selector["correspondents.email"]["$all"] - expected_array).must_equal []
+			end
+
+			it 'must append this query to the original query' do
+				num_correspondents = @mail2.correspondents.count
+				@email_query.selector.keys.must_equal ["correspondents.#{num_correspondents}", "correspondents.person_id", "correspondents.email"]
+			end
+
+			describe 'mail with no emails' do
+
+				before do
+					@mail3 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person3.id), build(:to_person, person_id: @person2.id), build(:to_person, person_id: @person4.id)])
+					@no_email_query = @mail3.initialize_conversation_query
+					@no_email_query = @mail3.add_people_to_conversation_query @no_email_query
+					@no_email_query = @mail3.add_emails_to_conversation_query @no_email_query
+				end
+
+				it 'must not add a selector for emails' do
+					num_correspondents = @mail3.correspondents.count
+					@no_email_query.selector.keys.must_equal ["correspondents.#{num_correspondents}", "correspondents.person_id"]
+				end
+
+			end
+
+		end
+
+		describe 'the final query' do
+
+			before do
+				@query = @mail2.conversation
+			end
+
+			it 'must have all of the selectors' do
+				num_correspondents = @mail2.correspondents.count
+				@query.selector.keys.must_equal ["correspondents.#{num_correspondents}", "correspondents.person_id", "correspondents.email"]
+			end
+
+			it 'must return the mail when it is evaluated' do
+				@query.to_a.include?(@mail2).must_equal true
+			end
+
 		end
 
 	end
@@ -175,61 +274,6 @@ describe Postoffice::Mail do
 			assert_operator (Time.now.to_i - @mail1.date_delivered.to_i), :<=, 100
 		end
 
-		# it 'must not be scheduled to arrive in the future' do
-		# 	assert_operator @mail1.scheduled_to_arrive, :<=, Time.now
-		# end
-
 	end
-
-	# describe 'update delivery status' do
-	#
-	# 	before do
-	# 		@mail1.mail_it
-	# 		@mail1.make_it_arrive_now
-	# 		@mail2.mail_it
-	# 	end
-	#
-	# 	it 'must set the status of the mail to DELIVERED for mail that has arrived' do
-	# 		@mail1.update_delivery_status
-	# 		@mail1.status.must_equal "DELIVERED"
-	# 	end
-	#
-	# 	it 'must not still list the mail status as SENT if the mail has not arrived yet' do
-	# 		@mail2.update_delivery_status
-	# 		@mail2.status.must_equal "SENT"
-	# 	end
-	#
-	# 	it 'must not change mail that has been read back to delivered' do
-	# 		@mail2.make_it_arrive_now
-	# 		@mail2.update_delivery_status
-	# 		@mail2.read
-	# 		@mail2.update_delivery_status
-	# 		@mail2.status.must_equal "READ"
-	# 	end
-	#
-	# end
-
-	# describe 'read mail' do
-	#
-	# 	before do
-	# 		@mail1.mail_it
-	# 		@mail1.make_it_arrive_now
-	# 		@mail1.update_delivery_status
-	#
-	# 		@mail2.mail_it
-	# 	end
-	#
-	# 	it 'must mark status of READ' do
-	# 		@mail1.read
-	# 		@mail1.status.must_equal "READ"
-	# 	end
-	#
-	# 	it 'must throw an error if mail does not have status of DELIVERED' do
-	# 		assert_raises(ArgumentError) {
-	# 			@mail2.read
-	# 		}
-	# 	end
-	#
-	# end
 
 end

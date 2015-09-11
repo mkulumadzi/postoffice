@@ -7,8 +7,8 @@ module Postoffice
 		dragonfly_accessor :image
 		dragonfly_accessor :thumbnail
 
-		belongs_to :person, foreign_key: :from_person_id
-		embeds_many :recipients
+		# belongs_to :person, foreign_key: :from_person_id
+		embeds_many :correspondents
 
 		# These fields are going to be migrated, then deleted
 		field :from, type: String
@@ -63,18 +63,34 @@ module Postoffice
 			self.save
 		end
 
-		# def update_delivery_status
-		# 	if self.scheduled_to_arrive && self.scheduled_to_arrive <= Time.now && self.status == "SENT"
-		# 		self.status = "DELIVERED"
-		# 		self.save
-		# 	end
-		# end
+		def conversation
+			query = self.initialize_conversation_query
+			query = self.add_people_to_conversation_query query
+			query = self.add_emails_to_conversation_query query
+			query
+		end
 
-		# def read
-		# 	raise ArgumentError, "Mail must be in DELIVERED state to read" unless self.status == "DELIVERED"
-		# 	self.status = "READ"
-		# 	self.save
-		# end
+		def initialize_conversation_query
+			num_correspondents = self.correspondents.count
+			Postoffice::Mail.where("correspondents.#{num_correspondents}" => { "$exists" => false })
+		end
+
+		def add_people_to_conversation_query query
+			from_person_id = self.correspondents.where(_type: "Postoffice::FromPerson")[0].person_id
+			people_array = [from_person_id]
+			self.correspondents.where(_type: "Postoffice::ToPerson").each { |r| people_array << r.person_id }
+			query.all_in("correspondents.person_id" => people_array)
+		end
+
+		def add_emails_to_conversation_query query
+			if self.correspondents.where(_type: "Postoffice::Email").count > 0
+				email_array = []
+				self.correspondents.where(_type: "Postoffice::Email").each { |r| email_array << r.email }
+				query.all_in("correspondents.email" => email_array)
+			else
+				query
+			end
+		end
 
 	end
 
