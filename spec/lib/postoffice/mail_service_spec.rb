@@ -20,7 +20,7 @@ describe Postoffice::MailService do
 
 		before do
 			recipient_array = [Hash["person_id", @person1.id], Hash["email", "test@test.com"]]
-			@recipients = Postoffice::MailService.get_recipients recipient_array
+			@recipients = Postoffice::MailService.create_recipients recipient_array
 		end
 
 		it 'must create a SlowpostRecipient if a person_id is included' do
@@ -53,7 +53,6 @@ describe Postoffice::MailService do
 		end
 
 		it 'must store all of the recipients' do
-			binding.pry
 			@mail4.recipients.count.must_equal 2
 		end
 
@@ -150,46 +149,46 @@ describe Postoffice::MailService do
 
 	end
 
-	describe 'ensure mail arrives in order in which it was sent' do
-		before do
-			@personA = create(:person, username: random_username)
-			@personB = create(:person, username: random_username)
-
-			@mailA = create(:mail, person: @personA, recipients: [build(:slowpost_recipient, person: @personB)])
-			@mailB = create(:mail, person: @personA, recipients: [build(:slowpost_recipient, person: @personB)])
-
-			@mailA.mail_it
-			@mailB.mail_it
-		end
-
-		it 'must make the arrival date of a mail at least 5 minutes after the latest arriving mail, if the former mail was sent later' do
-			@mailA.scheduled_to_arrive = Time.now + 4.days
-			@mailA.save
-			Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent @mailB
-			updated_mail_record = Postoffice::Mail.find(@mailB.id)
-			updated_mail_record.scheduled_to_arrive.to_i.must_equal (@mailA.scheduled_to_arrive + 5.minutes).to_i
-		end
-
-		it 'must leave the mail arrival date as is if it is already scheduled to arrive later than the other mail' do
-			@mailA.scheduled_to_arrive = Time.now
-			@mailA.save
-			original_scheduled_date = @mailB.scheduled_to_arrive
-			Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent @mailB
-			updated_mail_record = Postoffice::Mail.find(@mailB.id)
-			updated_mail_record.scheduled_to_arrive.to_i.must_equal original_scheduled_date.to_i
-		end
-
-		it 'must ignore other mail if it does not have a type of "STANDARD"' do
-			@mailA.scheduled_to_arrive = Time.now + 4.days
-			@mailA.type = "SCHEDULED"
-			@mailA.save
-			original_scheduled_date = @mailB.scheduled_to_arrive
-			Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent @mailB
-			updated_mail_record = Postoffice::Mail.find(@mailB.id)
-			updated_mail_record.scheduled_to_arrive.to_i.must_equal original_scheduled_date.to_i
-		end
-
-	end
+	# describe 'ensure mail arrives in order in which it was sent' do
+	# 	before do
+	# 		@personA = create(:person, username: random_username)
+	# 		@personB = create(:person, username: random_username)
+	#
+	# 		@mailA = create(:mail, person: @personA, recipients: [build(:slowpost_recipient, person_id: @personB.id)])
+	# 		@mailB = create(:mail, person: @personA, recipients: [build(:slowpost_recipient, person_id: @personB.id)])
+	#
+	# 		@mailA.mail_it
+	# 		@mailB.mail_it
+	# 	end
+	#
+	# 	it 'must make the arrival date of a mail at least 5 minutes after the latest arriving mail, if the former mail was sent later' do
+	# 		@mailA.scheduled_to_arrive = Time.now + 4.days
+	# 		@mailA.save
+	# 		Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent @mailB
+	# 		updated_mail_record = Postoffice::Mail.find(@mailB.id)
+	# 		updated_mail_record.scheduled_to_arrive.to_i.must_equal (@mailA.scheduled_to_arrive + 5.minutes).to_i
+	# 	end
+	#
+	# 	it 'must leave the mail arrival date as is if it is already scheduled to arrive later than the other mail' do
+	# 		@mailA.scheduled_to_arrive = Time.now
+	# 		@mailA.save
+	# 		original_scheduled_date = @mailB.scheduled_to_arrive
+	# 		Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent @mailB
+	# 		updated_mail_record = Postoffice::Mail.find(@mailB.id)
+	# 		updated_mail_record.scheduled_to_arrive.to_i.must_equal original_scheduled_date.to_i
+	# 	end
+	#
+	# 	it 'must ignore other mail if it does not have a type of "STANDARD"' do
+	# 		@mailA.scheduled_to_arrive = Time.now + 4.days
+	# 		@mailA.type = "SCHEDULED"
+	# 		@mailA.save
+	# 		original_scheduled_date = @mailB.scheduled_to_arrive
+	# 		Postoffice::MailService.ensure_mail_arrives_in_order_it_was_sent @mailB
+	# 		updated_mail_record = Postoffice::Mail.find(@mailB.id)
+	# 		updated_mail_record.scheduled_to_arrive.to_i.must_equal original_scheduled_date.to_i
+	# 	end
+	#
+	# end
 
 	describe 'get mail' do
 
@@ -240,7 +239,7 @@ describe Postoffice::MailService do
 
 			it 'must not show mail that has not been delivered yet' do
 				filtered_mail = @mailbox.select {|mail| mail[:_id] == @mail2.id}
-				filtered_mail.count.must_equal 05
+				filtered_mail.count.must_equal 0
 			end
 
 		end
@@ -349,291 +348,6 @@ describe Postoffice::MailService do
 				@outbox.to_s.include?(@person3.id.to_s).must_equal false
 			end
 
-		end
-
-	end
-
-	describe 'get conversation metadata' do
-
-		before do
-			@mail1.mail_it
-			@mail1.deliver
-			@mail2.mail_it
-			@mail2.deliver
-			@another_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person1.id)])
-			@another_mail.mail_it
-
-			@not_slowpost_mail = create(:mail, person: @person1, recipients: [build(:email_recipient)])
-			@not_slowpost_mail.mail_it
-			@not_slowpost_mail.deliver
-
-			@params = Hash[:id, @person2.id]
-			@person2_penpals = Postoffice::MailService.get_contacts @params
-			@conversation_metadata = Postoffice::MailService.conversation_metadata @params
-		end
-
-		it 'must return an array of Hashes' do
-			@conversation_metadata[0].must_be_instance_of Hash
-		end
-
-		it 'it must return a Hash for each penpal' do
-			@conversation_metadata.count.must_equal @person2_penpals.count
-		end
-
-		describe 'the metadata' do
-
-			before do
-				@metadata_for_person1 = @conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
-			end
-
-			it 'must include the username' do
-				@metadata_for_person1[:username].must_equal @person1.username
-			end
-
-			it 'must include the person name' do
-				@metadata_for_person1[:name].must_equal @person2.name
-			end
-
-			describe 'unread mail' do
-
-				it 'must include the number of unread mail that is to be delivered by SLOWPOST' do
-					mailbox = Postoffice::MailService.mailbox @params
-					num_unread = mailbox.select {|mail| mail[:status] != "READ" && mail[:from] == @person1.username && mail[:delivery_options].include?("SLOWPOST")}.count
-					@metadata_for_person1[:num_unread].must_equal num_unread
-				end
-
-			end
-
-			it 'must include the number of undelivered mail' do
-				outbox = Postoffice::MailService.outbox @params
-				num_undelivered = outbox.select {|mail| mail[:status] == "SENT" && mail[:to] == @person1.username}.count
-				@metadata_for_person1[:num_undelivered].must_equal num_undelivered
-			end
-
-			it 'must include the datetime that the most recent mail was updated' do
-				@another_mail.updated_at = Time.now + 5.seconds
-				@another_mail.save
-				conversation_metadata = Postoffice::MailService.conversation_metadata @params
-				metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
-				metadata_for_person1[:updated_at].to_i.must_equal @another_mail.updated_at.to_i
-			end
-
-			it 'must include the most recent status of a mail' do
-				@another_mail.updated_at = Time.now + 5.seconds
-				@another_mail.save
-				conversation_metadata = Postoffice::MailService.conversation_metadata @params
-				metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
-				metadata_for_person1[:most_recent_status].must_equal @another_mail.status
-			end
-
-			it 'must include the most recent sender of a mail' do
-				@another_mail.updated_at = Time.now + 5.seconds
-				@another_mail.save
-				conversation_metadata = Postoffice::MailService.conversation_metadata @params
-				metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
-				metadata_for_person1[:most_recent_sender].must_equal @another_mail.from
-			end
-
-		end
-
-		describe 'get only recent metadata' do
-
-			before do
-				recently_updated_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person3.id)])
-				recently_updated_mail.mail_it
-				recently_updated_mail.updated_at = Time.now + 5.minutes
-				recently_updated_mail.save
-
-				one_more_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person3.id)])
-				one_more_mail.mail_it
-
-				another_mail = create(:mail, person: @person3, recipients: [build(:slowpost_recipient, person_id: @person2.id)])
-				another_mail.mail_it
-				another_mail.deliver
-
-				params = Hash[:id, @person2.id, :updated_at, { "$gt" => Time.now + 4.minutes }]
-				@conversation_metadata = Postoffice::MailService.conversation_metadata params
-
-			end
-
-			it 'must only include people who sent mail or received mail after the date' do
-				@conversation_metadata.count.must_equal 1
-			end
-
-			it 'must include the total number of unread mail, not just the mail unread since the date' do
-				@conversation_metadata[0][:num_unread].must_equal 1
-			end
-
-			it 'must include the total number of undelivered mail, not just the mail undelivered since the date' do
-				@conversation_metadata[0][:num_undelivered].must_equal 2
-			end
-
-		end
-
-	end
-
-	describe 'conversation' do
-
-		before do
-			@mail1.mail_it
-			@mail1.deliver
-
-			@mail2.mail_it
-
-			@include_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person1.id)])
-
-			@exclude_mail1 = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person3.id)])
-			@exclude_mail2 = create(:mail, person: @person3, recipients: [build(:slowpost_recipient, person_id: @person2.id)])
-			@exclude_mail2.mail_it
-			@exclude_mail2.deliver
-
-			@params = Hash[:id, @person2.id, :conversation_id, @person1.id]
-			@conversation = Postoffice::MailService.conversation @params
-		end
-
-		it 'must include mail from person2 to person 1' do
-			filtered_mail = @conversation.select {|mail| mail[:from] == @person2.username && mail[:to] == @person1.username}
-			assert_operator filtered_mail.count, :>=, 1
-		end
-
-		it 'must include mail from person 2 to person 1' do
-			filtered_mail = @conversation.select {|mail| mail[:from] == @person1.username && mail[:to] == @person2.username}
-			assert_operator filtered_mail.count, :>=, 1
-		end
-
-		it 'must not include mail from or to person 3' do
-			filtered_mail = @conversation.select {|mail| mail[:to] == @person3.username || mail[:from] == @person3.username}
-			filtered_mail.count.must_equal 0
-		end
-
-		it 'must sort the mail in descending order based on the date it was created' do
-			@mail1.created_at = Time.now - 5.days
-			sorted_conversation = Postoffice::MailService.conversation @params
-			sorted_conversation.pop[:_id].to_s.must_equal @mail1.id.to_s
-		end
-
-	end
-
-	describe 'get contacts' do
-
-		#Touching mail to create associated mail objects in database
-		before do
-			@mail1.mail_it
-			@mail2.mail_it
-			@mail3.mail_it
-
-			@params = Hash[:id, @person1.id.to_s]
-		end
-
-		describe 'get users the person has sent mail to' do
-
-			before do
-				@recipients = Postoffice::MailService.get_people_who_received_mail_from @params
-			end
-
-			it 'must return an array of people who have received mail from the person' do
-				@recipients[0].must_be_instance_of Postoffice::Person
-			end
-
-			# To Do: Come up with a better way to test this; basically just repeating what the function does
-			it 'must include every user who has received mail from this person' do
-				sent_to = []
-				Postoffice::Mail.where(from_person_id: @person1.id).each do |mail|
-					mail.recipients.each do |recipient|
-						sent_to << Postoffice::Person.find(recipient.person_id)
-					end
-				end
-				(@recipients.uniq - sent_to.uniq).must_equal []
-			end
-
-		end
-
-		describe 'get records where mail was sent since a date' do
-
-			before do
-				another_mail = create(:mail, person: @person1, recipients:[build(:slowpost_recipient, person_id: @person3.id)])
-				another_mail.updated_at = Time.now + 5.minutes
-				another_mail.save
-				@params[:updated_at] = { "$gt" => Time.now + 4.minutes }
-				@recipients = Postoffice::MailService.get_people_who_received_mail_from @params
-			end
-
-			it 'must include people who sent mail to the user after the date specified' do
-				@recipients.must_include @person3
-			end
-
-			it 'must not include people who sent mail to the user earlier than the date specified' do
-				(@recipients.include? @person2).must_equal false
-			end
-
-		end
-
-		describe 'get users the person has received mail from' do
-
-			before do
-				@mail3.deliver
-
-				another_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person1.id)])
-				another_mail.mail_it
-				@senders = Postoffice::MailService.get_people_who_sent_mail_to @params
-			end
-
-			it 'must return an array of people' do
-				@senders[0].must_be_instance_of Postoffice::Person
-			end
-
-			it 'must include every user who has sent mail to this person, if the mail has been delivered already' do
-				received_from = []
-				Postoffice::Mail.where("recipients.person_id" => @person1.id, status: "DELIVERED").each do |mail|
-					received_from << Postoffice::Person.find(mail.from_person_id)
-				end
-				(@senders.uniq - received_from.uniq).must_equal []
-			end
-
-			it 'must not include users who have sent mail to the person that has not been delivered' do
-				@senders.include?(@person2).must_equal false
-			end
-
-		end
-
-		describe 'get records where mail was sent since a date' do
-
-			before do
-				another_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person1.id)])
-				another_mail.mail_it
-				another_mail.deliver
-				another_mail.updated_at = Time.now + 5.minutes
-				another_mail.save
-				@params[:updated_at] = { "$gt" => Time.now + 4.minutes }
-				@senders = Postoffice::MailService.get_people_who_sent_mail_to @params
-			end
-
-			it 'must include people who sent mail to the user after the date specified' do
-				@senders.must_include @person2
-			end
-
-			it 'must not include people who sent mail to the user earlier than the date specified' do
-				(@senders.include? @person3).must_equal false
-			end
-
-		end
-
-		it 'must return an array of bson documents' do
-			contacts = Postoffice::MailService.get_contacts @params
-			contacts[0].must_be_instance_of BSON::Document
-		end
-
-		it 'must create a unique list of all senders and recipients' do
-			senders = Postoffice::MailService.get_people_who_sent_mail_to @params
-			recipients = Postoffice::MailService.get_people_who_received_mail_from @params
-			comparison_group = (senders + recipients).uniq
-			comparison_group_as_documents = []
-			comparison_group.each do |person|
-				comparison_group_as_documents << person.as_document
-			end
-
-			contacts = Postoffice::MailService.get_contacts @params
-			(contacts - comparison_group_as_documents).must_equal []
 		end
 
 	end
@@ -882,6 +596,286 @@ describe Postoffice::MailService do
 			# To Do: Figure out how to test that notifications were actually sent
 			it 'must not raise an error' do
 				Postoffice::MailService.send_emails_for_mail @email_recipients
+			end
+
+		end
+
+		## Mark: Tests for conversations
+
+		describe 'get conversation metadata' do
+
+			before do
+				@mail1.mail_it
+				@mail1.deliver
+				@mail2.mail_it
+				@mail2.deliver
+				@another_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person1.id)])
+				@another_mail.mail_it
+
+				@not_slowpost_mail = create(:mail, person: @person1, recipients: [build(:email_recipient)])
+				@not_slowpost_mail.mail_it
+				@not_slowpost_mail.deliver
+
+				@params = Hash[:id, @person2.id]
+				@person2_penpals = Postoffice::MailService.get_contacts @params
+				@conversation_metadata = Postoffice::MailService.conversation_metadata @params
+			end
+
+			it 'must return an array of Hashes' do
+				@conversation_metadata[0].must_be_instance_of Hash
+			end
+
+			it 'it must return a Hash for each penpal' do
+				@conversation_metadata.count.must_equal @person2_penpals.count
+			end
+
+			describe 'the metadata' do
+
+				before do
+					@metadata_for_person1 = @conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
+				end
+
+				it 'must include the username' do
+					@metadata_for_person1[:username].must_equal @person1.username
+				end
+
+				it 'must include the person name' do
+					@metadata_for_person1[:name].must_equal @person2.name
+				end
+
+				describe 'unread mail' do
+
+					it 'must include the number of unread mail that is to be delivered by SLOWPOST' do
+						mailbox = Postoffice::MailService.mailbox @params
+						num_unread = mailbox.select {|mail| mail[:status] != "READ" && mail[:from] == @person1.username && mail[:delivery_options].include?("SLOWPOST")}.count
+						@metadata_for_person1[:num_unread].must_equal num_unread
+					end
+
+				end
+
+				it 'must include the number of undelivered mail' do
+					outbox = Postoffice::MailService.outbox @params
+					num_undelivered = outbox.select {|mail| mail[:status] == "SENT" && mail[:to] == @person1.username}.count
+					@metadata_for_person1[:num_undelivered].must_equal num_undelivered
+				end
+
+				it 'must include the datetime that the most recent mail was updated' do
+					@another_mail.updated_at = Time.now + 5.seconds
+					@another_mail.save
+					conversation_metadata = Postoffice::MailService.conversation_metadata @params
+					metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
+					metadata_for_person1[:updated_at].to_i.must_equal @another_mail.updated_at.to_i
+				end
+
+				it 'must include the most recent status of a mail' do
+					@another_mail.updated_at = Time.now + 5.seconds
+					@another_mail.save
+					conversation_metadata = Postoffice::MailService.conversation_metadata @params
+					metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
+					metadata_for_person1[:most_recent_status].must_equal @another_mail.status
+				end
+
+				it 'must include the most recent sender of a mail' do
+					@another_mail.updated_at = Time.now + 5.seconds
+					@another_mail.save
+					conversation_metadata = Postoffice::MailService.conversation_metadata @params
+					metadata_for_person1 = conversation_metadata.select { |metadata| metadata[:username] == @person1.username}[0]
+					metadata_for_person1[:most_recent_sender].must_equal @another_mail.from
+				end
+
+			end
+
+			describe 'get only recent metadata' do
+
+				before do
+					recently_updated_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person3.id)])
+					recently_updated_mail.mail_it
+					recently_updated_mail.updated_at = Time.now + 5.minutes
+					recently_updated_mail.save
+
+					one_more_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person3.id)])
+					one_more_mail.mail_it
+
+					another_mail = create(:mail, person: @person3, recipients: [build(:slowpost_recipient, person_id: @person2.id)])
+					another_mail.mail_it
+					another_mail.deliver
+
+					params = Hash[:id, @person2.id, :updated_at, { "$gt" => Time.now + 4.minutes }]
+					@conversation_metadata = Postoffice::MailService.conversation_metadata params
+
+				end
+
+				it 'must only include people who sent mail or received mail after the date' do
+					@conversation_metadata.count.must_equal 1
+				end
+
+				it 'must include the total number of unread mail, not just the mail unread since the date' do
+					@conversation_metadata[0][:num_unread].must_equal 1
+				end
+
+				it 'must include the total number of undelivered mail, not just the mail undelivered since the date' do
+					@conversation_metadata[0][:num_undelivered].must_equal 2
+				end
+
+			end
+
+		end
+
+		describe 'conversation' do
+
+			before do
+				@mail1.mail_it
+				@mail1.deliver
+
+				@mail2.mail_it
+
+				@include_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person1.id)])
+
+				@exclude_mail1 = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person3.id)])
+				@exclude_mail2 = create(:mail, person: @person3, recipients: [build(:slowpost_recipient, person_id: @person2.id)])
+				@exclude_mail2.mail_it
+				@exclude_mail2.deliver
+
+				@params = Hash[:id, @person2.id, :conversation_person_id, @person1.id]
+				@conversation = Postoffice::MailService.conversation @params
+			end
+
+			it 'must include mail from person2 to person 1' do
+				@conversation.to_s.include?(@person2.id.to_s).must_equal true
+			end
+
+			it 'must not include mail from or to person 3' do
+				@conversation.to_s.include?(@person3.id.to_s).must_equal false
+			end
+
+			it 'must sort the mail in descending order based on the date it was created' do
+				@mail1.created_at = Time.now - 5.days
+				sorted_conversation = Postoffice::MailService.conversation @params
+				sorted_conversation.pop[:_id].to_s.must_equal @mail1.id.to_s
+			end
+
+		end
+
+		describe 'get contacts' do
+
+			#Touching mail to create associated mail objects in database
+			before do
+				@mail1.mail_it
+				@mail2.mail_it
+				@mail3.mail_it
+
+				@params = Hash[:id, @person1.id.to_s]
+			end
+
+			describe 'get users the person has sent mail to' do
+
+				before do
+					@recipients = Postoffice::MailService.get_people_who_received_mail_from @params
+				end
+
+				it 'must return an array of people who have received mail from the person' do
+					@recipients[0].must_be_instance_of Postoffice::Person
+				end
+
+				# To Do: Come up with a better way to test this; basically just repeating what the function does
+				it 'must include every user who has received mail from this person' do
+					sent_to = []
+					Postoffice::Mail.where(from_person_id: @person1.id).each do |mail|
+						mail.recipients.each do |recipient|
+							sent_to << Postoffice::Person.find(recipient.person_id)
+						end
+					end
+					(@recipients.uniq - sent_to.uniq).must_equal []
+				end
+
+			end
+
+			describe 'get records where mail was sent since a date' do
+
+				before do
+					another_mail = create(:mail, person: @person1, recipients:[build(:slowpost_recipient, person_id: @person3.id)])
+					another_mail.updated_at = Time.now + 5.minutes
+					another_mail.save
+					@params[:updated_at] = { "$gt" => Time.now + 4.minutes }
+					@recipients = Postoffice::MailService.get_people_who_received_mail_from @params
+				end
+
+				it 'must include people who sent mail to the user after the date specified' do
+					@recipients.must_include @person3
+				end
+
+				it 'must not include people who sent mail to the user earlier than the date specified' do
+					(@recipients.include? @person2).must_equal false
+				end
+
+			end
+
+			describe 'get users the person has received mail from' do
+
+				before do
+					@mail3.deliver
+
+					another_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person1.id)])
+					another_mail.mail_it
+					@senders = Postoffice::MailService.get_people_who_sent_mail_to @params
+				end
+
+				it 'must return an array of people' do
+					@senders[0].must_be_instance_of Postoffice::Person
+				end
+
+				it 'must include every user who has sent mail to this person, if the mail has been delivered already' do
+					received_from = []
+					Postoffice::Mail.where("recipients.person_id" => @person1.id, status: "DELIVERED").each do |mail|
+						received_from << Postoffice::Person.find(mail.from_person_id)
+					end
+					(@senders.uniq - received_from.uniq).must_equal []
+				end
+
+				it 'must not include users who have sent mail to the person that has not been delivered' do
+					@senders.include?(@person2).must_equal false
+				end
+
+			end
+
+			describe 'get records where mail was sent since a date' do
+
+				before do
+					another_mail = create(:mail, person: @person2, recipients: [build(:slowpost_recipient, person_id: @person1.id)])
+					another_mail.mail_it
+					another_mail.deliver
+					another_mail.updated_at = Time.now + 5.minutes
+					another_mail.save
+					@params[:updated_at] = { "$gt" => Time.now + 4.minutes }
+					@senders = Postoffice::MailService.get_people_who_sent_mail_to @params
+				end
+
+				it 'must include people who sent mail to the user after the date specified' do
+					@senders.must_include @person2
+				end
+
+				it 'must not include people who sent mail to the user earlier than the date specified' do
+					(@senders.include? @person3).must_equal false
+				end
+
+			end
+
+			it 'must return an array of bson documents' do
+				contacts = Postoffice::MailService.get_contacts @params
+				contacts[0].must_be_instance_of BSON::Document
+			end
+
+			it 'must create a unique list of all senders and recipients' do
+				senders = Postoffice::MailService.get_people_who_sent_mail_to @params
+				recipients = Postoffice::MailService.get_people_who_received_mail_from @params
+				comparison_group = (senders + recipients).uniq
+				comparison_group_as_documents = []
+				comparison_group.each do |person|
+					comparison_group_as_documents << person.as_document
+				end
+
+				contacts = Postoffice::MailService.get_contacts @params
+				(contacts - comparison_group_as_documents).must_equal []
 			end
 
 		end

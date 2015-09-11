@@ -10,7 +10,6 @@ module Postoffice
 		belongs_to :person, foreign_key: :from_person_id
 		embeds_many :recipients
 
-
 		# These fields are going to be migrated, then deleted
 		field :from, type: String
 		field :to, type: String
@@ -21,12 +20,10 @@ module Postoffice
 		field :type, type: String, default: "STANDARD"
 		field :scheduled_to_arrive, type: DateTime
 
-		# Options include DRAFT, SENT, DELIVERED
+		# Statuses include DRAFT, SENT, DELIVERED
 		field :status, type: String, default: "DRAFT"
 		field :date_sent, type: DateTime
 		field :date_delivered, type: DateTime
-
-		# field :delivery_options, type: Array, default: ["SLOWPOST"]
 
 		# attachments: [
 		# 	{
