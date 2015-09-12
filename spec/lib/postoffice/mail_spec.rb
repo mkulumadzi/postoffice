@@ -72,6 +72,18 @@ describe Postoffice::Mail do
 
 	describe 'query who the mail is from and to' do
 
+		describe 'from_person' do
+
+			# before do
+			# 	@query = @mail1.from_person @person1.id
+			# end
+
+			it 'must do something' do
+				binding.pry
+			end
+
+		end
+
 		it 'must be able to find mail addressed to correspondents by their id' do
 			Postoffice::Mail.where("correspondents.person_id" => @person2.id).include?(@mail1).must_equal true
 		end
@@ -174,7 +186,7 @@ describe Postoffice::Mail do
 
 		end
 
-		describe 'the final query' do
+		describe 'conversation' do
 
 			before do
 				@query = @mail2.conversation

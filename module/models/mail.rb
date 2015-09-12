@@ -5,7 +5,6 @@ module Postoffice
 
 		extend Dragonfly::Model
 		dragonfly_accessor :image
-		dragonfly_accessor :thumbnail
 
 		# belongs_to :person, foreign_key: :from_person_id
 		embeds_many :correspondents
@@ -38,29 +37,8 @@ module Postoffice
 		# 	}
 		# ]
 
-		def days_to_arrive
-			(1..2).to_a.sample
-		end
-
-		def arrive_when
-			Time.now + days_to_arrive * 86400
-		end
-
-		def mail_it
-			raise ArgumentError, "Mail must be in DRAFT state to send" unless self.status == "DRAFT"
-			self.status = "SENT"
-			self.date_sent = Time.now
-			unless self.scheduled_to_arrive?
-				self.scheduled_to_arrive = arrive_when
-			end
-			self.save
-		end
-
-		def deliver
-			raise ArgumentError, "Mail must be in SENT state to deliver" unless self.status == "SENT"
-			self.status = "DELIVERED"
-			self.date_delivered = Time.now
-			self.save
+		def from_person person_id
+			Postoffice::Mail.where("correspondents" => {"_type" => "Postoffice::FromPerson", "person_id" => person_id})
 		end
 
 		def conversation
@@ -90,6 +68,31 @@ module Postoffice
 			else
 				query
 			end
+		end
+
+		def days_to_arrive
+			(1..2).to_a.sample
+		end
+
+		def arrive_when
+			Time.now + days_to_arrive * 86400
+		end
+
+		def mail_it
+			raise ArgumentError, "Mail must be in DRAFT state to send" unless self.status == "DRAFT"
+			self.status = "SENT"
+			self.date_sent = Time.now
+			unless self.scheduled_to_arrive?
+				self.scheduled_to_arrive = arrive_when
+			end
+			self.save
+		end
+
+		def deliver
+			raise ArgumentError, "Mail must be in SENT state to deliver" unless self.status == "SENT"
+			self.status = "DELIVERED"
+			self.date_delivered = Time.now
+			self.save
 		end
 
 	end
