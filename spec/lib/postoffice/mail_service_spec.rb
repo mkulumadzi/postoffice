@@ -12,31 +12,13 @@ describe Postoffice::MailService do
 
 	describe 'create mail' do
 
-		# def self.create_mail person_id, data
-		# 	mail_hash = self.create_mail_hash person_id, data
-		# 	mail = Postoffice::Mail.create!(mail_hash)
-		# 	self.add_image mail
-		# 	mail
-		# end
-
 		before do
 			@json_data = JSON.parse(@data)
 		end
 
 		describe 'create mail hash' do
 
-			# def self.create_mail_hash person_id, json_data
-			# 	mail_hash = self.initialize_mail_hash_with_from_person person_id
-			# 	mail_hash = self.add_content mail_hash, data
-			# 	mail_hash self.add_correspondents mail_hash, data
-			# 	mail_hash = self.set_scheduled_to_arrive mail_hash, data
-			# end
-
 			describe 'initialize mail hash with from person' do
-
-				# def self.initialize_mail_hash_with_from_person person_id
-				# 	Hash.new[:correspondents, [Postoffice::FromPerson.new(person_id: person.id)]]
-				# end
 
 				before do
 					@hash = Postoffice::MailService.initialize_mail_hash_with_from_person @person1.id
@@ -54,11 +36,6 @@ describe Postoffice::MailService do
 
 			describe 'add content' do
 
-				# def self.add_content mail_hash, data
-				# 	mail_hash [:content] = data["content"]
-				# 	mail_hash
-				# end
-
 				before do
 					@mail_hash = Postoffice::MailService.initialize_mail_hash_with_from_person @person1.id
 					@mail_hash = Postoffice::MailService.add_content @mail_hash, @json_data
@@ -72,39 +49,17 @@ describe Postoffice::MailService do
 
 			describe 'add correspondents' do
 
-				# @data = '{"content": "Hey what is up", "correspondents": ["to_people": ["' + @person2.id.to_s '","' + @person3.id.to_s '"], "emails": ["test@test.com", "test2@test.com"]]}'
-
-				# def self.add_correspondents mail_hash, json_data
-				# 	correspondents = self.create_to_person_correspondents json_data
-				# 	correspondents += self.create_email_correspondents json_data
-				# 	mail_hash[:correspondents] = correspondents
-				# 	mail_hash
-				# end
-
 				before do
 					@mail_hash = Postoffice::MailService.initialize_mail_hash_with_from_person @person1.id
 				end
 
 				describe 'create to person correpsondents' do
 
-					# def self.create_to_person_correspondents json_data
-					# 	correspondents = []
-					# 	to_person_list = json_data["correspondents"]["to_people"]
-					# 	if to_person_list
-					# 		to_person_list.each do { |id| correspondents << self.create_correspondent_from_person_id_string id } end
-					# 	end
-					# 	correspondents
-					# end
-
 					before do
 						@correspondents = Postoffice::MailService.create_to_person_correspondents @json_data
 					end
 
 					describe 'create correspondent from person_id_string' do
-
-						# def self.create_correspondent_from_person_id_string person_id_s
-						# 	Postoffice::ToPerson.new(person_id: BSON::ObjectId(c["person_id"])
-						# end
 
 						before do
 							@to_person = Postoffice::MailService.create_correspondent_from_person_id_string @person2.id.to_s
@@ -143,15 +98,6 @@ describe Postoffice::MailService do
 
 					describe 'create email correspondents' do
 
-						# def self.create_email_correspondents json_data
-						# 	correspondents = []
-						# 	email_list = json_data["correspondents"]["emails"]
-						# 	if email_list
-						# 		email_list.each do { |email| correspondents << Postoffice::Email.new(email: email } end
-						# 	end
-						# 	correspondents
-						# end
-
 						before do
 							@correspondents = Postoffice::MailService.create_email_correspondents @json_data
 						end
@@ -188,16 +134,6 @@ describe Postoffice::MailService do
 			end
 
 			describe 'set secheduled to arrive' do
-
-				# def self.set_scheduled_to_arrive mail_hash, data
-				# 	if data["scheduled_to_arrive"] then
-				# 		mail_hash[:scheduled_to_arrive] = data["scheduled_to_arrive"]
-				# 		mail_hash[:type] = "SCHEDULED"
-				# 		mail_hash
-				# 	else
-				# 		mail_hash
-				# 	end
-				# end
 
 				describe 'case where data does include a scheduled arrival date' do
 
@@ -360,6 +296,22 @@ describe Postoffice::MailService do
 		end
 
 		# To Do: Come back to this, it's getting tricky...
+
+		# def self.generate_welcome_message person
+		# 	text = File.open("templates/Welcome Message.txt").read
+		#
+		# 	mail = Postoffice::Mail.create!({
+		# 		from: ENV['POSTOFFICE_POSTMAN_USERNAME'],
+		# 		to: person.username,
+		# 		content: text,
+		# 		image_uid: ENV['POSTOFFICE_WELCOME_IMAGE']
+		# 	})
+		#
+		# 	mail.mail_it
+		# 	mail.make_it_arrive_now
+		#
+		# end
+
 		# describe 'get mail' do
 		#
 		# 	it 'must get all of the mail if no parameters are given' do
@@ -384,6 +336,219 @@ describe Postoffice::MailService do
 		# 	end
 		#
 		# end
+
+		describe 'mailbox' do
+
+			describe 'get person and perform mail query' do
+
+			# def self.get_person_and_perform_mail_query params, query_function
+			# 	person = Postoffice::Person.find(params[:id])
+			# 	query = self.mail_query(query_function, person, params)
+			# 	self.return_mail_array query
+			# end
+
+				before do
+					@mail1.mail_it
+					@mail1.deliver
+
+					@mail2.mail_it
+					@mail2.deliver
+					@mail2.updated_at = Time.now + 5.minutes
+					@mail2.save
+
+					@params = Hash(id: @person2.id.to_s, updated_at: { "$gt" => (Time.now + 4.minutes) })
+				end
+
+				describe 'mail query' do
+
+					describe 'create proc for query of mail to person' do
+
+						it 'must return a Proc' do
+							Postoffice::MailService.query_mail_to_person.must_be_instance_of Proc
+						end
+
+						describe 'call the proc' do
+
+							before do
+								@query = Postoffice::MailService.query_mail_to_person.call(@person2)
+							end
+
+							it 'must indicate that the status of the mail is DELIVERED' do
+								@query[:status].must_equal "DELIVERED"
+							end
+
+							it 'must indicate that the correspondent type is ToPerson' do
+								@query["correspondents._type"].must_equal "Postoffice::ToPerson"
+							end
+
+							it 'must point to the person id' do
+								@query["correspondents.person_id"].must_equal @person2.id
+							end
+
+						end
+
+					end
+
+					describe 'add updated since to query' do
+
+						before do
+							@query = Postoffice::MailService.query_mail_to_person.call(@person2)
+						end
+
+						describe 'params include updated_at' do
+
+							before do
+								@query = Postoffice::MailService.add_updated_since_to_query @query, @params
+							end
+
+							it 'must have added updated_at to the query' do
+								@query[:updated_at].must_equal @params[:updated_at]
+							end
+
+							it 'must have preserved the original parts of the query' do
+								@query.keys.must_equal [:status, "correspondents._type", "correspondents.person_id", :updated_at]
+							end
+
+						end
+
+						describe 'params do not include updated_at' do
+
+							before do
+								params = Hash(id: @person2.id.to_s)
+								@query = Postoffice::MailService.add_updated_since_to_query @query, params
+							end
+
+							it 'must not have added updated_at to the query' do
+								@query.keys.must_equal [:status, "correspondents._type", "correspondents.person_id"]
+							end
+
+						end
+
+					end
+
+					describe 'get mail query using function and params' do
+
+						before do
+							mail_query_proc = Postoffice::MailService.query_mail_to_person
+							@query = Postoffice::MailService.mail_query mail_query_proc, @person2, @params
+						end
+
+						it 'must return the query with all of the keys' do
+							@query.keys.must_equal [:status, "correspondents._type", "correspondents.person_id", :updated_at]
+						end
+
+						it 'must point to the person id' do
+							@query["correspondents.person_id"].must_equal @person2.id
+						end
+
+					end
+
+				end
+
+				describe 'return mail array' do
+
+					before do
+						mail_query_proc = Postoffice::MailService.query_mail_to_person
+						@query = Postoffice::MailService.mail_query mail_query_proc, @person2, @params
+						@mail_array = Postoffice::MailService.return_mail_array @query
+					end
+
+					it 'must return an array of mail' do
+						@mail_array[0].must_be_instance_of Postoffice::Mail
+					end
+
+					it 'must return the mail for the query' do
+						expected_mail = Postoffice::Mail.where(@query).to_a
+						@mail_array.must_equal expected_mail
+					end
+
+				end
+
+				describe 'get the maibox' do
+
+					# def self.mailbox params
+					# 	self.get_person_and_perform_mail_query params, self.query_mail_to_person
+					# end
+
+					before do
+						@params = Hash(id: @person2.id.to_s)
+						@mailbox = Postoffice::MailService.mailbox @params
+					end
+
+					it 'must return an array of mail' do
+						@mailbox[0].must_be_instance_of Postoffice::Mail
+					end
+
+					it 'must return all of the mail address to that person that has a status of delivered' do
+						expected_mail = Postoffice::Mail.where(status: "DELIVERED" , "correspondents._type" => "Postoffice::ToPerson", "correspondents.person_id" => @person2.id).to_a
+						expected_mail.must_equal @mailbox
+					end
+
+					describe 'get mail that was updated since a date' do
+
+						before do
+							@params = Hash(id: @person2.id.to_s, updated_at: { "$gt" => (Time.now + 4.minutes) })
+							@mailbox = Postoffice::MailService.mailbox @params
+						end
+
+						it 'must only return mail that was updated on or after the date specified' do
+							filtered_result = @mailbox.select {|mail| mail.updated_at >= (Time.now + 4.minutes)}
+							filtered_result.must_equal @mailbox
+						end
+
+					end
+
+				end
+
+			end
+
+			describe 'outbox' do
+
+				describe 'create a proc for a query that gets the mail sent by a person person' do
+
+					it 'must return a Proc' do
+						Postoffice::MailService.query_mail_from_person.must_be_instance_of Proc
+					end
+
+					describe 'call the proc' do
+
+						before do
+							@query = Postoffice::MailService.query_mail_from_person.call(@person1)
+						end
+
+						it 'must indicate that the correspondent type is FromPerson' do
+							@query["correspondents._type"].must_equal "Postoffice::FromPerson"
+						end
+
+						it 'must point to the person id' do
+							@query["correspondents.person_id"].must_equal @person1.id
+						end
+
+					end
+
+					describe 'get the outbox for a person' do
+
+						before do
+							@params = Hash(id: @person1.id)
+							@outbox = Postoffice::MailService.outbox @params
+						end
+
+						it 'must return an array of mail' do
+							@outbox[0].must_be_instance_of Postoffice::Mail
+						end
+
+						it 'must return all of the mailsent by the person' do
+							expected_mail = Postoffice::Mail.where("correspondents._type" => "Postoffice::FromPerson", "correspondents.person_id" => @person1.id).to_a
+							expected_mail.must_equal @outbox
+						end
+
+					end
+
+				end
+
+			end
+
+		end
 
 		# describe 'mailbox' do
 		#

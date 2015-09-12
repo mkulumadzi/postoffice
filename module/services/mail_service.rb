@@ -136,28 +136,39 @@ module Postoffice
 		# end
 
 		def self.mailbox params
+			self.get_person_and_perform_mail_query params, self.query_mail_to_person
+		end
+
+		def self.get_person_and_perform_mail_query params, query_function
 			person = Postoffice::Person.find(params[:id])
-			query = self.hash_mail_to_person person
-			self.return_mail_array query, params
+			query = self.mail_query(query_function, person, params)
+			self.return_mail_array query
+		end
+
+		def self.mail_query mail_query_proc, person, params
+			query = mail_query_proc.call(person)
+			query = self.add_updated_since_to_query query, params
+		end
+
+		def self.query_mail_to_person
+			Proc.new { |person| Hash(:status => "DELIVERED", "correspondents._type" => "Postoffice::ToPerson", "correspondents.person_id" => person.id) }
+		end
+
+		def self.add_updated_since_to_query query, params
+			if params[:updated_at] then query[:updated_at] = params[:updated_at] end
+			query
+		end
+
+		def self.return_mail_array query
+			Postoffice::Mail.where(query).to_a
 		end
 
 		def self.outbox params
-			person = Postoffice::Person.find(params[:id])
-			query = self.hash_mail_from_person person
-			self.return_mail_array query, params
+			self.get_person_and_perform_mail_query params, self.query_mail_from_person
 		end
 
-		def self.hash_mail_from_person person
-			Hash("correspondents._type" => "Postoffice::FromPerson", "correspondents.person_id" => person.id)
-		end
-
-		def self.hash_mail_to_person person
-			Hash("STATUS" => "DELIVERED", "correspondents._type" => "Postoffice::ToPerson", "correspondents.person_id" => person.id)
-		end
-
-		def self.return_mail_array query, params
-			if params[:updated_at] then query[:updated_at] = params[:updated_at] end
-			Postoffice::Mail.where(query).to_a
+		def self.query_mail_from_person
+			Proc.new { |person| Hash("correspondents._type" => "Postoffice::FromPerson", "correspondents.person_id" => person.id)}
 		end
 
 		### Scheduled tasks for delivering mail and sending notifications and emails
