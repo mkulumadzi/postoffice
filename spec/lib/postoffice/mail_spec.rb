@@ -6,6 +6,7 @@ describe Postoffice::Mail do
 
 		@person1 = create(:person, username: random_username)
 		@person2 = create(:person, username: random_username)
+		@person3 = create(:person, username: random_username)
 
 		@mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com")])
 
@@ -72,24 +73,104 @@ describe Postoffice::Mail do
 
 	describe 'query who the mail is from and to' do
 
-		describe 'from_person' do
-
-			# before do
-			# 	@query = @mail1.from_person @person1.id
-			# end
-
-			it 'must do something' do
-				binding.pry
-			end
-
-		end
-
 		it 'must be able to find mail addressed to correspondents by their id' do
 			Postoffice::Mail.where("correspondents.person_id" => @person2.id).include?(@mail1).must_equal true
 		end
 
 		it 'must be able to find mail addressed to emails' do
 			Postoffice::Mail.where("correspondents.email" =>"test@test.com").include?(@mail1).must_equal true
+		end
+
+	end
+
+	describe 'coversation' do
+
+		before do
+			@mail2 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person3.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "atest@test.com")])
+			@mail3 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person3.id), build(:to_person, person_id: @person2.id)])
+		end
+
+		describe 'people correspondents' do
+
+			before do
+				@people_correspondents = @mail2.people_correspondents
+			end
+
+			it 'must return an array of people' do
+				@people_correspondents[0].must_be_instance_of Postoffice::Person
+			end
+
+			it 'must return the person who sent the mail' do
+				@people_correspondents.include?(@person1).must_equal true
+			end
+
+			it 'must include the people the mail was sent to' do
+				@people_correspondents.include?(@person2).must_equal true
+			end
+
+			it 'must have sorted the list of people by their ids' do
+				sorted = @people_correspondents.sort {|a,b| a.id <=> b.id }
+				@people_correspondents.must_equal sorted
+			end
+
+		end
+
+		describe 'has email correspondents?' do
+
+			it 'must return true if the mail has email correspondents' do
+				@mail2.has_email_correspondents?.must_equal true
+			end
+
+			it 'must return false if the mail does not have email correspondents' do
+				@mail3.has_email_correspondents?.must_equal false
+			end
+
+		end
+
+		describe 'email corrspondents' do
+
+			before do
+				@email_correspondents = @mail2.email_correspondents
+			end
+
+			it 'must return the emails the mail was sent to, sorted ascending' do
+				@email_correspondents.must_equal ["atest@test.com", "test@test.com"]
+			end
+
+		end
+
+		describe 'conversation with people and email correspondents' do
+
+			before do
+				@conversation = @mail2.conversation
+				@people_correspondents = @mail2.people_correspondents
+				@email_correspondents = @mail2.email_correspondents
+			end
+
+			it 'must include the people corrspondents' do
+				@conversation[:people].must_equal @people_correspondents
+			end
+
+			it 'must include the email correspondents' do
+				@conversation[:emails].must_equal @email_correspondents
+			end
+
+			it 'must be equal to the conversation returned by another mail, with the same people but different roles' do
+				another_mail = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "atest@test.com")])
+				another_mail.conversation.must_equal @conversation
+			end
+
+		end
+
+		describe 'conversation with only people correspondents' do
+			before do
+				@conversation = @mail3.conversation
+			end
+
+			it 'must only include keys for the people' do
+				@conversation.keys.must_equal [:people]
+			end
+
 		end
 
 	end
@@ -186,10 +267,10 @@ describe Postoffice::Mail do
 
 		end
 
-		describe 'conversation' do
+		describe 'conversation query' do
 
 			before do
-				@query = @mail2.conversation
+				@query = @mail2.conversation_query
 			end
 
 			it 'must have all of the selectors' do

@@ -191,7 +191,7 @@ module Postoffice
 		end
 
 		def self.get_correspondents_to_notify_from_mail mail_array
-			correspondents = Hash[:to_people, [], :email, []]
+			correspondents = Hash[:to_people, [], :emails, []]
 			mail_array.each do |mail|
 				mail.correspondents.each do |c|
 					if c._type == "Postoffice::ToPerson" && c.attempted_to_notify != true

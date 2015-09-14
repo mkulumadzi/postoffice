@@ -37,11 +37,41 @@ module Postoffice
 		# 	}
 		# ]
 
-		def from_person person_id
-			Postoffice::Mail.where("correspondents" => {"_type" => "Postoffice::FromPerson", "person_id" => person_id})
-		end
+		# def from_person person_id
+		# 	Postoffice::Mail.where("correspondents" => {"_type" => "Postoffice::FromPerson", "person_id" => person_id})
+		# end
 
 		def conversation
+			conversation = Hash(people: self.people_correspondents)
+			if self.has_email_correspondents? then conversation[:emails] = self.email_correspondents end
+			conversation
+		end
+
+		def people_correspondents
+			people = []
+			self.correspondents.or({_type: "Postoffice::FromPerson"},{_type: "Postoffice::ToPerson"}).each do |c|
+				people << Postoffice::Person.find(c.person_id)
+			end
+			people.sort{|a,b| a.id <=> b.id}
+		end
+
+		def has_email_correspondents?
+			if self.correspondents.where(_type: "Postoffice::Email").count > 0
+				return true
+			else
+				return false
+			end
+		end
+
+		def email_correspondents
+			emails = []
+			self.correspondents.where(_type: "Postoffice::Email").each do |c|
+				emails << c.email
+			end
+			emails.sort{|a,b| a <=> b }
+		end
+
+		def conversation_query
 			query = self.initialize_conversation_query
 			query = self.add_people_to_conversation_query query
 			query = self.add_emails_to_conversation_query query

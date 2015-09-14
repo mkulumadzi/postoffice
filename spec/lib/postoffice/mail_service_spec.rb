@@ -356,6 +356,8 @@ describe Postoffice::MailService do
 					@mail2.updated_at = Time.now + 5.minutes
 					@mail2.save
 
+					binding.pry
+
 					@params = Hash(id: @person2.id.to_s, updated_at: { "$gt" => (Time.now + 4.minutes) })
 				end
 
@@ -550,142 +552,6 @@ describe Postoffice::MailService do
 
 		end
 
-		# describe 'mailbox' do
-		#
-		# 	before do
-		# 		@mail1.mail_it
-		# 		@mail1.deliver
-		#
-		# 		@mail2.mail_it
-		# 		@params = Hash[:id, @person2.id.to_s]
-		# 	end
-		#
-		# 	describe 'get mailbox' do
-		#
-		# 		before do
-		# 			@mailbox = Postoffice::MailService.mailbox(@params)
-		# 		end
-		#
-		# 		it 'must get mail for the person that has been delivered' do
-		# 			filtered_mail = @mailbox.select {|mail| mail.id == @mail1.id}
-		# 			filtered_mail.count.must_equal 1
-		# 		end
-		#
-		# 		it 'must not show mail that has not been delivered yet' do
-		# 			filtered_mail = @mailbox.select {|mail| mail.id == @mail2.id}
-		# 			filtered_mail.count.must_equal 0
-		# 		end
-		#
-		# 	end
-		#
-		# 	describe 'get only mailbox updates since a datetime' do
-		#
-		# 		before do
-		# 			@mail4 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
-		# 			@mail4.mail_it
-		# 			@mail4.deliver
-		#
-		# 			@params[:updated_at] = { "$gt" => @mail2.updated_at }
-		# 		end
-		#
-		# 		it 'must get mailbox records that were updated after the date specified' do
-		# 			number_returned = Postoffice::MailService.mailbox(@params).count
-		# 			expected_number = Postoffice::Mail.where({status: "DELIVERED", "correspondents.person_id" => @person2.id, updated_at: { "$gt" => @mail2.updated_at }}).count
-		# 			number_returned.must_equal expected_number
-		# 		end
-		#
-		# 	end
-		#
-		# 	# describe 'filter by from person' do
-		# 	#
-		# 	# 	before do
-		# 	# 		@exclude_mail = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person2.id)])
-		# 	# 		@exclude_mail.mail_it
-		# 	# 		@exclude_mail.deliver
-		# 	#
-		# 	# 		@params[:conversation_person_id] = @person1.id
-		# 	# 		@mailbox = Postoffice::MailService.mailbox(@params)
-		# 	# 	end
-		# 	#
-		# 	# 	it 'must return mail from person 1' do
-		# 	# 		filtered_mail = @mailbox.select {|mail| mail[:from_person_id] == @person1.id}
-		# 	# 		assert_operator filtered_mail.count, :>=, 1
-		# 	# 	end
-		# 	#
-		# 	# 	it 'must not return mail from person 3' do
-		# 	# 		filtered_mail = @mailbox.select {|mail| mail[:from_person_id] == @person3.id}
-		# 	# 		filtered_mail.count.must_equal 0
-		# 	# 	end
-		# 	#
-		# 	# end
-		#
-		# end
-		#
-		# describe 'outbox' do
-		#
-		# 	before do
-		# 		@mail1.mail_it
-		# 		@params1 = Hash[:id, @person1.id]
-		# 		@params2 = Hash[:id, @person2.id]
-		# 		@mail1.deliver
-		# 	end
-		#
-		# 	describe 'get outbox' do
-		#
-		# 		before do
-		# 			@outbox = Postoffice::MailService.outbox(@params1)
-		# 		end
-		#
-		# 		it 'must get mail that has been sent by the user' do
-		# 			filtered_mail = @outbox.select {|mail| mail[:from_person_id] == @person1.id}
-		# 			assert_operator filtered_mail.count, :>=, 1
-		# 		end
-		#
-		# 		it 'must not get mail that has been sent by another user' do
-		# 			filtered_mail = @outbox.select {|mail| mail[:from_person_id] == @person2.id}
-		# 			filtered_mail.count.must_equal 0
-		# 		end
-		#
-		# 	end
-		#
-		# 	describe 'get only outbox updates since a datetime' do
-		#
-		# 		before do
-		# 			@mail4 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
-		# 			@mail4.mail_it
-		# 			@mail4.deliver
-		# 			@params1[:updated_at] = { "$gt" => @mail1.updated_at }
-		# 		end
-		#
-		# 		it 'must get outbox records that were updated after the date specified' do
-		# 			number_returned = Postoffice::MailService.outbox(@params1).count
-		# 			expected_number = Postoffice::Mail.where({from_person_id: @person1.id, updated_at: { "$gt" => @mail1.updated_at }}).count
-		# 			number_returned.must_equal expected_number
-		# 		end
-		#
-		# 	end
-		#
-		# 	# describe 'filter by to person' do
-		# 	#
-		# 	# 	before do
-		# 	# 		@exclude_mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person3.id)])
-		# 	# 		@exclude_mail.mail_it
-		# 	# 		@params1[:conversation_person_id] = @person2.id
-		# 	# 		@outbox = Postoffice::MailService.outbox(@params1)
-		# 	# 	end
-		# 	#
-		# 	# 	it 'must return mail to person 2' do
-		# 	# 		@outbox.to_s.include?(@person2.id.to_s).must_equal true
-		# 	# 	end
-		# 	#
-		# 	# 	it 'must not return mail to person 3' do
-		# 	# 		@outbox.to_s.include?(@person3.id.to_s).must_equal false
-		# 	# 	end
-		# 	#
-		# 	# end
-		#
-		# end
-
 	end
 
 	### Mark: Tests for automated processes that deliver mail and send notifications
@@ -760,8 +626,8 @@ describe Postoffice::MailService do
 				@correspondents = Postoffice::MailService.get_correspondents_to_notify_from_mail @delivered_mail
 			end
 
-			it 'must return an hash with keys for :to_people correspondents and :email correspondents' do
-				@correspondents.keys.must_equal [:to_people, :email]
+			it 'must return an hash with keys for :to_people correspondents and :emails correspondents' do
+				@correspondents.keys.must_equal [:to_people, :emails]
 			end
 
 			describe 'slowpost correspondents' do
@@ -785,7 +651,7 @@ describe Postoffice::MailService do
 			describe 'email correspondents' do
 
 				before do
-					@email_correspondents = @correspondents[:email]
+					@email_correspondents = @correspondents[:emails]
 				end
 
 				it 'must return correspondents whose type is Postoffice::Email' do
@@ -850,7 +716,7 @@ describe Postoffice::MailService do
 
 			before do
 				@delivered_mail = Postoffice::MailService.deliver_mail_that_has_arrived
-				@email_correspondents = Postoffice::MailService.get_correspondents_to_notify_from_mail(@delivered_mail)[:email]
+				@email_correspondents = Postoffice::MailService.get_correspondents_to_notify_from_mail(@delivered_mail)[:emails]
 			end
 
 			describe 'create emails to send to correspondents' do
