@@ -6,6 +6,7 @@ module Postoffice
 			mail_hash = self.create_mail_hash person_id, JSON.parse(data)
 			mail = Postoffice::Mail.create!(mail_hash)
 			# self.add_image mail
+			self.create_conversation_if_none_exists mail
 			mail
 		end
 
@@ -63,6 +64,12 @@ module Postoffice
 				mail_hash
 			else
 				mail_hash
+			end
+		end
+
+		def self.create_conversation_if_none_exists mail
+			if Postoffice::Conversation.where(hex_hash: mail.conversation[:hex_hash]).count == 0
+				Postoffice::Conversation.new(mail.conversation).save
 			end
 		end
 
@@ -151,7 +158,7 @@ module Postoffice
 		end
 
 		def self.query_mail_to_person
-			Proc.new { |person| Hash(:status => "DELIVERED", "correspondents._type" => "Postoffice::ToPerson", "correspondents.person_id" => person.id) }
+			Proc.new { |person| Hash(:status => "DELIVERED", :correspondents.elem_match => {"_type" => "Postoffice::ToPerson", "person_id" => person.id} ) }
 		end
 
 		def self.add_updated_since_to_query query, params
@@ -168,7 +175,7 @@ module Postoffice
 		end
 
 		def self.query_mail_from_person
-			Proc.new { |person| Hash("correspondents._type" => "Postoffice::FromPerson", "correspondents.person_id" => person.id)}
+			Proc.new { |person| Hash(:correspondents.elem_match => {"_type" => "Postoffice::FromPerson", "person_id" => person.id} ) }
 		end
 
 		### Scheduled tasks for delivering mail and sending notifications and emails
@@ -197,7 +204,7 @@ module Postoffice
 					if c._type == "Postoffice::ToPerson" && c.attempted_to_notify != true
 						correspondents[:to_people] << c
 					elsif c._type == "Postoffice::Email" && c.attempted_to_send != true
-						correspondents[:email] << c
+						correspondents[:emails] << c
 					end
 				end
 			end
@@ -269,6 +276,35 @@ module Postoffice
 		# def query_all_mail_for_a_person person
 		# 	Postoffice::Mail.or({from_person_id: person.id},{"recipients.person_id" => person.id, status: "DELIVERED"})
 		# end
+
+		# def self.mailbox params
+		# 	self.get_person_and_perform_mail_query params, self.query_mail_to_person
+		# end
+		#
+		# def self.get_person_and_perform_mail_query params, query_function
+		# 	person = Postoffice::Person.find(params[:id])
+		# 	query = self.mail_query(query_function, person, params)
+		# 	self.return_mail_array query
+		# end
+		#
+		# def self.mail_query mail_query_proc, person, params
+		# 	query = mail_query_proc.call(person)
+		# 	query = self.add_updated_since_to_query query, params
+		# end
+		#
+		# def self.query_mail_to_person
+		# 	Proc.new { |person| Hash(:status => "DELIVERED", "correspondents._type" => "Postoffice::ToPerson", "correspondents.person_id" => person.id) }
+		# end
+		#
+		# def self.add_updated_since_to_query query, params
+		# 	if params[:updated_at] then query[:updated_at] = params[:updated_at] end
+		# 	query
+		# end
+		#
+		# def self.return_mail_array query
+		# 	Postoffice::Mail.where(query).to_a
+		# end
+
 		#
 		# def get_participants_from_mail person, mail
 		# 	participants = [mail.from_person_id]

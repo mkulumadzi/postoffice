@@ -21,6 +21,7 @@ task :create_indexes do
 	Postoffice::Person.create_indexes
 	Postoffice::Token.create_indexes
 	Postoffice::Contact.create_indexes
+	Postoffice::Conversation.create_indexes
 
 end
 
@@ -30,7 +31,7 @@ task :remove_indexes do
   Postoffice::Person.remove_indexes
 	Postoffice::Token.remove_indexes
 	Postoffice::Contact.remove_indexes
-
+	Postoffice::Conversation.remove_indexes
 end
 
 task :setup_demo_data do

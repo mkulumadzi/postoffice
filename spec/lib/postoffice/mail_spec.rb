@@ -93,23 +93,23 @@ describe Postoffice::Mail do
 		describe 'people correspondents' do
 
 			before do
-				@people_correspondents = @mail2.people_correspondents
+				@people_correspondents = @mail2.people_correspondent_ids
 			end
 
-			it 'must return an array of people' do
-				@people_correspondents[0].must_be_instance_of Postoffice::Person
+			it 'must return an array of object_ids' do
+				@people_correspondents[0].must_be_instance_of BSON::ObjectId
 			end
 
 			it 'must return the person who sent the mail' do
-				@people_correspondents.include?(@person1).must_equal true
+				@people_correspondents.include?(@person1.id).must_equal true
 			end
 
 			it 'must include the people the mail was sent to' do
-				@people_correspondents.include?(@person2).must_equal true
+				@people_correspondents.include?(@person2.id).must_equal true
 			end
 
-			it 'must have sorted the list of people by their ids' do
-				sorted = @people_correspondents.sort {|a,b| a.id <=> b.id }
+			it 'must have sorted the list of ids ascending' do
+				sorted = @people_correspondents.sort {|a,b| a <=> b }
 				@people_correspondents.must_equal sorted
 			end
 
@@ -139,11 +139,25 @@ describe Postoffice::Mail do
 
 		end
 
+		describe 'add hex hash to conversation' do
+
+			before do
+				@conversation_hash = Hash(people: @mail2.people_correspondent_ids, email: @mail2.email_correspondents)
+				@mail2.add_hex_hash_to_conversation @conversation_hash
+			end
+
+			it 'must have created a hex hash of the conversation and added this to the string' do
+				hex_hash = Digest::SHA1.hexdigest(Hash(people: @mail2.people_correspondent_ids, email: @mail2.email_correspondents).to_s)
+				@conversation_hash[:hex_hash].must_equal hex_hash
+			end
+
+		end
+
 		describe 'conversation with people and email correspondents' do
 
 			before do
 				@conversation = @mail2.conversation
-				@people_correspondents = @mail2.people_correspondents
+				@people_correspondents = @mail2.people_correspondent_ids
 				@email_correspondents = @mail2.email_correspondents
 			end
 
@@ -153,6 +167,10 @@ describe Postoffice::Mail do
 
 			it 'must include the email correspondents' do
 				@conversation[:emails].must_equal @email_correspondents
+			end
+
+			it 'must include the hex hash' do
+				@conversation[:hex_hash].must_be_instance_of String
 			end
 
 			it 'must be equal to the conversation returned by another mail, with the same people but different roles' do
@@ -167,8 +185,8 @@ describe Postoffice::Mail do
 				@conversation = @mail3.conversation
 			end
 
-			it 'must only include keys for the people' do
-				@conversation.keys.must_equal [:people]
+			it 'must only include keys for the people and the hex hash' do
+				@conversation.keys.must_equal [:people, :hex_hash]
 			end
 
 		end

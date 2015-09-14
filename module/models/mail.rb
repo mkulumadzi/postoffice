@@ -42,17 +42,17 @@ module Postoffice
 		# end
 
 		def conversation
-			conversation = Hash(people: self.people_correspondents)
+			conversation = Hash(people: self.people_correspondent_ids)
 			if self.has_email_correspondents? then conversation[:emails] = self.email_correspondents end
-			conversation
+			conversation = self.add_hex_hash_to_conversation conversation
 		end
 
-		def people_correspondents
+		def people_correspondent_ids
 			people = []
 			self.correspondents.or({_type: "Postoffice::FromPerson"},{_type: "Postoffice::ToPerson"}).each do |c|
-				people << Postoffice::Person.find(c.person_id)
+				people << Postoffice::Person.find(c.person_id).id
 			end
-			people.sort{|a,b| a.id <=> b.id}
+			people.sort{|a,b| a <=> b}
 		end
 
 		def has_email_correspondents?
@@ -69,6 +69,11 @@ module Postoffice
 				emails << c.email
 			end
 			emails.sort{|a,b| a <=> b }
+		end
+
+		def add_hex_hash_to_conversation conversation
+			conversation[:hex_hash] = Digest::SHA1.hexdigest(conversation.to_s)
+			conversation
 		end
 
 		def conversation_query

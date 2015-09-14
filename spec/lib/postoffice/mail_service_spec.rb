@@ -232,8 +232,39 @@ describe Postoffice::MailService do
 		#
 		# end
 
-		it 'must return the mail' do
-			Postoffice::MailService.create_mail(@person1.id, @data).must_be_instance_of Postoffice::Mail
+		describe 'create conversation if none exists' do
+
+			before do
+				@mailA = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com")])
+				@mailB = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com")])
+			end
+
+			it 'must create the conversation if none exists' do
+				Postoffice::MailService.create_conversation_if_none_exists @mailA
+				Postoffice::Conversation.where(hex_hash: @mailA.conversation[:hex_hash]).count.must_equal 1
+			end
+
+			it 'must not create a duplicate conversation' do
+				Postoffice::MailService.create_conversation_if_none_exists @mailB
+				Postoffice::Conversation.where(hex_hash: @mailA.conversation[:hex_hash]).count.must_equal 1
+			end
+
+		end
+
+		describe 'create the mail' do
+
+			before do
+				@mail = Postoffice::MailService.create_mail(@person1.id, @data)
+			end
+
+			it 'must return the mail' do
+				@mail.must_be_instance_of Postoffice::Mail
+			end
+
+			it 'must have created the conversation for the mail' do
+				Postoffice::Conversation.where(hex_hash: @mail.conversation[:hex_hash]).count.must_equal 1
+			end
+
 		end
 
 	end
@@ -356,8 +387,6 @@ describe Postoffice::MailService do
 					@mail2.updated_at = Time.now + 5.minutes
 					@mail2.save
 
-					binding.pry
-
 					@params = Hash(id: @person2.id.to_s, updated_at: { "$gt" => (Time.now + 4.minutes) })
 				end
 
@@ -371,6 +400,10 @@ describe Postoffice::MailService do
 
 						describe 'call the proc' do
 
+							# def self.query_mail_to_person
+							# 	Proc.new { |person| Hash(:status => "DELIVERED", :correspondents.elem_match => {"_type" => "Postoffice::ToPerson", "person_id" => person.id} ) }
+							# end
+
 							before do
 								@query = Postoffice::MailService.query_mail_to_person.call(@person2)
 							end
@@ -379,13 +412,13 @@ describe Postoffice::MailService do
 								@query[:status].must_equal "DELIVERED"
 							end
 
-							it 'must indicate that the correspondent type is ToPerson' do
-								@query["correspondents._type"].must_equal "Postoffice::ToPerson"
+							it 'must indicate that the correspondens must include a ToPerson that maps to the person.id' do
+								@query[:correspondents.elem_match].must_equal Hash("_type" => "Postoffice::ToPerson", "person_id" => @person2.id)
 							end
 
-							it 'must point to the person id' do
-								@query["correspondents.person_id"].must_equal @person2.id
-							end
+							# it 'must point to the person id' do
+							# 	@query["correspondents.person_id"].must_equal @person2.id
+							# end
 
 						end
 
@@ -408,7 +441,7 @@ describe Postoffice::MailService do
 							end
 
 							it 'must have preserved the original parts of the query' do
-								@query.keys.must_equal [:status, "correspondents._type", "correspondents.person_id", :updated_at]
+								@query.keys.must_equal [:status, :correspondents.elem_match, :updated_at]
 							end
 
 						end
@@ -421,7 +454,7 @@ describe Postoffice::MailService do
 							end
 
 							it 'must not have added updated_at to the query' do
-								@query.keys.must_equal [:status, "correspondents._type", "correspondents.person_id"]
+								@query.keys.include?(:updated_at).must_equal false
 							end
 
 						end
@@ -436,11 +469,11 @@ describe Postoffice::MailService do
 						end
 
 						it 'must return the query with all of the keys' do
-							@query.keys.must_equal [:status, "correspondents._type", "correspondents.person_id", :updated_at]
+							@query.keys.must_equal [:status, :correspondents.elem_match, :updated_at]
 						end
 
 						it 'must point to the person id' do
-							@query["correspondents.person_id"].must_equal @person2.id
+							@query[:correspondents.elem_match]["person_id"].must_equal @person2.id
 						end
 
 					end
@@ -466,7 +499,7 @@ describe Postoffice::MailService do
 
 				end
 
-				describe 'get the maibox' do
+				describe 'get the mailbox' do
 
 					# def self.mailbox params
 					# 	self.get_person_and_perform_mail_query params, self.query_mail_to_person
@@ -481,9 +514,21 @@ describe Postoffice::MailService do
 						@mailbox[0].must_be_instance_of Postoffice::Mail
 					end
 
+					it 'must include mail that has been sent to the person and has been delivered' do
+						@mailbox.include?(@mail1).must_equal true
+					end
+
 					it 'must return all of the mail address to that person that has a status of delivered' do
-						expected_mail = Postoffice::Mail.where(status: "DELIVERED" , "correspondents._type" => "Postoffice::ToPerson", "correspondents.person_id" => @person2.id).to_a
+						expected_mail = Postoffice::Mail.where(:status => "DELIVERED", :correspondents.elem_match => {"_type" => "Postoffice::ToPerson", "person_id" => @person2.id}).to_a
 						expected_mail.must_equal @mailbox
+					end
+
+					it 'must not include mail sent by someone else that has not arrived yet' do
+						exclude_mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
+						exclude_mail.mail_it
+
+						mailbox = Postoffice::MailService.mailbox @params
+						mailbox.include?(exclude_mail).must_equal false
 					end
 
 					describe 'get mail that was updated since a date' do
@@ -518,12 +563,8 @@ describe Postoffice::MailService do
 							@query = Postoffice::MailService.query_mail_from_person.call(@person1)
 						end
 
-						it 'must indicate that the correspondent type is FromPerson' do
-							@query["correspondents._type"].must_equal "Postoffice::FromPerson"
-						end
-
-						it 'must point to the person id' do
-							@query["correspondents.person_id"].must_equal @person1.id
+						it 'must indicate that the correspondent ToPerson must be this person' do
+							@query[:correspondents.elem_match].must_equal Hash("_type" => "Postoffice::FromPerson", "person_id" => @person1.id)
 						end
 
 					end
@@ -539,9 +580,19 @@ describe Postoffice::MailService do
 							@outbox[0].must_be_instance_of Postoffice::Mail
 						end
 
-						it 'must return all of the mailsent by the person' do
-							expected_mail = Postoffice::Mail.where("correspondents._type" => "Postoffice::FromPerson", "correspondents.person_id" => @person1.id).to_a
+						it 'must include mail that was sent by the person' do
+							@outbox.include?(@mail1).must_equal true
+						end
+
+						it 'must return all of the mail sent by the person' do
+							expected_mail = Postoffice::Mail.where(:correspondents.elem_match => {"_type" => "Postoffice::FromPerson", "person_id" => @person1.id}).to_a
 							expected_mail.must_equal @outbox
+						end
+
+						it 'must not include mail sent by another person' do
+							exclude_mail = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person1.id)])
+							outbox = Postoffice::MailService.outbox(@params)
+							outbox.include?(exclude_mail).must_equal false
 						end
 
 					end
