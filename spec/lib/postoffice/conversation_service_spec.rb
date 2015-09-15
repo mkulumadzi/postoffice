@@ -30,18 +30,8 @@ describe Postoffice::ConversationService do
 
   describe 'get conversation metadata' do
 
-    # def self.get_conversation_metadata params
-    #   person = Postoffice::Person.find(params[:person_id])
-    #   query_proc = self.proc_for_conversation_metadata_query
-    #   conversation_query = self.query_persons_conversations conversation_query, person, params
-    #   conversations = self.filter_conversations_by_mail_for_person person
-    #   conversation_metadata = self.get_conversation_metadata_for_person conversations, person
-    # end
-
     describe 'query a persons conversations' do
-    # def self.query_persons_conversations person
-    #   Postoffice::Conversation.where(people: person.id)
-    # end
+
       before do
         @convo_query = Postoffice::ConversationService.query_persons_conversations @person1
       end
@@ -57,15 +47,6 @@ describe Postoffice::ConversationService do
     end
 
     describe 'filter conversations by mail for person' do
-
-    # def self.filter_conversations_by_mail_for_person conversation_query, person
-    #   conversations = conversation_query.to_a
-    #   conversations = conversations.select {|c| c.mail_for_person(person).count > 0 }
-    #   if params[:updated_at]
-    #     conversations = conversations.select { |c| c.mail_for_person(person).order_by(updated_at: "desc").first[:updated_at] > params[:updated_at] }
-    #   end
-    #   conversations
-    # end
 
       it 'must return conversations that include mail for the person' do
         conversation_query = Postoffice::ConversationService.query_persons_conversations @person1
@@ -94,13 +75,6 @@ describe Postoffice::ConversationService do
     end
 
     describe 'get conversation metadata for a person' do
-    # def self.get_conversation_metadata_for_person conversations, person
-    #   conversation_metadata = []
-    #   conversations.each do |conversation|
-    #       conversation_metadata << conversation.metadata_for_person(person)
-    #   end
-    #   conversation_metadata
-    # end
 
       before do
         @conversations = Postoffice::ConversationService.query_persons_conversations(@person1).to_a
@@ -130,31 +104,71 @@ describe Postoffice::ConversationService do
   end
 
   describe 'conversation mail' do
-  #
-  # ### View mail from a conversation for a person
-  #
-
-  # def self.conversation_mail params
-  #   conversation = Postoffice::Conversation.find(params[:conversation_id])
-  #   person = Postoffice::Person.find(params[:person_id])
-  #   query_proc = self.fproc_for_conversation_mail
-  #   self.conversation_query(query_proc, params, person).to_a
-  # end
-  #
-    describe 'converastion query' do
-    # def self.conversation_query query_proc, params, person
-    #   query = conversation_query_proc.call(person)
-    #   query = Postoffice::AppService.add_updated_since_to_query query, params
-    # end
-    end
 
     describe 'proc for converation mail' do
-    # def self.proc_for_conversation_mail
-    #   Proc.new { |person| conversation.mail_for_person(person) }
-    # end
+
+      it 'must return a Proc' do
+        Postoffice::ConversationService.proc_for_conversation_mail(@convo_1).must_be_instance_of Proc
+      end
+
+      it 'must return the mail for a person when it is called' do
+        query = Postoffice::ConversationService.proc_for_conversation_mail @convo_1
+        mail = query.call(@person1).to_a
+        mail.must_equal [@mail_convo_1_A, @mail_convo_1_B]
+      end
+
+    end
+
+    describe 'conversation query' do
+
+      before do
+        @query_proc = Postoffice::ConversationService.proc_for_conversation_mail(@convo_1)
+      end
+
+      describe 'get all mail for the conversation' do
+
+        before do
+          params = Hash.new
+          @query = Postoffice::ConversationService.conversation_query @query_proc, params, @person1
+        end
+
+        it 'must return a Mongoid Criteria' do
+          @query.must_be_instance_of Mongoid::Criteria
+        end
+
+        it 'must return all of the mail for the person' do
+          @query.to_a.must_equal [@mail_convo_1_A, @mail_convo_1_B]
+        end
+
+      end
+
+      describe 'get mail that was updated since a date' do
+
+        before do
+          @mail_convo_1_A.updated_at = Time.now + 5.minutes
+          @mail_convo_1_A.save
+          params = Hash(updated_at: Hash( "$gt" => (Time.now + 4.minutes) ))
+          @query = Postoffice::ConversationService.conversation_query @query_proc, params, @person1
+        end
+
+        it 'must have added updated_at to the query' do
+          @query.selector.keys.include?("updated_at").must_equal true
+        end
+
+        it 'must only return mail updated since the date' do
+          @query.to_a.must_equal [@mail_convo_1_A]
+        end
+
+      end
+
+    end
+
+    it 'must get the mail for the conversation' do
+      params = Hash(person_id: @person1.id, conversation_id: @convo_1.id)
+      mail = Postoffice::ConversationService.conversation_mail params
+      mail.must_equal [@mail_convo_1_A, @mail_convo_1_B]
     end
 
   end
-
 
 end

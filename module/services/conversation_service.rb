@@ -37,17 +37,17 @@ module Postoffice
     def self.conversation_mail params
       conversation = Postoffice::Conversation.find(params[:conversation_id])
       person = Postoffice::Person.find(params[:person_id])
-      query_proc = self.fproc_for_conversation_mail
+      query_proc = self.proc_for_conversation_mail conversation
       self.conversation_query(query_proc, params, person).to_a
     end
 
-    def self.conversation_query query_proc, params, person
-      query = conversation_query_proc.call(person)
-      query = Postoffice::AppService.add_updated_since_to_query query, params
+    def self.proc_for_conversation_mail conversation
+      Proc.new { |person| conversation.mail_for_person(person) }
     end
 
-    def self.proc_for_conversation_mail
-      Proc.new { |person| conversation.mail_for_person(person) }
+    def self.conversation_query query_proc, params, person
+      query = query_proc.call(person)
+      query = Postoffice::AppService.add_updated_since_to_query query, params
     end
 
   end
