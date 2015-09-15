@@ -83,6 +83,12 @@ module Postoffice
       end
       version
     end
+
+    def self.add_updated_since_to_query query, params
+      if params[:updated_at] then query = query.where(updated_at: params[:updated_at]) end
+      query
+    end
+
   end
 
 end

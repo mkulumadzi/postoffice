@@ -384,6 +384,14 @@ describe Postoffice::Conversation do
         @metadata = @conversation.metadata_for_person @person1
       end
 
+      it 'must list the people' do
+        @metadata[:people].must_equal @conversation.people
+      end
+
+      it 'must list the emails' do
+        @metadata[:emails].must_equal @conversation.emails
+      end
+
       it 'must give the date and time that the last mail was updated' do
         @metadata[:updated_at].to_i.must_equal @last_update.to_i
       end

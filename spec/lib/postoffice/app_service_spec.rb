@@ -182,4 +182,42 @@ describe Postoffice::AppService do
 
   end
 
+  describe 'add updated since to query' do
+
+    before do
+      @query = Postoffice::Mail.where(status: "DELIVERED")
+    end
+
+    describe 'params include updated_at' do
+
+      before do
+        @params = Hash(updated_at: { "$gt" => (Time.now + 4.minutes) })
+        @query = Postoffice::AppService.add_updated_since_to_query @query, @params
+      end
+
+      it 'must have added updated_at to the query' do
+        @query.selector["updated_at"].must_equal @params[:updated_at]
+      end
+
+      it 'must have preserved the original parts of the query' do
+        @query.selector.keys.must_equal ["status", "updated_at"]
+      end
+
+    end
+
+    describe 'params do not include updated_at' do
+
+      before do
+        params = Hash.new
+        @query = Postoffice::AppService.add_updated_since_to_query @query, params
+      end
+
+      it 'must not have added updated_at to the query' do
+        @query.selector.keys.include?("updated_at").must_equal false
+      end
+
+    end
+
+  end
+
 end
