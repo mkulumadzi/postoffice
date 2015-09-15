@@ -51,9 +51,33 @@ module Postoffice
 			self.mail.where(status: "SENT", :correspondents.elem_match => {:_type => "Postoffice::FromPerson", :person_id => person.id})
 		end
 
-		# def most_recent_mail_for_person person
-		# 	self.mail_for_person(person).order_by(:)
-		# end
+		def most_recent_mail_received_by_person person
+			self.mail.where(status: "DELIVERED", :correspondents.elem_match => { :_type => "Postoffice::ToPerson", :person_id => person.id} ).order_by(date_delivered: "desc").first
+		end
+
+		def most_recent_mail_sent_by_person person
+			self.mail.where(:correspondents.elem_match => { :_type => "Postoffice::FromPerson", :person_id => person.id} ).order_by(date_sent: "desc").first
+		end
+
+		def person_sent_most_recent_mail? person
+			last_mail_received = self.most_recent_mail_received_by_person(person).date_delivered
+			last_mail_sent = self.most_recent_mail_sent_by_person(person).date_sent
+
+			if last_mail_sent.to_i > last_mail_received.to_i
+				return true
+			else
+				return false
+			end
+		end
+
+		def metadata_for_person person
+			Hash(
+				updated_at: self.mail_for_person(person).order_by(updated_at: "desc").first[:updated_at],
+				num_unread: self.unread_mail_for_person(person).count,
+				num_undelivered: self.undelivered_mail_from_person(person).count,
+				person_sent_most_recent_mail: self.person_sent_most_recent_mail?(person)
+			)
+		end
 
 	end
 
