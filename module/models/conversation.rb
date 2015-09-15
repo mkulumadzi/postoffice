@@ -60,11 +60,17 @@ module Postoffice
 		end
 
 		def person_sent_most_recent_mail? person
-			last_mail_received = self.most_recent_mail_received_by_person(person).date_delivered
-			last_mail_sent = self.most_recent_mail_sent_by_person(person).date_sent
+			last_mail_received = self.most_recent_mail_received_by_person(person)
+			last_mail_sent = self.most_recent_mail_sent_by_person(person)
 
-			if last_mail_sent.to_i > last_mail_received.to_i
+			if last_mail_sent && last_mail_received && last_mail_sent.date_sent.to_i > last_mail_received.date_delivered.to_i
 				return true
+			elsif last_mail_sent && last_mail_received && last_mail_sent.date_sent.to_i <= last_mail_received.date_delivered.to_i
+				return false
+			elsif last_mail_sent
+				return true
+			elsif last_mail_received
+				return false
 			else
 				return false
 			end

@@ -2,25 +2,26 @@ module Postoffice
 
   class ConversationService
 
-    # Viw a list of the conversations a person has had, and include data such as
-    ## The number of unread messages for the person
-    ## The number of undelivered mail for the person
-    ## The date of the most recent mail in the conversation (that the person is supposed to know about)
+    ### Get conversation metadata for a person
 
     def self.get_conversation_metadata params
-      person = Postoffice::Person.find(params[:person_id])
-      query_proc = self.proc_for_conversation_metadata_query
-      conversations = self.conversation_query(query_proc, params, person).to_a
-      self.get_conversation_metadata_for_person conversation, person
+      person = Postoffice::Person.find(params[:id])
+      conversation_query = self.query_persons_conversations person
+      conversations = self.filter_conversations_by_mail_for_person conversation_query, person, params
+      conversation_metadata = self.get_conversation_metadata_for_person conversations, person
     end
 
-    def self.conversation_query query_proc, params, person
-      query = conversation_query_proc.call(person)
-      query = Postoffice::AppService.add_updated_since_to_query query, params
+    def self.query_persons_conversations person
+      Postoffice::Conversation.where(people: person.id)
     end
 
-    def self.proc_for_conversation_metadata_query
-      Proc.new { |person| Postoffice::Conversation.where(people: person.id) }
+    def self.filter_conversations_by_mail_for_person conversation_query, person, params
+      conversations = conversation_query.to_a
+      conversations = conversations.select {|c| c.mail_for_person(person).count > 0 }
+      if params[:updated_at]
+        conversations = conversations.select { |c| c.mail_for_person(person).order_by(updated_at: "desc").first[:updated_at] > params[:updated_at] }
+      end
+      conversations
     end
 
     def self.get_conversation_metadata_for_person conversations, person
@@ -28,15 +29,21 @@ module Postoffice
       conversations.each do |conversation|
           conversation_metadata << conversation.metadata_for_person(person)
       end
-
       conversation_metadata
     end
+
+    ### View mail from a conversation for a person
 
     def self.conversation_mail params
       conversation = Postoffice::Conversation.find(params[:conversation_id])
       person = Postoffice::Person.find(params[:person_id])
       query_proc = self.fproc_for_conversation_mail
       self.conversation_query(query_proc, params, person).to_a
+    end
+
+    def self.conversation_query query_proc, params, person
+      query = conversation_query_proc.call(person)
+      query = Postoffice::AppService.add_updated_since_to_query query, params
     end
 
     def self.proc_for_conversation_mail

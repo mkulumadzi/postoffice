@@ -352,6 +352,25 @@ describe Postoffice::Conversation do
         @conversation.person_sent_most_recent_mail?(@person2).must_equal false
       end
 
+      it 'must return true if a person has only sent mail, and not received any mail in the conversation' do
+        mail = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person1.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
+        mail.mail_it
+        conversation = Postoffice::Conversation.new(mail.conversation)
+        conversation.save
+
+        conversation.person_sent_most_recent_mail?(@person3).must_equal true
+      end
+
+      it 'must return false if a person has only received mail, and not sent any mail in the conversation' do
+        mail = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
+        mail.mail_it
+        mail.deliver
+        conversation = Postoffice::Conversation.new(mail.conversation)
+        conversation.save
+
+        conversation.person_sent_most_recent_mail?(@person3).must_equal false
+      end
+
     end
 
     describe 'conversation metadata for person' do
