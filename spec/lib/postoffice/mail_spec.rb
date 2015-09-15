@@ -387,4 +387,31 @@ describe Postoffice::Mail do
 
 	end
 
+	describe 'read by person' do
+
+		describe 'read by a recipient' do
+
+			before do
+				@mail1.read_by @person2
+			end
+
+			it 'must mark that the mail as read by the recipient' do
+				correspondent = @mail1.correspondents.find_by(person_id: @person2.id)
+				correspondent.status.must_equal "READ"
+			end
+
+		end
+
+		describe 'read by someone who is not a ToPerson' do
+
+			it 'must rais a DocumentNotFound error if a person tries to read the mail and they are not a ToPerson' do
+				assert_raises Mongoid::Errors::DocumentNotFound do
+					@mail1.read_by @person1
+				end
+			end
+
+		end
+
+	end
+
 end

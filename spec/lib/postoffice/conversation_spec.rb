@@ -171,7 +171,7 @@ describe Postoffice::Conversation do
         end
 
         it 'must specify that the mail can also be from the person' do
-          @or_selector[1]["correspondents"]["$elemMatch"].must_equal Hash("_type" => "Postoffice::FromPerson", "person_id" => @person1.id)
+          @or_selector[1]["correspondents"]["$elemMatch"].must_equal Hash(:_type => "Postoffice::FromPerson", :person_id => @person1.id)
         end
 
       end
@@ -209,6 +209,80 @@ describe Postoffice::Conversation do
 
         it 'must not include mail that is not part of the conversation' do
           @mail_for_person_from_conversation.include?(@mail4).must_equal false
+        end
+
+      end
+
+      describe 'unread mail for a person' do
+
+        before do
+          @unread_mail = @conversation.unread_mail_for_person @person2
+        end
+
+        it 'must return a Mongoid Criteria' do
+          @unread_mail.must_be_instance_of Mongoid::Criteria
+        end
+
+        it 'must not return mail that has been read by the person' do
+          @mail1.read_by @person2
+          @unread_mail.to_a.include?(@mail1).must_equal false
+        end
+
+        it 'must return mail that has not been read by the person' do
+          include_mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
+          include_mail.mail_it
+          include_mail.deliver
+
+          @unread_mail.to_a.include?(include_mail).must_equal true
+        end
+
+        it 'must not return mail that has not been delivered yet' do
+          not_delivered = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
+          not_delivered.mail_it
+
+          @unread_mail.to_a.include?(not_delivered).must_equal false
+        end
+
+        it 'must not return mail that the person sent' do
+          sent_by_the_person = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person1.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
+          sent_by_the_person.mail_it
+          sent_by_the_person.deliver
+
+          @unread_mail.to_a.include?(sent_by_the_person).must_equal false
+        end
+
+      end
+
+      describe 'undelivered mail from a person' do
+
+        before do
+          @undelivered_mail = @conversation.undelivered_mail_from_person(@person1)
+        end
+
+        it 'must return a Mongoid Criteria' do
+          @undelivered_mail.must_be_instance_of Mongoid::Criteria
+        end
+
+        it 'must return mail that was sent by the person and has not been delivered yet' do
+          include_mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
+          include_mail.mail_it
+
+          @undelivered_mail.to_a.include?(include_mail).must_equal true
+        end
+
+        it 'must not return mail that was sent by the person and has been delivered' do
+          exclude_mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
+          exclude_mail.mail_it
+          exclude_mail.deliver
+
+          @undelivered_mail.to_a.include?(exclude_mail).must_equal false
+        end
+
+        it 'must not return mail that was sent by another person' do
+          exclude_mail = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person1.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
+          exclude_mail.mail_it
+
+          @undelivered_mail.to_a.include?(exclude_mail).must_equal false
         end
 
       end

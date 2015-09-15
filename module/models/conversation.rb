@@ -40,8 +40,20 @@ module Postoffice
 		end
 
 		def mail_for_person person
-			self.mail.or({status: "DELIVERED"},{:correspondents.elem_match => {"_type" => "Postoffice::FromPerson", "person_id" => person.id}})
+			self.mail.or({status: "DELIVERED"},{:correspondents.elem_match => {:_type => "Postoffice::FromPerson", :person_id => person.id}})
 		end
+
+		def unread_mail_for_person person
+			self.mail.where(status: "DELIVERED", :correspondents.elem_match => { :_type => "Postoffice::ToPerson", :person_id => person.id, :status => {"$ne" => "READ"}})
+		end
+
+		def undelivered_mail_from_person person
+			self.mail.where(status: "SENT", :correspondents.elem_match => {:_type => "Postoffice::FromPerson", :person_id => person.id})
+		end
+
+		# def most_recent_mail_for_person person
+		# 	self.mail_for_person(person).order_by(:)
+		# end
 
 	end
 

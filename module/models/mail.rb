@@ -130,6 +130,11 @@ module Postoffice
 			self.save
 		end
 
+		def read_by person
+			correspondent = self.correspondents.find_by(person_id: person.id, _type: "Postoffice::ToPerson")
+			correspondent.read
+		end
+
 	end
 
 end
