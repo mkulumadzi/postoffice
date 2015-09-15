@@ -15,11 +15,11 @@ describe app do
 		@person2 = create(:person, username: random_username)
 		@person3 = create(:person, username: random_username)
 
-		@mail1 = create(:mail, from: @person1.username, to: @person2.username)
-		@mail2 = create(:mail, from: @person1.username, to: @person2.username)
-		@mail3 = create(:mail, from: @person3.username, to: @person1.username)
+		@mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
+		@mail2 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
+		@mail3 = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person1.id)])
 
-		@mail4 = build(:mail, from: @person1.username, to: @person2.username)
+		@mail4 = build(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
 
     @admin_token = Postoffice::AuthService.get_admin_token
     @app_token = Postoffice::AuthService.get_app_token
@@ -906,19 +906,19 @@ describe app do
       describe 'request authorization' do
 
         it 'must allow a person who sent the mail to get it' do
-          mail = create(:mail, from: @person1.username, to: @person2.username)
+          mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
           get "/mail/id/#{@mail1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
           last_response.status.must_equal 200
         end
 
         it 'must allow a person who received the mail to get it' do
-          mail = create(:mail, from: @person2.username, to: @person1.username)
+          mail = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person1.id)])
           get "/mail/id/#{@mail1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
           last_response.status.must_equal 200
         end
 
         it 'must not allow a person to get the mail if they did not send or receive it' do
-          mail = create(:mail, from: @person2.username, to: @person3.username)
+          mail = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id)])
           get "/mail/id/#{mail.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
           last_response.status.must_equal 401
         end
@@ -1079,7 +1079,7 @@ describe app do
     describe 'get only records that were created or updated after a specific date and time' do
 
       before do
-        @mail5 = create(:mail, from: @person3.username, to: @person1.username)
+        @mail5 = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person1.id)])
         mail_record = Postoffice::Mail.find(@mail1.id)
         @timestamp = mail_record.updated_at
         @timestamp_string = JSON.parse(mail_record.as_document.to_json)["updated_at"]
@@ -1192,7 +1192,7 @@ describe app do
 
       describe 'get metadata since a date' do
         before do
-          another_mail = build(:mail, from: @person2.username, to: @person3.username)
+          another_mail = build(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id)])
           another_mail.updated_at = Time.now + 5.minutes
           another_mail.mail_it
           get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}", "HTTP_IF_MODIFIED_SINCE" => (Time.now + 4.minutes).to_s}
@@ -1210,15 +1210,15 @@ describe app do
     describe 'get recently modified data only' do
 
       before do
-        @another_mail = create(:mail, from: @person2.username, to: @person3.username)
+        @another_mail = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id)])
         @another_mail.mail_it
         @another_mail.updated_at = Time.now + 5.minutes
         @another_mail.save
 
-        @one_more_mail = create(:mail, from: @person2.username, to: @person3.username)
+        @one_more_mail = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id)])
         @one_more_mail.mail_it
 
-        @an_unread_mail = create(:mail, from: @person3.username, to: @person2.username)
+        @an_unread_mail = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person2.id)])
         @an_unread_mail.mail_it
         @an_unread_mail.make_it_arrive_now
         @an_unread_mail.update_delivery_status
@@ -1237,12 +1237,12 @@ describe app do
       end
 
       it 'must still return the total number of undelivered mail' do
-        num_undelivered = Postoffice::Mail.where({from: @person2.username, to: @person3.username, status: "SENT"}).count
+        num_undelivered = Postoffice::Mail.where({correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id)], status: "SENT"}).count
         @parsed_response[0]["num_undelivered"].must_equal num_undelivered
       end
 
       it 'must still return the total number of unread mail' do
-        num_unread = Postoffice::Mail.where({from: @person3.username, to: @person2.username, status: "DELIVERED"}).count
+        num_unread = Postoffice::Mail.where({correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person2.id)], status: "DELIVERED"}).count
         @parsed_response[0]["num_unread"].must_equal num_unread
       end
 

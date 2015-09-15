@@ -14,8 +14,8 @@ describe Postoffice::AppService do
     @person2 = create(:person, username: random_username)
     @person3 = create(:person, username: random_username)
 
-    @mail1 = create(:mail, from: @person1.username, to: @person2.username)
-    @mail2 = create(:mail, from: @person3.username, to: @person1.username)
+    @mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
+    @mail2 = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person1.id)])
 
     @admin_token = Postoffice::AuthService.get_admin_token
     @app_token = Postoffice::AuthService.get_app_token
@@ -140,6 +140,19 @@ describe Postoffice::AppService do
   end
 
   describe 'check admin or mail ownership' do
+
+    # def self.not_admin_or_mail_owner? request, scope, mail
+    #   correspondent_ids = mail.people_correspondent_ids
+    #   payload = self.get_payload_from_authorization_header request
+    #   person_id = BSON::ObjectId(payload["id"])
+    #   if self.unauthorized?(request, "admin") == false
+    #     false
+    #   elsif correspondent_ids.include?(person_id) && self.unauthorized?(request, scope)
+    #     false
+    #   else
+    #     true
+    #   end
+    # end
 
     it 'must return false if the token has the admin scope' do
       get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}

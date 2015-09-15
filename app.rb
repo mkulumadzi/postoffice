@@ -244,7 +244,7 @@ post '/person/id/:id/mail/new' do
   if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
 
   begin
-    mail = Postoffice::MailService.create_mail params[:id], data
+    mail = Postoffice::MailService.create_mail params, data
     mail_link = "#{ENV['POSTOFFICE_BASE_URL']}/mail/id/#{mail.id}"
     headers = { "location" => mail_link }
     [201, headers, nil]

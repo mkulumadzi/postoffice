@@ -254,7 +254,8 @@ describe Postoffice::MailService do
 		describe 'create the mail' do
 
 			before do
-				@mail = Postoffice::MailService.create_mail(@person1.id, @data)
+				params = Hash(id: @person1.id.to_s)
+				@mail = Postoffice::MailService.create_mail(params, @data)
 			end
 
 			it 'must return the mail' do

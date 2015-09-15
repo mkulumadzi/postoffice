@@ -2,8 +2,9 @@ module Postoffice
 
 	class MailService
 
-		def self.create_mail person_id, data
-			mail_hash = self.create_mail_hash person_id, JSON.parse(data)
+		def self.create_mail params, data
+			person = Postoffice::Person.find(params[:id])
+			mail_hash = self.create_mail_hash person.id, JSON.parse(data)
 			mail = Postoffice::Mail.create!(mail_hash)
 			# self.add_image mail
 			self.create_conversation_if_none_exists mail

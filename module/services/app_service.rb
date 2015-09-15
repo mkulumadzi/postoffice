@@ -65,12 +65,15 @@ module Postoffice
     end
 
     def self.not_admin_or_mail_owner? request, scope, mail
-      from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
-      to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
-      if self.unauthorized?(request, "admin") && self.not_authorized_owner?(request, scope, from_id) && self.not_authorized_owner?(request, scope, to_id)
-        true
-      else
+      correspondent_ids = mail.people_correspondent_ids
+      payload = self.get_payload_from_authorization_header request
+      if payload["id"] then person_id = BSON::ObjectId(payload["id"]) end
+      if self.unauthorized?(request, "admin") == false
         false
+      elsif correspondent_ids.include?(person_id) && self.unauthorized?(request, scope) == false
+        false
+      else
+        true
       end
     end
 
