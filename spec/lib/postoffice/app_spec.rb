@@ -17,7 +17,12 @@ describe app do
 
 		@mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
 		@mail2 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
+
+    @convo_1 = @mail1.conversation
+
 		@mail3 = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person1.id)])
+
+    @convo_2 = @mail3.conversation
 
 		@mail4 = build(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
 
@@ -145,28 +150,13 @@ describe app do
   		describe 'welcome message' do
 
   			before do
-  				@welcome_mail = Postoffice::Mail.find_by(to: @username)
+          person = Postoffice::Person.find_by(username: @username)
+          @welcome_mail = Postoffice::Mail.where(:correspondents.elem_match => { :_type => "Postoffice::ToPerson", :person_id => person.id}).first
+          @postman = Postoffice::Person.find_by(username: ENV['POSTOFFICE_POSTMAN_USERNAME'])
   			end
 
   			it 'must generate a welcome message from the Postoffice Postman' do
-  				@welcome_mail.from.must_equal "postman"
-  			end
-
-  			it 'must set the image using the welcome image environment variable' do
-  				@welcome_mail.image_uid.must_equal ENV['POSTOFFICE_WELCOME_IMAGE']
-  			end
-
-        it 'must point to a real image from the image_uid' do
-          @welcome_mail.image.data.must_be_instance_of String
-        end
-
-  			it 'must deliver the mail' do
-  				assert_operator @welcome_mail.scheduled_to_arrive, :<=, Time.now
-  			end
-
-  			it 'must include standard welcome text in the mail content' do
-  				text = File.open("templates/Welcome Message.txt").read
-  				@welcome_mail.content.must_equal text
+  				@welcome_mail.from_person.must_equal @postman
   			end
 
   		end
@@ -954,7 +944,7 @@ describe app do
 		describe 'try to deliver mail that has not been sent' do
 
 			before do
-				post "/mail/id/#{@mail2.id}/arrive_now", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+				post "/mail/id/#{@mail2.id}/deliver", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must return a 403 status' do
@@ -967,10 +957,10 @@ describe app do
 
 		end
 
-		describe 'send to a missing piece of mail' do
+		describe 'deliver a missing piece of mail' do
 
 			before do
-				post "/mail/id/abc/arrive_now", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+				post "/mail/id/abc/deliver", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must return 404 if the mail is not found' do
@@ -1263,15 +1253,12 @@ describe app do
 			@response = JSON.parse(last_response.body)
 		end
 
-		it 'must return a 200 status code' do
+		it 'must return a 200 status code if the contacts are fetched successfully' do
 			last_response.status.must_equal 200
 		end
 
-		## This test should be improved...
-		it 'must return all of the users contacts' do
-      params = Hash[:id, @person1.id.to_s]
-			contacts = Postoffice::MailService.get_contacts params
-			@response.length.must_equal contacts.length
+		it 'must include the people the person has communicated with' do
+      @response.to_s.include?(@person2.id).must_equal true
 		end
 
 		it 'must return the expected information for a person record' do
@@ -1287,24 +1274,6 @@ describe app do
 			end
 
 		end
-
-    describe 'get records modified since a date' do
-
-      before do
-        @mail3.mail_it
-        @mail3.deliver
-        @mail3.updated_at = Time.now + 5.minutes
-        @mail3.save
-
-        get "/person/id/#{@person1.id}/contacts", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}", "HTTP_IF_MODIFIED_SINCE" => (Time.now + 4.minutes).to_s}
-  			@response = JSON.parse(last_response.body)
-      end
-
-      it 'must only include people who sent mail to the person since the date' do
-        @response.count.must_equal 1
-      end
-
-    end
 
 	end
 
@@ -1418,122 +1387,122 @@ describe app do
 
   end
 
-  describe '/mail/id/:id/image' do
-
-    before do
-      @image = File.open('spec/resources/image2.jpg')
-      @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
-
-      data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
-      @mail5 = Postoffice::MailService.create_mail @person1.id, data
-
-      get "/mail/id/#{@mail5.id}/image", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-    end
-
-    after do
-      @image.close
-    end
-
-    describe 'redirect to AWS for basic image_uid' do
-
-      it 'must redirect the request and return a 302 status' do
-        last_response.status.must_equal 302
-      end
-
-    end
-
-    describe 'resize image with thumb parameter' do
-
-      it 'must resize the image if a thumbnail parameter is given' do
-        get "/mail/id/#{@mail5.id}/image?thumb=400x", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        assert_operator last_response.headers["Content-Length"].to_i, :<, @image.size
-      end
-
-      describe 'unrecognized thumbnail parameter' do
-
-        before do
-          get "/mail/id/#{@mail5.id}/image?thumb=foo", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        end
-
-        it 'must return a 403 status code if an unrecognized thumbnail parameter is entered' do
-          last_response.status.must_equal 403
-        end
-
-        it 'must return an error message' do
-          response = JSON.parse(last_response.body)
-          response["message"].must_equal "Could not process thumbnail parameter."
-        end
-
-      end
-
-    end
-
-  end
-
-  describe 'attempt to get mail image that does not exist.' do
-
-    before do
-      get "/mail/id/#{@mail1.id}/image", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-    end
-
-    it 'must return a 404 status' do
-      last_response.status.must_equal 404
-    end
-
-    it 'must return an empty response body' do
-      last_response.body.must_equal ""
-    end
-
-  end
-
-  describe '/mail/id/:id/thumbnail' do
-
-    before do
-      @image = File.open('spec/resources/image2.jpg')
-      @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
-
-      data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
-      @mail5 = Postoffice::MailService.create_mail @person1.id, data
-    end
-
-    after do
-      @image.close
-    end
-
-    describe 'get thumbnail' do
-
-      before do
-        get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-      end
-
-      it 'must redirect and return a 302 status if the image is found' do
-        last_response.status.must_equal 302
-      end
-
-    end
-
-    describe 'get thumbnail that does not already exist' do
-
-      before do
-        @mail5.thumbnail = nil
-        @mail5.save
-      end
-
-      it 'must return a 404 status if the mail does not have an image' do
-        @mail5.image = nil
-        @mail5.save
-        get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 404
-      end
-
-      it 'must create the thumbnail while fulfilling the request and then redirecting, returning status 200, if the image exists' do
-        get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 302
-      end
-
-    end
-
-  end
+  # describe '/mail/id/:id/image' do
+  #
+  #   before do
+  #     @image = File.open('spec/resources/image2.jpg')
+  #     @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
+  #
+  #     data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
+  #     @mail5 = Postoffice::MailService.create_mail @person1.id, data
+  #
+  #     get "/mail/id/#{@mail5.id}/image", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+  #   end
+  #
+  #   after do
+  #     @image.close
+  #   end
+  #
+  #   describe 'redirect to AWS for basic image_uid' do
+  #
+  #     it 'must redirect the request and return a 302 status' do
+  #       last_response.status.must_equal 302
+  #     end
+  #
+  #   end
+  #
+  #   describe 'resize image with thumb parameter' do
+  #
+  #     it 'must resize the image if a thumbnail parameter is given' do
+  #       get "/mail/id/#{@mail5.id}/image?thumb=400x", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+  #       assert_operator last_response.headers["Content-Length"].to_i, :<, @image.size
+  #     end
+  #
+  #     describe 'unrecognized thumbnail parameter' do
+  #
+  #       before do
+  #         get "/mail/id/#{@mail5.id}/image?thumb=foo", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+  #       end
+  #
+  #       it 'must return a 403 status code if an unrecognized thumbnail parameter is entered' do
+  #         last_response.status.must_equal 403
+  #       end
+  #
+  #       it 'must return an error message' do
+  #         response = JSON.parse(last_response.body)
+  #         response["message"].must_equal "Could not process thumbnail parameter."
+  #       end
+  #
+  #     end
+  #
+  #   end
+  #
+  # end
+  #
+  # describe 'attempt to get mail image that does not exist.' do
+  #
+  #   before do
+  #     get "/mail/id/#{@mail1.id}/image", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+  #   end
+  #
+  #   it 'must return a 404 status' do
+  #     last_response.status.must_equal 404
+  #   end
+  #
+  #   it 'must return an empty response body' do
+  #     last_response.body.must_equal ""
+  #   end
+  #
+  # end
+  #
+  # describe '/mail/id/:id/thumbnail' do
+  #
+  #   before do
+  #     @image = File.open('spec/resources/image2.jpg')
+  #     @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
+  #
+  #     data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
+  #     @mail5 = Postoffice::MailService.create_mail @person1.id, data
+  #   end
+  #
+  #   after do
+  #     @image.close
+  #   end
+  #
+  #   describe 'get thumbnail' do
+  #
+  #     before do
+  #       get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+  #     end
+  #
+  #     it 'must redirect and return a 302 status if the image is found' do
+  #       last_response.status.must_equal 302
+  #     end
+  #
+  #   end
+  #
+  #   describe 'get thumbnail that does not already exist' do
+  #
+  #     before do
+  #       @mail5.thumbnail = nil
+  #       @mail5.save
+  #     end
+  #
+  #     it 'must return a 404 status if the mail does not have an image' do
+  #       @mail5.image = nil
+  #       @mail5.save
+  #       get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+  #       last_response.status.must_equal 404
+  #     end
+  #
+  #     it 'must create the thumbnail while fulfilling the request and then redirecting, returning status 200, if the image exists' do
+  #       get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+  #       last_response.status.must_equal 302
+  #     end
+  #
+  #   end
+  #
+  # end
 
   describe 'get a list of cards available' do
 

@@ -312,6 +312,34 @@ describe Postoffice::MailService do
 	#
 	# end
 
+	describe 'welcome message' do
+
+		before do
+			@welcome_mail = Postoffice::MailService.generate_welcome_message @person1
+		end
+
+		it 'must be from the postman' do
+			@welcome_mail.from_person.must_equal Postoffice::Person.find_by(username: ENV['POSTOFFICE_POSTMAN_USERNAME'])
+		end
+
+		it 'must contain content' do
+			@welcome_mail.content.must_be_instance_of String
+		end
+
+		it 'must contain the message content' do
+			message_template = File.open("templates/Welcome Message.txt")
+			expected_text = message_template.read
+			message_template.close
+
+			@welcome_mail.content.must_equal expected_text
+		end
+
+		it 'must have been delivered' do
+			@welcome_mail.status.must_equal "DELIVERED"
+		end
+
+	end
+
 	describe 'operations to get mail' do
 
 		before do

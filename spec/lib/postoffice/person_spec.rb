@@ -71,12 +71,6 @@ describe Postoffice::Person do
 				@person.device_token.must_equal @expected_attrs[:device_token]
 			end
 
-			it 'must be able to store a relationship to many mail' do
-				mail = create(:mail, person: @person)
-				binding.pry
-				@person.mail.include?(mail).must_equal true
-			end
-
 		end
 
 	end

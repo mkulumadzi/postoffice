@@ -25,17 +25,15 @@ describe APNS do
 			@person1 = create(:person, username: random_username, phone: random_phone, email: random_email, device_token: nil)
 			@person2 = create(:person, username: random_username, phone: random_phone, email: random_email, device_token: "abc123")
 
-			@mail1 = create(:mail, from: @person1.username, to: @person2.username)
-			@mail2 = create(:mail, from: @person1.username, to: @person2.username)
+			@mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
+			@mail2 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
 
 			@mail1.mail_it
-			@mail1.make_it_arrive_now
-			@mail1.update_delivery_status
-			@mail1.read
+			@mail1.deliver
+			@mail1.read_by @person2
 
 			@mail2.mail_it
-			@mail2.make_it_arrive_now
-			@mail2.update_delivery_status
+			@mail2.deliver
 		end
 
 		it 'must return the number of mail that is delivered to a person' do
@@ -76,27 +74,6 @@ describe APNS do
 			end
 
 		end
-
-	## Possible To Do: Test that a notification was actually sent
-		# let ( :person1 ) {
-		# 	person1_username = random_username
-		# 	salt = SecureRandom.hex(64)
-		# 	hashed_password = Digest::SHA256.bubblebabble ("password" + salt)
-		# 	Postoffice::Person.create!(
-		# 		name: "Evan",
-		# 		username: "#{person1_username}",
-		# 		address1: "121 W 3rd St",
-		# 		city: "New York",
-		# 		state: "NY",
-		# 		zip: "10012",
-		# 		device_token: "4144e129b885dbf301deacdb0b427ad02f052a39cb7e5c0443d6188a483fa166"
-		# 	)
-		# }
-
-		# it 'must send the notification' do
-		# 	Postoffice::NotificationService.send_notification person1, "Hello my friend"
-		# 	last_response.must_equal "foo"
-		# end
 
 	end
 

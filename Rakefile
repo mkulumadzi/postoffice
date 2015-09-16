@@ -48,8 +48,19 @@ task :setup_demo_data do
 	Postoffice::Mail.delete_all
 	Postoffice::Person.delete_all
 	Postoffice::Token.delete_all
-	Postoffice::Recipient.delete_all
 	Postoffice::Contact.delete_all
+	Postoffice::Conversation.delete_all
+
+	Postoffice::Person.create!({
+			username: "postman",
+			email: "postman@slowpost.me",
+			name: "Slowpost Postman",
+			phone: "5554441234",
+			address1: nil,
+			city: nil,
+			state: nil,
+			zip: nil
+		})
 
   data =  JSON.parse '{"name": "Evan Waters", "username": "evan.waters", "email": "evan.waters@gmail.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
   person = Postoffice::PersonService.create_person data
@@ -67,72 +78,60 @@ task :setup_demo_data do
 	demo = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message demo
 
-  Postoffice::Person.create!({
-      username: "postman",
-      email: "postman@slowpost.me",
-      name: "Slowpost Postman",
-      phone: "5554441234",
-      address1: nil,
-      city: nil,
-      state: nil,
-      zip: nil
-    })
+		# image1 = File.open('spec/resources/image1.jpg')
+		# uid1 = Dragonfly.app.store(image1.read, 'name' => 'image1.jpg')
+		# image1.close
+		#
+		# image2 = File.open('spec/resources/image2.jpg')
+		# uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
+		# image2.close
 
-		image1 = File.open('spec/resources/image1.jpg')
-		uid1 = Dragonfly.app.store(image1.read, 'name' => 'image1.jpg')
-		image1.close
 
-		image2 = File.open('spec/resources/image2.jpg')
-		uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
-		image2.close
-
+		f1 = Postoffice::FromPerson.new(person_id: person1.id)
+		t1 = Postoffice::ToPerson.new(person_id: person.id)
     mail1 = Postoffice::Mail.create!({
-    	from: "nwaters4",
-    	to: "evan.waters",
-    	content: "Hey bro, how's it going? Would you like to watch the game?"
+    	content: "Hey bro, how's it going? Would you like to watch the game?",
+			correspondents: [f1, t1]
     })
 
     mail1.mail_it
-    mail1.make_it_arrive_now
-    mail1.update_delivery_status
-    mail1.read
+    mail1.deliver
 
+		f2 = Postoffice::FromPerson.new(person_id: person2.id)
+		t2 = Postoffice::ToPerson.new(person_id: person.id)
+		t2b = Postoffice::ToPerson.new(person_id: person1.id)
     mail2 = Postoffice::Mail.create!({
-    	from: "kulwelling",
-    	to: "evan.waters",
     	content: "Greetings from NOLA!",
-      image_uid: uid1
+			correspondents: [f2, t2, t2b]
     })
 
     mail2.mail_it
-    mail2.make_it_arrive_now
-    mail1.update_delivery_status
+    mail2.deliver
 
+		f3 = Postoffice::FromPerson.new(person_id: person1.id)
+		t3 = Postoffice::ToPerson.new(person_id: person.id)
     mail3 = Postoffice::Mail.create!({
-    	from: "nwaters4",
-    	to: "evan.waters",
     	content: "Go U of A!",
-      image_uid: uid2
+			correspondents: [f3, t3]
     })
 
 		mail3.mail_it
 
+		f4 = Postoffice::FromPerson.new(person_id: person.id)
+		t4 = Postoffice::ToPerson.new(person_id: demo.id)
 		mail4 = Postoffice::Mail.create!({
-			from: "evan.waters",
-			to: "demo",
 			content: "Thanks for checking out the app! Looking forward to getting your feedback.",
-			image_uid: uid1
+			correspondents: [f4, t4]
 		})
 
 		mail4.mail_it
-		mail4.make_it_arrive_now
-		mail4.update_delivery_status
+		mail4.deliver
 
+		f5 = Postoffice::FromPerson.new(person_id: demo.id)
+		t5 = Postoffice::ToPerson.new(person_id: person.id)
 		mail5 = Postoffice::Mail.create!({
-			from: "demo",
-			to: "evan.waters",
 			content: "Can't wait to receive a few more Slowposts!",
-			image_uid: uid2
+			correspondents: [f5, t5]
 		})
 
 		mail5.mail_it

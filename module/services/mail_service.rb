@@ -27,8 +27,6 @@ module Postoffice
 			mail_hash
 		end
 
-		# @data = '{"content": "Hey what is up", "correspondents": {"to_people": ["' + @person2.id.to_s '","' + @person3.id.to_s '"], "emails": ["test@test.com", "test2@test.com"]}'
-
 		def self.add_correspondents mail_hash, json_data
 			correspondents = self.create_to_person_correspondents json_data
 			correspondents += self.create_email_correspondents json_data
@@ -91,26 +89,30 @@ module Postoffice
 		# 	end
 		# end
 
-		### Mark: Come back to these...
 		def self.generate_welcome_message person
-			text = File.open("templates/Welcome Message.txt").read
+			message_template = File.open("templates/Welcome Message.txt")
+			text = message_template.read
+			message_template.close
 
-			mail = Postoffice::Mail.create!({
-				from: ENV['POSTOFFICE_POSTMAN_USERNAME'],
-				to: person.username,
+			from_person_record = Postoffice::Person.find_by(username: ENV['POSTOFFICE_POSTMAN_USERNAME'])
+			from_person = Postoffice::FromPerson.new(person_id: from_person_record.id)
+			to_person = Postoffice::ToPerson.new(person_id: person.id)
+
+			mail = Postoffice::Mail.new(
 				content: text,
-				image_uid: ENV['POSTOFFICE_WELCOME_IMAGE']
-			})
+				correspondents: [from_person, to_person]
+			)
+
+			# image_uid: ENV['POSTOFFICE_WELCOME_IMAGE']
 
 			mail.mail_it
-			mail.make_it_arrive_now
-
+			mail.deliver
+			mail
 		end
 
 		def self.get_mail params = {}
 			Postoffice::Mail.where(params).to_a
 		end
-		### End Mark
 
 		def self.mailbox params
 			self.get_person_and_perform_mail_query params, self.query_mail_to_person
@@ -234,48 +236,6 @@ module Postoffice
 				c.save
 			end
 		end
-
-		### Functions for viewing lists of conversations, conversation metadata and mail within a conversation
-
-
-		# def self.get_contacts params
-		# 	recipients = self.get_people_who_received_mail_from params
-		# 	senders = self.get_people_who_sent_mail_to params
-		# 	contacts = (recipients + senders).uniq
-		# 	contacts_as_documents = []
-		# 	contacts.each do |person|
-		# 		contacts_as_documents << person.as_document
-		# 	end
-		# 	contacts_as_documents
-		# end
-		#
-		# # Get people who have sent or received mail to the person
-		# def self.get_people_who_received_mail_from params
-		# 	query = Hash[:from_person_id, BSON::ObjectId(params[:id])]
-		# 	if params[:updated_at] != nil then query[:updated_at] = params[:updated_at] end
-		#
-		# 	list_of_people = []
-		# 	Postoffice::Mail.where(query).each do |mail|
-		# 		mail.recipients.each do |recipient|
-		# 			list_of_people << Postoffice::Person.find(recipient.person_id)
-		# 		end
-		# 	end
-		#
-		# 	list_of_people.uniq
-		# end
-		#
-		# def self.get_people_who_sent_mail_to params
-		# 	id = BSON::ObjectId(params[:id])
-		# 	query = Hash["recipients.person_id" => id, status: "DELIVERED"]
-		# 	if params[:updated_at] != nil then query[:updated_at] = params[:updated_at] end
-		#
-		# 	list_of_people = []
-		# 	Postoffice::Mail.where(query).each do |mail|
-		# 		list_of_people << Postoffice::Person.find(mail.from_person_id)
-		# 	end
-		#
-		# 	list_of_people.uniq
-		# end
 
 	end
 

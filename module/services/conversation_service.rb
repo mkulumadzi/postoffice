@@ -54,15 +54,15 @@ module Postoffice
 
     def self.people_from_conversations params
       person = Postoffice::Person.find(params[:id])
-      conversation_metadata = self.conversation_metadata params
-      people_array = self.get_people_from_conversations conversation_metadata
+      conversation_metadata = self.get_conversation_metadata params
+      people_array = self.collect_all_people_from_conversations conversation_metadata
       self.get_unique_people_from_conversation_people_list people_array, person
     end
 
-    def self.get_people_from_conversations conversation_metadata
+    def self.collect_all_people_from_conversations conversation_metadata
       people_array = []
       conversation_metadata.each do |conversation|
-        people.each do |person_id|
+        conversation[:people].each do |person_id|
           people_array << Postoffice::Person.find(person_id)
         end
       end

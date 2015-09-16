@@ -301,49 +301,49 @@ get '/mail/id/:id' do
 
 end
 
-# Retrieve image for a piece of mail
-# Scope: admin OR (can-read, is to or from person)
-get '/mail/id/:id/image' do
-
-  begin
-    mail = Postoffice::Mail.find(params[:id])
-    if mail.image_uid == nil
-      [404, nil]
-    else
-      if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
-      if params["thumb"]
-        Postoffice::FileService.fetch_image(mail.image_uid, params).to_response
-      else
-        redirect Postoffice::FileService.get_presigned_url mail.image_uid
-      end
-    end
-  rescue ArgumentError
-    response_body = Hash["message", "Could not process thumbnail parameter."].to_json
-    [403, nil, response_body]
-  end
-
-end
-
-# Retrieve image for a piece of mail
-# Scope: admin OR (can-read, is to or from person)
-get '/mail/id/:id/thumbnail' do
-
-  mail = Postoffice::Mail.find(params[:id])
-
-  ## For legacy purposes, creating the thumbnail if it does not already exist
-  if mail.thumbnail_uid == nil && mail.image_uid != nil
-    mail.thumbnail = mail.image.thumb('x96')
-    mail.save
-  end
-
-  if mail.thumbnail_uid == nil
-    [404, nil, nil]
-  else
-    if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
-    redirect Postoffice::FileService.get_presigned_url mail.thumbnail_uid
-  end
-
-end
+# # Retrieve image for a piece of mail
+# # Scope: admin OR (can-read, is to or from person)
+# get '/mail/id/:id/image' do
+#
+#   begin
+#     mail = Postoffice::Mail.find(params[:id])
+#     if mail.image_uid == nil
+#       [404, nil]
+#     else
+#       if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
+#       if params["thumb"]
+#         Postoffice::FileService.fetch_image(mail.image_uid, params).to_response
+#       else
+#         redirect Postoffice::FileService.get_presigned_url mail.image_uid
+#       end
+#     end
+#   rescue ArgumentError
+#     response_body = Hash["message", "Could not process thumbnail parameter."].to_json
+#     [403, nil, response_body]
+#   end
+#
+# end
+#
+# # Retrieve image for a piece of mail
+# # Scope: admin OR (can-read, is to or from person)
+# get '/mail/id/:id/thumbnail' do
+#
+#   mail = Postoffice::Mail.find(params[:id])
+#
+#   ## For legacy purposes, creating the thumbnail if it does not already exist
+#   if mail.thumbnail_uid == nil && mail.image_uid != nil
+#     mail.thumbnail = mail.image.thumb('x96')
+#     mail.save
+#   end
+#
+#   if mail.thumbnail_uid == nil
+#     [404, nil, nil]
+#   else
+#     if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
+#     redirect Postoffice::FileService.get_presigned_url mail.thumbnail_uid
+#   end
+#
+# end
 
 # View all mail in the system
 # Scope: admin
@@ -491,7 +491,9 @@ get '/person/id/:id/contacts' do
   if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
-    response_body = Postoffice::MailService.get_contacts(params).to_json( :except => ["salt", "hashed_password", "device_token"] )
+    people = Postoffice::ConversationService.people_from_conversations(params)
+    people_docs = Postoffice::AppService.convert_objects_to_documents(people)
+    response_body = people_docs.to_json( :except => ["salt", "hashed_password", "device_token"] )
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]

@@ -17,7 +17,7 @@ module Postoffice
 		end
 
 		def self.count_unread_mail person
-			Postoffice::Mail.where({to: person.username, status: "DELIVERED"}).count
+			Postoffice::Mail.where(status: "DELIVERED", :correspondents.elem_match => { :_type => "Postoffice::ToPerson", :person_id => person.id, :status => {"$ne" => "READ"}}).count
 		end
 
 	end

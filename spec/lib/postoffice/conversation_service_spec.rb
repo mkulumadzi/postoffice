@@ -13,18 +13,18 @@ describe Postoffice::ConversationService do
     @mail_convo_1_B = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person1.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
     @mail_convo_1_B.mail_it
     @mail_convo_1_B.deliver
-    @convo_1 = Postoffice::Conversation.new(@mail_convo_1_A.conversation)
-    @convo_1.save
+
+    @convo_1 = @mail_convo_1_A.conversation
 
     @mail_convo_2 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:to_person, person_id: @person3.id)])
     @mail_convo_2.mail_it
-    @convo_2 = Postoffice::Conversation.new(@mail_convo_2.conversation)
-    @convo_2.save
+
+    @convo_2 = @mail_convo_2.conversation
 
     @mail_convo_3 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
     @mail_convo_3.mail_it
-    @convo_3 = Postoffice::Conversation.new(@mail_convo_3.conversation)
-    @convo_3.save
+
+    @convo_3 = @mail_convo_3.conversation
 
   end
 
@@ -168,6 +168,62 @@ describe Postoffice::ConversationService do
       mail = Postoffice::ConversationService.conversation_mail params
       mail.must_equal [@mail_convo_1_A, @mail_convo_1_B]
     end
+
+  end
+
+  describe 'get people from conversations' do
+
+    # def self.people_from_conversations params
+    #   person = Postoffice::Person.find(params[:id])
+    #   conversation_metadata = self.conversation_metadata params
+    #   people_array = self.get_people_from_conversations conversation_metadata
+    #   self.get_unique_people_from_conversation_people_list people_array, person
+    # end
+
+    before do
+      @params = Hash(id: @person1.id.to_s)
+      @conversation_metadata = Postoffice::ConversationService.get_conversation_metadata @params
+    end
+
+    describe 'collect all people from conversations' do
+
+      before do
+        @all_people = Postoffice::ConversationService.collect_all_people_from_conversations @conversation_metadata
+      end
+
+      it 'must return an array of people' do
+        @all_people[0].must_be_instance_of Postoffice::Person
+      end
+
+      it 'must include all people the person has been in conversations with' do
+        expected_people = [@person1, @person2, @person3]
+        (expected_people - @all_people).count.must_equal 0
+      end
+
+    end
+
+    describe 'get unique people from conversation people list' do
+
+      before do
+        @people_array = Postoffice::ConversationService.collect_all_people_from_conversations @conversation_metadata
+        @unique_people = Postoffice::ConversationService.get_unique_people_from_conversation_people_list @people_array, @person1
+      end
+
+      it 'must not include the person' do
+        @unique_people.include?(@person1).must_equal false
+      end
+
+      it 'must be a unique list of the people the person has communicated with' do
+        @unique_people.must_equal [@person2, @person3]
+      end
+
+    end
+
+    it 'must return a unique list of people the person has commnicated with' do
+      people = Postoffice::ConversationService.people_from_conversations @params
+      people.must_equal [@person2, @person3]
+    end
+
 
   end
 
