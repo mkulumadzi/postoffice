@@ -25,23 +25,6 @@ module Postoffice
 		field :date_sent, type: DateTime
 		field :date_delivered, type: DateTime
 
-		# attachments: [
-		# 	{
-		# 		id: objectId,
-		# 		type: "TEXT",
-		# 		content: "blah"
-		# 	}
-		# 	{
-		# 		id: objectId,
-		# 		type: "IMAGE",
-		# 		image_uid: "xxxx"
-		# 	}
-		# ]
-
-		# def from_person person_id
-		# 	Postoffice::Mail.where("correspondents" => {"_type" => "Postoffice::FromPerson", "person_id" => person_id})
-		# end
-
 		def conversation_hash
 			conversation_hash = Hash(people: self.people_correspondent_ids)
 			if self.has_email_correspondents? then conversation_hash[:emails] = self.email_correspondents end
@@ -108,6 +91,14 @@ module Postoffice
 			else
 				query
 			end
+		end
+
+		def notes
+			self.attachments.select { |a| a._type == "Postoffice::Note"}
+		end
+
+		def image_attachments
+			self.attachments.select { |a| a._type == "Postoffice::ImageAttachment"}
 		end
 
 		def days_to_arrive

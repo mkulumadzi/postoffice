@@ -8,7 +8,11 @@ describe Postoffice::Mail do
 		@person2 = create(:person, username: random_username)
 		@person3 = create(:person, username: random_username)
 
-		@mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com")])
+		image = File.open('spec/resources/image2.jpg')
+		@uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
+		image.close
+
+		@mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up"), build(:image_attachment, image_uid: @uid)])
 
 		@expected_attrs = attributes_for(:mail)
 
@@ -49,21 +53,21 @@ describe Postoffice::Mail do
 			assert_operator @mail1.correspondents.select{|correspondent| correspondent.class == Postoffice::Email}.count, :>=, 1
 		end
 
-		describe 'add mail image' do
-
-			before do
-				image = File.open('spec/resources/image2.jpg')
-				@uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
-				image.close
-
-				@mail1.image = Dragonfly.app.fetch(@uid).apply
-			end
-
-			it 'must store the Dragonfly UID for the mail' do
-				@mail1.image.name.must_equal 'image2.jpg'
-			end
-
-		end
+		# describe 'add mail image' do
+		#
+		# 	before do
+		# 		image = File.open('spec/resources/image2.jpg')
+		# 		@uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
+		# 		image.close
+		#
+		# 		@mail1.image = Dragonfly.app.fetch(@uid).apply
+		# 	end
+		#
+		# 	it 'must store the Dragonfly UID for the mail' do
+		# 		@mail1.image.name.must_equal 'image2.jpg'
+		# 	end
+		#
+		# end
 
 		it 'must have a default status of "DRAFT"' do
 			@mail1.status.must_equal 'DRAFT'
@@ -79,6 +83,26 @@ describe Postoffice::Mail do
 
 		it 'must be able to find mail addressed to emails' do
 			Postoffice::Mail.where("correspondents.email" =>"test@test.com").include?(@mail1).must_equal true
+		end
+
+	end
+
+	describe 'get attachments from mail' do
+
+		describe 'notes' do
+
+			it 'must return the notes for the mail' do
+				@mail1.notes[0].must_be_instance_of Postoffice::Note
+			end
+
+		end
+
+		describe 'image attachments' do
+
+			it 'must return the image attachments for the mail' do
+				@mail1.image_attachments[0].must_be_instance_of Postoffice::ImageAttachment
+			end
+
 		end
 
 	end
@@ -127,7 +151,7 @@ describe Postoffice::Mail do
 
 		end
 
-		describe 'email corrspondents' do
+		describe 'email correspondents' do
 
 			before do
 				@email_correspondents = @mail2.email_correspondents

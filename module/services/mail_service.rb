@@ -6,15 +6,14 @@ module Postoffice
 			person = Postoffice::Person.find(params[:id])
 			mail_hash = self.create_mail_hash person.id, json_data
 			mail = Postoffice::Mail.create!(mail_hash)
-			# self.add_image mail
 			self.create_conversation_if_none_exists mail
 			mail
 		end
 
 		def self.create_mail_hash person_id, json_data
 			mail_hash = self.initialize_mail_hash_with_from_person person_id
-			mail_hash = self.add_content mail_hash, json_data
 			mail_hash = self.add_correspondents mail_hash, json_data
+			mail_hash = self.add_attachments mail_hash, json_data
 			mail_hash = self.set_scheduled_to_arrive mail_hash, json_data
 		end
 
@@ -22,38 +21,42 @@ module Postoffice
 			Hash(correspondents: [Postoffice::FromPerson.new(person_id: person_id)])
 		end
 
-		def self.add_content mail_hash, json_data
-			mail_hash [:content] = json_data["content"]
-			mail_hash
-		end
-
 		def self.add_correspondents mail_hash, json_data
-			correspondents = self.create_to_person_correspondents json_data
-			correspondents += self.create_email_correspondents json_data
-			mail_hash[:correspondents] = correspondents
+			correspondents = self.add_embedded_documents json_data["correspondents"]["to_people"], self.create_person_correspondent
+			correspondents += self.add_embedded_documents json_data["correspondents"]["emails"], self.create_email_correspondent
+			mail_hash[:correspondents] += correspondents
 			mail_hash
 		end
 
-		def self.create_to_person_correspondents json_data
-			correspondents = []
-			to_person_list = json_data["correspondents"]["to_people"]
-			if to_person_list
-				to_person_list.each { |id| correspondents << self.create_correspondent_from_person_id_string(id) }
+		def self.add_embedded_documents source_data, create_document_function
+			documents = []
+			if source_data
+				source_data.each { |d| documents << create_document_function.call(d) }
 			end
-			correspondents
+			documents
 		end
 
-		def self.create_correspondent_from_person_id_string person_id_s
-			Postoffice::ToPerson.new(person_id: BSON::ObjectId(person_id_s))
+		def self.create_person_correspondent
+			Proc.new { |person_id_string| Postoffice::ToPerson.new(person_id: BSON::ObjectId(person_id_string))}
 		end
 
-		def self.create_email_correspondents json_data
-			correspondents = []
-			email_list = json_data["correspondents"]["emails"]
-			if email_list
-				email_list.each { |email| correspondents << Postoffice::Email.new(email: email ) }
-			end
-			correspondents
+		def self.create_email_correspondent
+			Proc.new { |email| Postoffice::Email.new(email: email)}
+		end
+
+		def self.add_attachments mail_hash, json_data
+			attachments = self.add_embedded_documents json_data["attachments"]["notes"], self.add_note
+			attachments += self.add_embedded_documents json_data["attachments"]["image_attachments"], self.add_image_attachment
+			mail_hash[:attachments] = attachments
+			mail_hash
+		end
+
+		def self.add_note
+			Proc.new { |note| Postoffice::Note.new(content: note)}
+		end
+
+		def self.add_image_attachment
+			Proc.new { |uid| Postoffice::ImageAttachment.new(image_uid: uid)}
 		end
 
 		def self.set_scheduled_to_arrive mail_hash, json_data
@@ -71,13 +74,6 @@ module Postoffice
 				Postoffice::Conversation.new(mail.conversation_hash).save
 			end
 		end
-
-		# def self.add_image mail, json_data
-		# 	if json_data["image_uid"]
-		# 		mail.image = Dragonfly.app.fetch(data["image_uid"]).apply
-		# 		mail.save
-		# 	end
-		# end
 
 		# Going to have to rethink this given the ability to send group mail; it would need to be relative to the group conversation...
 		# def self.ensure_mail_arrives_in_order_it_was_sent mail
@@ -97,13 +93,13 @@ module Postoffice
 			from_person_record = Postoffice::Person.find_by(username: ENV['POSTOFFICE_POSTMAN_USERNAME'])
 			from_person = Postoffice::FromPerson.new(person_id: from_person_record.id)
 			to_person = Postoffice::ToPerson.new(person_id: person.id)
+			note = Postoffice::Note.new(content: text)
+			welcome_image = Postoffice::ImageAttachment.new(image_uid: ENV['POSTOFFICE_WELCOME_IMAGE'])
 
 			mail = Postoffice::Mail.new(
-				content: text,
-				correspondents: [from_person, to_person]
+				correspondents: [from_person, to_person],
+				attachments: [note, welcome_image]
 			)
-
-			# image_uid: ENV['POSTOFFICE_WELCOME_IMAGE']
 
 			mail.mail_it
 			mail.deliver

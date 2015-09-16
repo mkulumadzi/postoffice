@@ -7,7 +7,11 @@ describe Postoffice::MailService do
 		@person2 = create(:person, username: random_username)
 		@person3 = create(:person, username: random_username)
 
-		@data = '{"content": "Hey what is up", "correspondents": {"to_people": ["' + @person2.id.to_s + '","' + @person3.id.to_s + '"], "emails": ["test@test.com", "test2@test.com"]}}'
+		image = File.open('spec/resources/image2.jpg')
+		@uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
+		image.close
+
+		@data = '{"correspondents": {"to_people": ["' + @person2.id.to_s + '","' + @person3.id.to_s + '"], "emails": ["test@test.com", "test2@test.com"]}, "attachments": {"notes": ["Hey what is up"], "image_attachments": ["' + @uid +'"]}}'
 	end
 
 	describe 'create mail' do
@@ -34,99 +38,165 @@ describe Postoffice::MailService do
 
 			end
 
-			describe 'add content' do
-
-				before do
-					@mail_hash = Postoffice::MailService.initialize_mail_hash_with_from_person @person1.id
-					@mail_hash = Postoffice::MailService.add_content @mail_hash, @json_data
-				end
-
-				it 'must have added the content to the mail_hash' do
-					@mail_hash[:content].must_equal @json_data["content"]
-				end
-
-			end
-
 			describe 'add correspondents' do
 
 				before do
 					@mail_hash = Postoffice::MailService.initialize_mail_hash_with_from_person @person1.id
 				end
 
-				describe 'create to person correpsondents' do
+				describe 'add embedded documents' do
 
 					before do
-						@correspondents = Postoffice::MailService.create_to_person_correspondents @json_data
+						@example_proc = Proc.new { |string| string }
 					end
 
-					describe 'create correspondent from person_id_string' do
+					describe 'source data is not null' do
 
 						before do
-							@to_person = Postoffice::MailService.create_correspondent_from_person_id_string @person2.id.to_s
+							@source_data = ["thing_one", "thing_two"]
+							@documents = Postoffice::MailService.add_embedded_documents @source_data, @example_proc
 						end
 
-						it 'must create a ToPerson' do
-							@to_person.must_be_instance_of Postoffice::ToPerson
-						end
-
-						it 'must store the person id as an ObjectId' do
-							@to_person.person_id.must_equal @person2.id
+						it 'must call the proc and return an array of the documents that are created' do
+							@documents.must_equal @source_data
 						end
 
 					end
 
-					it 'must return an array of to_people correspondents' do
-						@correspondents[0].must_be_instance_of Postoffice::ToPerson
-					end
+					describe 'source data is null' do
 
-					it 'must create a to_person for every record in the data' do
-						@correspondents.count.must_equal @json_data["correspondents"]["to_people"].count
-					end
-
-					describe 'handle case where data does not contain any to_people' do
-
-						before do
-							@json_data = JSON.parse('{"content": "Hey what is up", "correspondents": {"emails": ["test@test.com", "test2@test.com"]}}')
-							@correspondents = Postoffice::MailService.create_to_person_correspondents @json_data
-						end
-
-						it 'msut return an empty array' do
-							@correspondents.must_equal []
+						it 'must return an empty array' do
+							Postoffice::MailService.add_embedded_documents(nil, @example_proc).must_equal []
 						end
 
 					end
 
-					describe 'create email correspondents' do
+				end
 
-						before do
-							@correspondents = Postoffice::MailService.create_email_correspondents @json_data
-						end
+				describe 'create person correspondent' do
 
-						it 'must return an array of email correspondents' do
-							@correspondents[0].must_be_instance_of Postoffice::Email
-						end
+					before do
+						@proc = Postoffice::MailService.create_person_correspondent
+					end
 
-						it 'must have stored the email' do
-							@correspondents[0].email.must_be_instance_of String
-						end
+					it 'must create a ToPerson correspondent when it is called with a person id' do
+						@proc.call(@person1.id.to_s).must_be_instance_of Postoffice::ToPerson
+					end
 
-						it 'must create an email for every record in the data' do
-							@correspondents.count.must_equal @json_data["correspondents"]["emails"].count
-						end
+					it 'must have stored the person id' do
+						to_person = @proc.call(@person1.id.to_s)
+						to_person.person_id.must_equal @person1.id
+					end
 
-						describe 'handle case where data does not contain any emails' do
+				end
 
-							before do
-								@json_data = JSON.parse('{"content": "Hey what is up", "correspondents": {"to_people": ["' + @person2.id.to_s + '","' + @person3.id.to_s + '"]}}')
-								@correspondents = Postoffice::MailService.create_email_correspondents @json_data
-							end
+				describe 'create email correspondent' do
 
-							it 'msut return an empty array' do
-								@correspondents.must_equal []
-							end
+					before do
+						@proc = Postoffice::MailService.create_email_correspondent
+					end
 
-						end
+					it 'must create a ToPerson correspondent when it is called with a person id' do
+						@proc.call("test@test.com").must_be_instance_of Postoffice::Email
+					end
 
+					it 'must have stored the email' do
+						email = @proc.call("test@test.com")
+						email.email.must_equal "test@test.com"
+					end
+
+				end
+
+				describe 'add the correspondents' do
+
+					before do
+						@updated_hash = Postoffice::MailService.add_correspondents @mail_hash, @json_data
+					end
+
+					it 'must still have the from person' do
+						from_person = @updated_hash[:correspondents].select {|c| c._type == "Postoffice::FromPerson"}
+						from_person.count.must_equal 1
+					end
+
+					it 'must have added people correspondents' do
+						to_people = @updated_hash[:correspondents].select {|c| c._type == "Postoffice::ToPerson"}
+						assert_operator to_people.count, :>, 0
+					end
+
+					it 'must have added email correspondents' do
+						emails = @updated_hash[:correspondents].select {|c| c._type == "Postoffice::Email"}
+						assert_operator emails.count, :>, 0
+					end
+
+				end
+
+			end
+
+			describe 'add attachments' do
+
+				before do
+					@mail_hash = Postoffice::MailService.initialize_mail_hash_with_from_person @person1.id
+				end
+
+				describe 'add note' do
+
+					before do
+						@proc = Postoffice::MailService.add_note
+					end
+
+					it 'must create a Note when it is called' do
+						@proc.call('Hey what is up').must_be_instance_of Postoffice::Note
+					end
+
+					it 'must have stored the content' do
+						note = @proc.call('Hey what is up')
+						note.content.must_equal "Hey what is up"
+					end
+
+				end
+
+				describe 'add image' do
+
+					before do
+						@proc = Postoffice::MailService.add_image_attachment
+					end
+
+					it 'must create a Note when it is called' do
+						@proc.call(@uid).must_be_instance_of Postoffice::ImageAttachment
+					end
+
+					it 'must have stored the image uid' do
+						image_attachment = @proc.call(@uid)
+						image_attachment.image_uid.must_equal @uid
+					end
+
+				end
+
+				# def self.add_attachments mail_hash, json_data
+				# 	attachments = self.add_embedded_documents json_data["attachments"]["notes"], self.add_note
+				# 	attachments += self.create_image_attachments json_data["attachments"]["image_attachments"], self.add_image_attachment
+				# 	mail_hash[:attachments] = attachments
+				# 	mail_hash
+				# end
+
+				describe 'add the attachments' do
+
+					before do
+						@updated_hash = Postoffice::MailService.add_attachments @mail_hash, @json_data
+					end
+
+					it 'must have added an attachments key' do
+						@updated_hash.keys.include?(:attachments).must_equal true
+					end
+
+					it 'must have added notes' do
+						notes = @updated_hash[:attachments].select {|c| c._type == "Postoffice::Note"}
+						assert_operator notes.count, :>, 0
+					end
+
+					it 'must have added image attachments' do
+						image_attachments = @updated_hash[:attachments].select {|c| c._type == "Postoffice::ImageAttachment"}
+						assert_operator image_attachments.count, :>, 0
 					end
 
 				end
@@ -180,7 +250,8 @@ describe Postoffice::MailService do
 				end
 
 				it 'must have the all of the keys it needs to create the mail' do
-					@mail_hash.keys.must_equal [:correspondents, :content, :scheduled_to_arrive, :type]
+					expected_keys = [:correspondents, :attachments, :scheduled_to_arrive, :type]
+					(expected_keys - @mail_hash.keys).must_equal []
 				end
 
 				it 'must be able to be used to create a mail' do
@@ -191,46 +262,6 @@ describe Postoffice::MailService do
 			end
 
 		end
-
-		# describe 'add image' do
-		#
-		# 	# def self.add_image mail, json_data
-		# 	# 	if json_data["image_uid"]
-		# 	# 		mail.image = Dragonfly.app.fetch(data["image_uid"]).apply
-		# 	# 		mail.save
-		# 	# 	end
-		# 	# end
-		#
-		# 	before do
-		# 		image = File.open('spec/resources/image2.jpg')
-		# 		@uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
-		# 		image.close
-		#
-		# 		@json_data["image_uid"] = @uid
-		# 		@mail
-		#
-		# 		correspondent_array = [Hash["person_id", @person2.id]]
-		# 		data = Hash["correspondents", correspondent_array, "content", @expected_attrs[:content], "image_uid", @uid]
-		# 		@mail4 = Postoffice::MailService.create_mail @person1.id, data
-		# 	end
-		#
-		# 	it 'must add a Dragonfly attachment for the mail capable of getting the image name' do
-		# 		@mail4.image.name.must_equal 'image2.jpg'
-		# 	end
-		#
-		# 	it 'must be able to return the mime-type' do
-		# 		@mail4.image.mime_type.must_equal "image/jpeg"
-		# 	end
-		#
-		# 	it 'must add a thumbnail' do
-		# 		@mail4.thumbnail.mime_type.must_equal "image/jpeg"
-		# 	end
-		#
-		# 	it 'must compress the thumbnail to a height of 96 px' do
-		# 		@mail4.thumbnail.height.must_equal 96
-		# 	end
-		#
-		# end
 
 		describe 'create conversation if none exists' do
 
@@ -322,16 +353,28 @@ describe Postoffice::MailService do
 			@welcome_mail.from_person.must_equal Postoffice::Person.find_by(username: ENV['POSTOFFICE_POSTMAN_USERNAME'])
 		end
 
-		it 'must contain content' do
-			@welcome_mail.content.must_be_instance_of String
-		end
+		describe 'attachments' do
 
-		it 'must contain the message content' do
-			message_template = File.open("templates/Welcome Message.txt")
-			expected_text = message_template.read
-			message_template.close
+			it 'must have a note attachment with a String for its content' do
+				@welcome_mail.notes[0].content.must_be_instance_of String
+			end
 
-			@welcome_mail.content.must_equal expected_text
+			it 'must have stored the template content' do
+				message_template = File.open("templates/Welcome Message.txt")
+				expected_text = message_template.read
+				message_template.close
+
+				@welcome_mail.notes[0].content.must_equal expected_text
+			end
+
+			it 'must have an image attachment with a String for its uid' do
+				@welcome_mail.image_attachments[0].image_uid.must_be_instance_of String
+			end
+
+			it 'must have the image uid for the welcome message image' do
+				@welcome_mail.image_attachments[0].image_uid.must_equal ENV['POSTOFFICE_WELCOME_IMAGE']
+			end
+
 		end
 
 		it 'must have been delivered' do
@@ -821,9 +864,9 @@ describe Postoffice::MailService do
 						@hash[:subject].must_equal "You've received a Slowpost!"
 					end
 
-					it 'must have an html body containing the content' do
-						@hash[:html_body].must_equal @example_correspondent.mail.content
-					end
+					# it 'must have an html body containing the content' do
+					# 	@hash[:html_body].must_equal @example_correspondent.mail.content
+					# end
 
 					it 'must be configured to track opens' do
 						@hash[:track_opens].must_equal true

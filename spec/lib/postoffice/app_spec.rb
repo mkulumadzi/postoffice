@@ -702,7 +702,7 @@ describe app do
 	describe '/person/id/:id/mail/new' do
 
 		before do
-      @data = '{"content": "Hey what is up", "correspondents": {"to_people": ["' + @person2.id.to_s + '"], "emails": ["test@test.com", "test2@test.com"]}}'
+      @data = '{"correspondents": {"to_people": ["' + @person2.id.to_s + '"], "emails": ["test@test.com", "test2@test.com"]}, "attachments": {"notes": ["Hey what is up"]}}'
 		end
 
 		describe 'post /person/id/:id/mail/new' do
@@ -756,7 +756,7 @@ describe app do
 	describe '/person/id/:id/mail/send' do
 
 		before do
-      @data = '{"content": "Hey what is up", "correspondents": {"to_people": ["' + @person2.id.to_s + '"], "emails": ["test@test.com", "test2@test.com"]}}'
+      @data = '{"correspondents": {"to_people": ["' + @person2.id.to_s + '"], "emails": ["test@test.com", "test2@test.com"]}, "attachments": {"notes": ["Hey what is up"]}}'
 		end
 
 		describe 'post /person/id/:id/mail/send' do
