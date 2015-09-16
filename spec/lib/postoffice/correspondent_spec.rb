@@ -2,7 +2,7 @@ require_relative '../../spec_helper'
 
 describe Postoffice::Correspondent do
 
-  describe 'create a recipient' do
+  describe 'create a correspondent' do
 
     before do
 			@mail1 = create(:mail)

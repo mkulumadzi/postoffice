@@ -8,6 +8,7 @@ module Postoffice
 
 		# belongs_to :person, foreign_key: :from_person_id
 		embeds_many :correspondents
+		embeds_many :attachments
 
 		# These fields are going to be migrated, then deleted
 		field :from, type: String

@@ -37,6 +37,12 @@ FactoryGirl.define do
     person_id "abc"
   end
 
+  factory :note, class: Postoffice::Note do
+    content "Hey what is up"
+  end
 
+  factory :image_attachment, class: Postoffice::ImageAttachment do
+    image_uid "image.jpg"
+  end
 
 end
