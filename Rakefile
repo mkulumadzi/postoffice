@@ -78,20 +78,22 @@ task :setup_demo_data do
 	demo = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message demo
 
-		# image1 = File.open('spec/resources/image1.jpg')
-		# uid1 = Dragonfly.app.store(image1.read, 'name' => 'image1.jpg')
-		# image1.close
-		#
-		# image2 = File.open('spec/resources/image2.jpg')
-		# uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
-		# image2.close
+		image1 = File.open('spec/resources/image1.jpg')
+		uid1 = Dragonfly.app.store(image1.read, 'name' => 'image1.jpg')
+		image1.close
+
+		image2 = File.open('spec/resources/image2.jpg')
+		uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
+		image2.close
 
 
 		f1 = Postoffice::FromPerson.new(person_id: person1.id)
 		t1 = Postoffice::ToPerson.new(person_id: person.id)
+		n1 = Postoffice::Note.new(content: "Hey bro, how's it going? Would you like to watch the game?")
+		i1 = Postoffice::ImageAttachment.new(image_uid: uid1)
     mail1 = Postoffice::Mail.create!({
-    	content: "Hey bro, how's it going? Would you like to watch the game?",
-			correspondents: [f1, t1]
+			correspondents: [f1, t1],
+			attachments: [n1, i1]
     })
 
     mail1.mail_it
@@ -100,9 +102,12 @@ task :setup_demo_data do
 		f2 = Postoffice::FromPerson.new(person_id: person2.id)
 		t2 = Postoffice::ToPerson.new(person_id: person.id)
 		t2b = Postoffice::ToPerson.new(person_id: person1.id)
+		t2c = Postoffice::Email.new(email: "test@test.com")
+		n2 = Postoffice::Note.new(content: "Greetings from NOLA!")
+		i2 = Postoffice::ImageAttachment.new(image_uid: uid2)
     mail2 = Postoffice::Mail.create!({
-    	content: "Greetings from NOLA!",
-			correspondents: [f2, t2, t2b]
+			correspondents: [f2, t2, t2b, t2c],
+			attachments: [n2, i2]
     })
 
     mail2.mail_it
@@ -110,18 +115,22 @@ task :setup_demo_data do
 
 		f3 = Postoffice::FromPerson.new(person_id: person1.id)
 		t3 = Postoffice::ToPerson.new(person_id: person.id)
+		n3 = Postoffice::Note.new(content: "Go U of A!")
+		i3 = Postoffice::ImageAttachment.new(image_uid: uid1)
+		i3b = Postoffice::ImageAttachment.new(image_uid: uid2)
     mail3 = Postoffice::Mail.create!({
-    	content: "Go U of A!",
-			correspondents: [f3, t3]
+			correspondents: [f3, t3],
+			attachments: [n3, i3]
     })
 
 		mail3.mail_it
 
 		f4 = Postoffice::FromPerson.new(person_id: person.id)
 		t4 = Postoffice::ToPerson.new(person_id: demo.id)
+		n4 = Postoffice::Note.new(content: "Thanks for checking out the app! Looking forward to getting your feedback.")
 		mail4 = Postoffice::Mail.create!({
-			content: "Thanks for checking out the app! Looking forward to getting your feedback.",
-			correspondents: [f4, t4]
+			correspondents: [f4, t4],
+			attachments: [n4]
 		})
 
 		mail4.mail_it
@@ -129,9 +138,11 @@ task :setup_demo_data do
 
 		f5 = Postoffice::FromPerson.new(person_id: demo.id)
 		t5 = Postoffice::ToPerson.new(person_id: person.id)
+		n5 = Postoffice::Note.new(content: "Can't wait to receive a few more Slowposts!")
+		i5 = Postoffice::ImageAttachment.new(image_uid: uid1)
 		mail5 = Postoffice::Mail.create!({
-			content: "Can't wait to receive a few more Slowposts!",
-			correspondents: [f5, t5]
+			correspondents: [f5, t5],
+			attachments: [n5, i5]
 		})
 
 		mail5.mail_it
