@@ -15,8 +15,6 @@ FactoryGirl.define do
   end
 
   factory :mail, class: Postoffice::Mail do
-    from "a_user"
-    to "a_different_user"
     content "I love this app"
   end
 

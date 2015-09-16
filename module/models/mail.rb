@@ -41,10 +41,14 @@ module Postoffice
 		# 	Postoffice::Mail.where("correspondents" => {"_type" => "Postoffice::FromPerson", "person_id" => person_id})
 		# end
 
+		def conversation_hash
+			conversation_hash = Hash(people: self.people_correspondent_ids)
+			if self.has_email_correspondents? then conversation_hash[:emails] = self.email_correspondents end
+			conversation_hash = self.add_hex_hash_to_conversation conversation_hash
+		end
+
 		def conversation
-			conversation = Hash(people: self.people_correspondent_ids)
-			if self.has_email_correspondents? then conversation[:emails] = self.email_correspondents end
-			conversation = self.add_hex_hash_to_conversation conversation
+			Postoffice::Conversation.find_or_create_by(self.conversation_hash)
 		end
 
 		def people_correspondent_ids
@@ -130,7 +134,13 @@ module Postoffice
 			self.save
 		end
 
+		def from_person
+			from_person_id = self.correspondents.where(_type: "Postoffice::FromPerson").first.person_id
+			Postoffice::Person.find(from_person_id)
+		end
+
 		def read_by person
+			if self.status != "DELIVERED" then raise "Mail must be DELIVERED to read" end
 			correspondent = self.correspondents.find_by(person_id: person.id, _type: "Postoffice::ToPerson")
 			correspondent.read
 		end

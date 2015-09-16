@@ -240,6 +240,7 @@ end
 # Mail from field is interpreted by the ID in the URI
 # Scope: admin OR (can-write, is the person)
 post '/person/id/:id/mail/new' do
+  content_type :json
   data = JSON.parse request.body.read
   if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
 
@@ -262,12 +263,12 @@ end
 # Send mail right away, without creating draft state
 # Scope: admin OR (can-write, is person)
 post '/person/id/:id/mail/send' do
+  content_type :json
   data = JSON.parse request.body.read
-
   if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
 
   begin
-    mail = Postoffice::MailService.create_mail params[:id], data
+    mail = Postoffice::MailService.create_mail params, data
     mail.mail_it
     mail_link = "#{ENV['POSTOFFICE_BASE_URL']}/mail/id/#{mail.id}"
     headers = { "location" => mail_link }
@@ -350,7 +351,9 @@ get '/mail' do
   content_type :json
   if Postoffice::AppService.unauthorized?(request, "admin") then return [401, nil] end
   Postoffice::AppService.add_if_modified_since_to_request_parameters self
-  response_body = Postoffice::MailService.get_mail(params).to_json
+  mail = Postoffice::MailService.get_mail(params)
+  mail_documents = Postoffice::AppService.convert_objects_to_documents mail
+  response_body = mail_documents.to_json
   [200, response_body]
 end
 
@@ -361,7 +364,7 @@ post '/mail/id/:id/send' do
 
   begin
     mail = Postoffice::Mail.find(params[:id])
-    from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
+    from_id = mail.from_person.id.to_s
     if Postoffice::AppService.not_admin_or_owner?(request, "can-write", from_id) then return [401, nil] end
     mail.mail_it
     [204, nil]
@@ -375,13 +378,13 @@ end
 
 # Deliver a piece of mail
 # Scope: admin
-post '/mail/id/:id/arrive_now' do
+post '/mail/id/:id/deliver' do
 
    begin
     mail = Postoffice::Mail.find(params[:id])
-    from_id = Postoffice::Person.find_by(username: mail.from).id.to_s
+    from_id = mail.from_person.id.to_s
     if Postoffice::AppService.not_admin_or_owner?(request, "can-write", from_id) then return [401, nil] end
-    mail.make_it_arrive_now
+    mail.deliver
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
@@ -397,13 +400,16 @@ post '/mail/id/:id/read' do
 
   begin
     mail = Postoffice::Mail.find(params[:id])
-    to_id = Postoffice::Person.find_by(username: mail.to).id.to_s
-    if Postoffice::AppService.not_admin_or_owner?(request, "can-write", to_id) then return [401, nil] end
-    mail.read
+    if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-write", mail) then return [401, nil] end
+    payload = Postoffice::AppService.get_payload_from_authorization_header request
+    person = Postoffice::Person.find(payload["id"])
+    mail.read_by person
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
   rescue ArgumentError
+    [403, nil]
+  rescue RuntimeError
     [403, nil]
   end
 
@@ -417,7 +423,8 @@ get '/person/id/:id/mailbox' do
   if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
-    response_body = Postoffice::MailService.mailbox(params).to_json
+    mail = Postoffice::MailService.mailbox(params)
+    response_body = Postoffice::AppService.convert_objects_to_documents(mail).to_json
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
@@ -433,7 +440,8 @@ get '/person/id/:id/outbox' do
   if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
-    response_body = Postoffice::MailService.outbox(params).to_json
+    mail = Postoffice::MailService.outbox(params)
+    response_body = Postoffice::AppService.convert_objects_to_documents(mail).to_json
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
@@ -446,11 +454,11 @@ end
 get '/person/id/:id/conversations' do
 
   content_type :json
-  Postoffice::AppService.add_if_modified_since_to_request_parameters self
+  Postoffice::AppService.add_if_modified_since_to_request_as_date self
   if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
-    response_body = Postoffice::MailService.conversation_metadata(params).to_json
+    response_body = Postoffice::ConversationService.get_conversation_metadata(params).to_json
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
@@ -460,13 +468,14 @@ end
 
 # View a conversation with another person
 # Scope: admin OR (can-read, is person)
-get '/person/id/:id/conversation/id/:conversation_person_id' do
+get '/person/id/:person_id/conversation/id/:conversation_id' do
   content_type :json
   Postoffice::AppService.add_if_modified_since_to_request_parameters self
-  if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:person_id]) then return [401, nil] end
 
   begin
-    response_body = Postoffice::MailService.conversation(params).to_json
+    mail = Postoffice::ConversationService.conversation_mail(params)
+    response_body = Postoffice::AppService.convert_objects_to_documents(mail).to_json
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]

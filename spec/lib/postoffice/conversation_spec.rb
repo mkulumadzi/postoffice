@@ -10,7 +10,7 @@ describe Postoffice::Conversation do
 
     @mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
 
-    @conversation = Postoffice::Conversation.new(@mail1.conversation)
+    @conversation = Postoffice::Conversation.new(@mail1.conversation_hash)
     @conversation.save
 
   end
@@ -31,7 +31,7 @@ describe Postoffice::Conversation do
 
     it 'must have a unique index on the hex hash, preventing the dubplicate conversation entries' do
       assert_raises Mongo::Error::OperationFailure do
-        duplicate_mail = Postoffice::Conversation.new(@mail1.conversation)
+        duplicate_mail = Postoffice::Conversation.new(@mail1.conversation_hash)
         duplicate_mail.save
       end
     end
@@ -54,7 +54,7 @@ describe Postoffice::Conversation do
 
         it 'must return the total number of people if there are no emails' do
           another_mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
-          conversation = Postoffice::Conversation.new(another_mail.conversation)
+          conversation = Postoffice::Conversation.new(another_mail.conversation_hash)
           conversation.save
 
           conversation.num_correspondents.must_equal conversation.people.count
@@ -121,7 +121,7 @@ describe Postoffice::Conversation do
 				before do
 					another_mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person3.id), build(:to_person, person_id: @person2.id)])
 
-          @no_email_conversation = Postoffice::Conversation.new(another_mail.conversation)
+          @no_email_conversation = Postoffice::Conversation.new(another_mail.conversation_hash)
 
 					@no_email_query = @no_email_conversation.initialize_conversation_mail_query
 					@no_email_query = @no_email_conversation.add_people_to_conversation_mail_query @no_email_query
@@ -192,7 +192,7 @@ describe Postoffice::Conversation do
         @mail4 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com"), build(:email, email: "test3@test.com")])
         @mail4.mail_it
 
-        @conversation = Postoffice::Conversation.find_by(hex_hash: @mail1.conversation[:hex_hash])
+        @conversation = Postoffice::Conversation.find_by(hex_hash: @mail1.conversation_hash[:hex_hash])
         @mail_for_person_from_conversation = @conversation.mail_for_person(@person1).to_a
 
       end
@@ -226,6 +226,8 @@ describe Postoffice::Conversation do
       end
 
       it 'must not return mail that has been read by the person' do
+        @mail1.mail_it
+        @mail1.deliver
         @mail1.read_by @person2
         @unread_mail.to_a.include?(@mail1).must_equal false
       end
@@ -355,7 +357,7 @@ describe Postoffice::Conversation do
       it 'must return true if a person has only sent mail, and not received any mail in the conversation' do
         mail = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person1.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
         mail.mail_it
-        conversation = Postoffice::Conversation.new(mail.conversation)
+        conversation = Postoffice::Conversation.new(mail.conversation_hash)
         conversation.save
 
         conversation.person_sent_most_recent_mail?(@person3).must_equal true
@@ -365,7 +367,7 @@ describe Postoffice::Conversation do
         mail = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
         mail.mail_it
         mail.deliver
-        conversation = Postoffice::Conversation.new(mail.conversation)
+        conversation = Postoffice::Conversation.new(mail.conversation_hash)
         conversation.save
 
         conversation.person_sent_most_recent_mail?(@person3).must_equal false

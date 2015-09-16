@@ -50,6 +50,31 @@ module Postoffice
       query = Postoffice::AppService.add_updated_since_to_query query, params
     end
 
+    ### Get a list of people the person has sent mail to or received mail from
+
+    def self.people_from_conversations params
+      person = Postoffice::Person.find(params[:id])
+      conversation_metadata = self.conversation_metadata params
+      people_array = self.get_people_from_conversations conversation_metadata
+      self.get_unique_people_from_conversation_people_list people_array, person
+    end
+
+    def self.get_people_from_conversations conversation_metadata
+      people_array = []
+      conversation_metadata.each do |conversation|
+        people.each do |person_id|
+          people_array << Postoffice::Person.find(person_id)
+        end
+      end
+      people_array
+    end
+
+    def self.get_unique_people_from_conversation_people_list people_array, person
+      people_array = people_array.uniq
+      people_array.delete(person)
+      people_array
+    end
+
   end
 
 end

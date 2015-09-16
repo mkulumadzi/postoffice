@@ -83,7 +83,7 @@ describe Postoffice::Mail do
 
 	end
 
-	describe 'coversation' do
+	describe 'conversation hash' do
 
 		before do
 			@mail2 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person3.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "atest@test.com")])
@@ -139,7 +139,7 @@ describe Postoffice::Mail do
 
 		end
 
-		describe 'add hex hash to conversation' do
+		describe 'add hex hash to conversation hash' do
 
 			before do
 				@conversation_hash = Hash(people: @mail2.people_correspondent_ids, email: @mail2.email_correspondents)
@@ -153,42 +153,56 @@ describe Postoffice::Mail do
 
 		end
 
-		describe 'conversation with people and email correspondents' do
+		describe 'conversation hash with people and email correspondents' do
 
 			before do
-				@conversation = @mail2.conversation
+				@conversation_hash = @mail2.conversation_hash
 				@people_correspondents = @mail2.people_correspondent_ids
 				@email_correspondents = @mail2.email_correspondents
 			end
 
 			it 'must include the people corrspondents' do
-				@conversation[:people].must_equal @people_correspondents
+				@conversation_hash[:people].must_equal @people_correspondents
 			end
 
 			it 'must include the email correspondents' do
-				@conversation[:emails].must_equal @email_correspondents
+				@conversation_hash[:emails].must_equal @email_correspondents
 			end
 
 			it 'must include the hex hash' do
-				@conversation[:hex_hash].must_be_instance_of String
+				@conversation_hash[:hex_hash].must_be_instance_of String
 			end
 
 			it 'must be equal to the conversation returned by another mail, with the same people but different roles' do
 				another_mail = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "atest@test.com")])
-				another_mail.conversation.must_equal @conversation
+				another_mail.conversation_hash.must_equal @conversation_hash
 			end
 
 		end
 
-		describe 'conversation with only people correspondents' do
+		describe 'conversation hash with only people correspondents' do
 			before do
-				@conversation = @mail3.conversation
+				@conversation_hash = @mail3.conversation_hash
 			end
 
 			it 'must only include keys for the people and the hex hash' do
-				@conversation.keys.must_equal [:people, :hex_hash]
+				@conversation_hash.keys.must_equal [:people, :hex_hash]
 			end
 
+		end
+
+	end
+
+	describe 'conversation' do
+
+		it 'must return a conversation if it already exists' do
+			conversation = Postoffice::Conversation.new(@mail1.conversation_hash)
+			conversation.save
+			@mail1.conversation.must_equal conversation
+		end
+
+		it 'must create a new conversation if it does not exist' do
+			@mail1.conversation.must_be_instance_of Postoffice::Conversation
 		end
 
 	end
@@ -387,11 +401,25 @@ describe Postoffice::Mail do
 
 	end
 
+	describe 'from person' do
+
+		before do
+			@from_person = @mail1.from_person
+		end
+
+		it 'must return the person' do
+			@from_person.must_equal @person1
+		end
+
+	end
+
 	describe 'read by person' do
 
 		describe 'read by a recipient' do
 
 			before do
+				@mail1.mail_it
+				@mail1.deliver
 				@mail1.read_by @person2
 			end
 
@@ -400,14 +428,26 @@ describe Postoffice::Mail do
 				correspondent.status.must_equal "READ"
 			end
 
+			describe 'read by someone who is not a ToPerson' do
+
+				it 'must rais a DocumentNotFound error if a person tries to read the mail and they are not a ToPerson' do
+					assert_raises Mongoid::Errors::DocumentNotFound do
+						@mail1.read_by @person1
+					end
+				end
+
+			end
+
 		end
 
-		describe 'read by someone who is not a ToPerson' do
+		describe 'read mail that has not been DELIVERED yet' do
 
-			it 'must rais a DocumentNotFound error if a person tries to read the mail and they are not a ToPerson' do
-				assert_raises Mongoid::Errors::DocumentNotFound do
-					@mail1.read_by @person1
+			it 'must raise a runtime error' do
+
+				assert_raises RuntimeError do
+					@mail1.read_by @person2
 				end
+
 			end
 
 		end

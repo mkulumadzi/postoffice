@@ -241,12 +241,12 @@ describe Postoffice::MailService do
 
 			it 'must create the conversation if none exists' do
 				Postoffice::MailService.create_conversation_if_none_exists @mailA
-				Postoffice::Conversation.where(hex_hash: @mailA.conversation[:hex_hash]).count.must_equal 1
+				Postoffice::Conversation.where(hex_hash: @mailA.conversation_hash[:hex_hash]).count.must_equal 1
 			end
 
 			it 'must not create a duplicate conversation' do
 				Postoffice::MailService.create_conversation_if_none_exists @mailB
-				Postoffice::Conversation.where(hex_hash: @mailA.conversation[:hex_hash]).count.must_equal 1
+				Postoffice::Conversation.where(hex_hash: @mailA.conversation_hash[:hex_hash]).count.must_equal 1
 			end
 
 		end
@@ -255,7 +255,8 @@ describe Postoffice::MailService do
 
 			before do
 				params = Hash(id: @person1.id.to_s)
-				@mail = Postoffice::MailService.create_mail(params, @data)
+				@json_data = JSON.parse(@data)
+				@mail = Postoffice::MailService.create_mail(params, @json_data)
 			end
 
 			it 'must return the mail' do
@@ -263,7 +264,7 @@ describe Postoffice::MailService do
 			end
 
 			it 'must have created the conversation for the mail' do
-				Postoffice::Conversation.where(hex_hash: @mail.conversation[:hex_hash]).count.must_equal 1
+				Postoffice::Conversation.where(hex_hash: @mail.conversation_hash[:hex_hash]).count.must_equal 1
 			end
 
 		end
@@ -344,30 +345,30 @@ describe Postoffice::MailService do
 		#
 		# end
 
-		# describe 'get mail' do
-		#
-		# 	it 'must get all of the mail if no parameters are given' do
-		# 		num_mail = Postoffice::Mail.count
-		# 		mail = Postoffice::MailService.get_mail
-		# 		mail.length.must_equal num_mail
-		# 	end
-		#
-		# 	# To Do: Come back to these after converting 'from' and 'to' to a dynamic attribute
-		# 	it 'must filter the records by from when it is passed in as a parameter' do
-		# 		num_mail = Postoffice::Mail.where({from: @person1.username}).count
-		# 		params = Hash[:from, @person1.username]
-		# 		mail = Postoffice::MailService.get_mail params
-		# 		mail.length.must_equal num_mail
-		# 	end
-		#
-		# 	it 'must filter the records by username and name when both are passed in as a parameter' do
-		# 		num_mail = Postoffice::Mail.where({from: @person1.username, to: @person2.username}).count
-		# 		params = Hash[:from, @person1.username, :to, @person2.username]
-		# 		mail = Postoffice::MailService.get_mail params
-		# 		mail.length.must_equal num_mail
-		# 	end
-		#
-		# end
+		describe 'get mail' do
+
+			it 'must get all of the mail if no parameters are given' do
+				num_mail = Postoffice::Mail.count
+				mail = Postoffice::MailService.get_mail
+				mail.count.must_equal num_mail
+			end
+
+			# To Do: Come back to these after converting 'from' and 'to' to a dynamic attribute
+			it 'must filter the records by a single parameter' do
+				num_mail = Postoffice::Mail.where({status: "SENT"}).count
+				params = Hash(status: "SENT")
+				mail = Postoffice::MailService.get_mail params
+				mail.count.must_equal num_mail
+			end
+
+			it 'must filter the records by multiple parameters' do
+				num_mail = Postoffice::Mail.where({:correspondents.elem_match => {_type: "Postoffice::FromPerson", person_id:  @person1.id}}).count
+				params = Hash(:correspondents.elem_match => Hash(_type: "Postoffice::FromPerson", person_id:  @person1.id))
+				mail = Postoffice::MailService.get_mail params
+				mail.count.must_equal num_mail
+			end
+
+		end
 
 		describe 'mailbox' do
 

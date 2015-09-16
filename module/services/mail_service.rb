@@ -2,9 +2,9 @@ module Postoffice
 
 	class MailService
 
-		def self.create_mail params, data
+		def self.create_mail params, json_data
 			person = Postoffice::Person.find(params[:id])
-			mail_hash = self.create_mail_hash person.id, JSON.parse(data)
+			mail_hash = self.create_mail_hash person.id, json_data
 			mail = Postoffice::Mail.create!(mail_hash)
 			# self.add_image mail
 			self.create_conversation_if_none_exists mail
@@ -69,8 +69,8 @@ module Postoffice
 		end
 
 		def self.create_conversation_if_none_exists mail
-			if Postoffice::Conversation.where(hex_hash: mail.conversation[:hex_hash]).count == 0
-				Postoffice::Conversation.new(mail.conversation).save
+			if Postoffice::Conversation.where(hex_hash: mail.conversation_hash[:hex_hash]).count == 0
+				Postoffice::Conversation.new(mail.conversation_hash).save
 			end
 		end
 
@@ -108,40 +108,9 @@ module Postoffice
 		end
 
 		def self.get_mail params = {}
-			mails = []
-			Postoffice::Mail.where(params).each { |mail| mails << mail.as_document }
-			mails
+			Postoffice::Mail.where(params).to_a
 		end
 		### End Mark
-
-		# def self.mailbox params
-		# 	mails = []
-		# 	person = Postoffice::Person.find(params[:id])
-		# 	query = self.hash_mail_to_person person
-		# 	if params[:updated_at] then query[:updated_at] = params[:updated_at] end
-		# 	# if params[:conversation_person_id] then query[:from_person_id] = params[:conversation_person_id] end
-		#
-		# 	Postoffice::Mail.where(query).each do |mail|
-		# 		mails << mail.as_document
-		# 	end
-		#
-		# 	mails
-		# end
-
-		# def self.outbox params
-		# 	mails = []
-		#
-		# 	query = {from_person_id: params[:id]}
-		#
-		# 	if params[:updated_at] then query[:updated_at] = params[:updated_at] end
-		# 	if params[:conversation_person_id] then query["recipients.person_id"] = params[:conversation_person_id] end
-		#
-		# 	Postoffice::Mail.where(query).each do |mail|
-		# 		mails << mail.as_document
-		# 	end
-		#
-		# 	mails
-		# end
 
 		def self.mailbox params
 			self.get_person_and_perform_mail_query params, self.query_mail_to_person
@@ -268,52 +237,7 @@ module Postoffice
 
 		### Functions for viewing lists of conversations, conversation metadata and mail within a conversation
 
-		# Get mail that the person can know about (either mail they have sent, or mail that has been delivered to them)
-		# Get a unique list of the people involved in each mail (ie, any senders, any recipients, either Slowpost or Email)
-		# Group the mail into 'conversations' using these unique lists
-		# Allow these conversations to be returned
-		# Provide a summary of some stats for each conversation, by aggregating the conversation
 
-		# def query_all_mail_for_a_person person
-		# 	Postoffice::Mail.or({from_person_id: person.id},{"recipients.person_id" => person.id, status: "DELIVERED"})
-		# end
-
-		# def self.mailbox params
-		# 	self.get_person_and_perform_mail_query params, self.query_mail_to_person
-		# end
-		#
-		# def self.get_person_and_perform_mail_query params, query_function
-		# 	person = Postoffice::Person.find(params[:id])
-		# 	query = self.mail_query(query_function, person, params)
-		# 	self.return_mail_array query
-		# end
-		#
-		# def self.mail_query mail_query_proc, person, params
-		# 	query = mail_query_proc.call(person)
-		# 	query = self.add_updated_since_to_query query, params
-		# end
-		#
-		# def self.query_mail_to_person
-		# 	Proc.new { |person| Hash(:status => "DELIVERED", "correspondents._type" => "Postoffice::ToPerson", "correspondents.person_id" => person.id) }
-		# end
-		#
-		# def self.add_updated_since_to_query query, params
-		# 	if params[:updated_at] then query[:updated_at] = params[:updated_at] end
-		# 	query
-		# end
-		#
-		# def self.return_mail_array query
-		# 	Postoffice::Mail.where(query).to_a
-		# end
-
-		#
-		# def get_participants_from_mail person, mail
-		# 	participants = [mail.from_person_id]
-		# 	participants << mail.recipient_list
-		# 	participants.delete(person.id)
-		# 	participants
-		# end
-		#
 		# def self.get_contacts params
 		# 	recipients = self.get_people_who_received_mail_from params
 		# 	senders = self.get_people_who_sent_mail_to params
@@ -351,43 +275,6 @@ module Postoffice
 		# 	end
 		#
 		# 	list_of_people.uniq
-		# end
-		#
-		# def self.conversation_metadata params
-		# 	penpals = self.get_contacts params
-		# 	conversations = []
-		# 	id = BSON::ObjectId(params[:id])
-		#
-		# 	penpals.each do |person|
-		#
-		# 		num_unread = Postoffice::Mail.where({from_person_id: person["_id"], "recipients.person_id" => id, status: "DELIVERED"}).count
-		# 		num_undelivered = Postoffice::Mail.where({from_person_id: id, "recipients.person_id" => person["_id"], status: "SENT"}).count
-		# 		all_mail_query = Postoffice::Mail.or({from_person_id: id, "recipients.person_id" => person["_id"]},{from_person_id: person["_id"], "recipients.person_id" => id, status: "DELIVERED"})
-		#
-		# 		most_recent_updated_mail = all_mail_query.sort! {|a,b| b[:updated_at] <=> a[:updated_at]}[0]
-		# 		most_recent_arrived_mail = all_mail_query.where(scheduled_to_arrive: {:$ne => nil}).sort! {|a,b| b[:scheduled_to_arrive] <=> a[:scheduled_to_arrive]}[0]
-		#
-		# 		metadata = Hash.new
-		# 		metadata[:person_id] = person["_id"]
-		# 		metadata[:username] = person["username"]
-		# 		metadata[:name] = person["name"]
-		# 		metadata[:num_unread] = num_unread
-		# 		metadata[:num_undelivered] = num_undelivered
-		# 		metadata[:updated_at] = most_recent_updated_mail[:updated_at]
-		# 		metadata[:most_recent_status] = most_recent_arrived_mail[:status]
-		# 		metadata[:most_recent_sender] = most_recent_arrived_mail[:from_person_id]
-		# 		conversations << metadata
-		#
-		# 	end
-		#
-		# 	conversations
-		# end
-		#
-		# def self.conversation params
-		# 	from_conversation = self.outbox params
-		# 	to_conversation = self.mailbox params
-		# 	mails = from_conversation + to_conversation
-		# 	mails.sort! {|a,b| b[:created_at] <=> a[:created_at]}
 		# end
 
 	end

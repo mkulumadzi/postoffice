@@ -9,6 +9,13 @@ module Postoffice
       end
     end
 
+    def self.add_if_modified_since_to_request_as_date app
+      if app.request.env["HTTP_IF_MODIFIED_SINCE"]
+        utc_date = Time.parse(app.request.env["HTTP_IF_MODIFIED_SINCE"])
+        app.params[:updated_at] = utc_date
+      end
+    end
+
     def self.get_token_from_authorization_header request
       token_header = request.env["HTTP_AUTHORIZATION"]
       token_header.split(' ')[1]
@@ -90,6 +97,12 @@ module Postoffice
     def self.add_updated_since_to_query query, params
       if params[:updated_at] then query = query.where(updated_at: params[:updated_at]) end
       query
+    end
+
+    def self.convert_objects_to_documents array
+      document_array = []
+      array.each { |e| document_array << e.as_document }
+      document_array
     end
 
   end

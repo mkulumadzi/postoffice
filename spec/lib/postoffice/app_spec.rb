@@ -712,16 +712,16 @@ describe app do
 	describe '/person/id/:id/mail/new' do
 
 		before do
-			@mail_data = convert_mail_to_json @mail4
+      @data = '{"content": "Hey what is up", "correspondents": {"to_people": ["' + @person2.id.to_s + '"], "emails": ["test@test.com", "test2@test.com"]}}'
 		end
 
 		describe 'post /person/id/:id/mail/new' do
 
 			before do
-				post "/person/id/#{@person1.id}/mail/new", @mail_data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+				post "/person/id/#{@person1.id}/mail/new", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 			end
 
-			it 'must get a status of 201' do
+			it 'must get a status of 201 when the mail is created' do
 				last_response.status.must_equal 201
 			end
 
@@ -739,7 +739,7 @@ describe app do
 
 			before do
 				from_id = 'abc'
-				post "/person/id/#{from_id}/mail/new", @mail_data, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+				post "/person/id/#{from_id}/mail/new", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
 			end
 
 			it 'should return a 404 status' do
@@ -752,42 +752,10 @@ describe app do
 
 		end
 
-    describe 'create mail with email delivery options' do
-
-      describe 'invalid email' do
-
-        before do
-          data = '{"to": "foo", "content": "Yo what is up", "delivery_options": ["EMAIL"]}'
-          post "/person/id/#{@person1.id}/mail/new", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        end
-
-        it 'must return a 403 status if a person tries to send mail with an EMAIL delivery option, and the recipient does not have a valid email address' do
-          last_response.status.must_equal 403
-        end
-
-        it 'must include an error message in the response body' do
-          message = JSON.parse(last_response.body)["message"]
-          message.must_be_instance_of String
-        end
-
-      end
-
-      describe 'valid email' do
-
-        it 'must create the mail successfully and return a 201 status' do
-          data = '{"to": "foo@foo.com", "content": "Yo what is up", "delivery_options": ["EMAIL"]}'
-          post "/person/id/#{@person1.id}/mail/new", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-          last_response.status.must_equal 201
-        end
-
-      end
-
-    end
-
     describe 'unauthorized request' do
 
       it 'must return a 401 error if a person tries to create mail for another user id' do
-        post "/person/id/#{@person2.id}/mail/new", @mail_data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        post "/person/id/#{@person2.id}/mail/new", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
         last_response.status.must_equal 401
       end
 
@@ -798,13 +766,13 @@ describe app do
 	describe '/person/id/:id/mail/send' do
 
 		before do
-			@mail_data = convert_mail_to_json @mail4
+      @data = '{"content": "Hey what is up", "correspondents": {"to_people": ["' + @person2.id.to_s + '"], "emails": ["test@test.com", "test2@test.com"]}}'
 		end
 
 		describe 'post /person/id/:id/mail/send' do
 
 			before do
-				post "/person/id/#{@person1.id}/mail/send", @mail_data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+				post "/person/id/#{@person1.id}/mail/send", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must get a status of 201' do
@@ -827,42 +795,10 @@ describe app do
 
 		end
 
-    describe 'send mail with email delivery options' do
-
-      describe 'invalid email' do
-
-        before do
-          data = '{"to": "foo", "content": "Yo what is up", "delivery_options": ["EMAIL"]}'
-          post "/person/id/#{@person1.id}/mail/send", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        end
-
-        it 'must return a 403 status if a person tries to send mail with an EMAIL delivery option, and the recipient does not have a valid email address' do
-          last_response.status.must_equal 403
-        end
-
-        it 'must include an error message in the response body' do
-          message = JSON.parse(last_response.body)["message"]
-          message.must_be_instance_of String
-        end
-
-      end
-
-      describe 'valid email' do
-
-        it 'must send the mail successfully and return a 201 status' do
-          data = '{"to": "foo@foo.com", "content": "Yo what is up", "delivery_options": ["EMAIL"]}'
-          post "/person/id/#{@person1.id}/mail/send", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-          last_response.status.must_equal 201
-        end
-
-      end
-
-    end
-
     describe 'unauthorized request' do
 
       it 'must return a 401 error if a person tries to create mail for another user id' do
-        post "/person/id/#{@person2.id}/mail/send", @mail_data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        post "/person/id/#{@person2.id}/mail/send", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
         last_response.status.must_equal 401
       end
 
@@ -995,16 +931,16 @@ describe app do
 
   end
 
-	describe 'post /mail/id/:id/arrive_now' do
+	describe 'post /mail/id/:id/deliver' do
 
 		before do
 			post "/mail/id/#{@mail1.id}/send", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-			post "/mail/id/#{@mail1.id}/arrive_now", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+			post "/mail/id/#{@mail1.id}/deliver", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 		end
 
-		it 'must be scheduled to arrive in the past' do
+		it 'must have a status of DELIVERED' do
 			mail = Postoffice::Mail.find(@mail1.id)
-			assert_operator mail.scheduled_to_arrive, :<=, Time.now
+			mail.status.must_equal "DELIVERED"
 		end
 
 		it 'must return a 204 status code' do
@@ -1065,9 +1001,9 @@ describe app do
 		end
 
 		it 'must return a filtered collection if parameters are given' do
-			get "/mail?from=#{@person1.username}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+			get "/mail?status=SENT", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
 			response = JSON.parse(last_response.body)
-			response.count.must_equal Postoffice::Mail.where(from: @person1.username).count
+			response.count.must_equal Postoffice::Mail.where(status: "SENT").count
 		end
 
 		it 'must return the expected fields for the mail' do
@@ -1105,7 +1041,7 @@ describe app do
 		before do
 
 			@mail1.mail_it
-			@mail1.make_it_arrive_now
+			@mail1.deliver
 
 			@mail2.mail_it
 
@@ -1148,7 +1084,6 @@ describe app do
 		it 'must return the expected fields for the mail' do
 			response = JSON.parse(last_response.body)
 			mail = get_mail_object_from_mail_response response[0]
-
 			response[0].must_equal expected_json_fields_for_mail(mail)
 		end
 
@@ -1158,8 +1093,8 @@ describe app do
 
     before do
       @mail1.mail_it
-      @mail1.make_it_arrive_now
-      @mail1.update_delivery_status
+      @mail1.deliver
+      @conversation = @mail1.conversation
     end
 
     describe 'get conversation metadata' do
@@ -1171,12 +1106,15 @@ describe app do
           @metadata = JSON.parse(last_response.body)
         end
 
-        it 'must return a 200 status' do
+        it 'must return a 200 status if the conversation metadata is fetched successfully' do
           last_response.status.must_equal 200
         end
 
         it 'must return an array of conversation metadata' do
-          @metadata[0].keys.must_equal ["username", "name", "num_unread", "num_undelivered", "updated_at", "most_recent_status", "most_recent_sender"]
+          hash = @mail1.conversation.metadata_for_person(@person2)
+          hash_keys_as_strings = []
+          hash.keys.each { |key| hash_keys_as_strings << key.to_s }
+          @metadata[0].keys.must_equal hash_keys_as_strings
         end
 
       end
@@ -1190,26 +1128,16 @@ describe app do
 
       end
 
-      describe 'get metadata since a date' do
-        before do
-          another_mail = build(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id)])
-          another_mail.updated_at = Time.now + 5.minutes
-          another_mail.mail_it
-          get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}", "HTTP_IF_MODIFIED_SINCE" => (Time.now + 4.minutes).to_s}
-          @metadata = JSON.parse(last_response.body)
-        end
-
-        it 'must only include people whose conversations were updated since the date specified' do
-          @metadata.count.must_equal 1
-        end
-
-      end
-
     end
 
     describe 'get recently modified data only' do
 
       before do
+        @mail_convo_exclude = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person1.id)])
+        @mail_convo_exclude.mail_it
+
+        @convo_exclude = @mail_convo_exclude.conversation
+
         @another_mail = create(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id)])
         @another_mail.mail_it
         @another_mail.updated_at = Time.now + 5.minutes
@@ -1220,15 +1148,16 @@ describe app do
 
         @an_unread_mail = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person2.id)])
         @an_unread_mail.mail_it
-        @an_unread_mail.make_it_arrive_now
-        @an_unread_mail.update_delivery_status
+        @an_unread_mail.deliver
+
+        @convo_include = @another_mail.conversation
 
         if_modified_since = (Time.now + 4.minutes).to_s
         get "/person/id/#{@person2.id}/conversations", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}", "HTTP_IF_MODIFIED_SINCE" => if_modified_since}
         @parsed_response = JSON.parse(last_response.body)
       end
 
-      it 'must return a 200 status code' do
+      it 'must return a 200 status code if the conversatio metadata is fetched' do
         last_response.status.must_equal 200
       end
 
@@ -1236,16 +1165,9 @@ describe app do
         @parsed_response.count.must_equal 1
       end
 
-      it 'must still return the total number of undelivered mail' do
-        num_undelivered = Postoffice::Mail.where({correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person3.id)], status: "SENT"}).count
-        @parsed_response[0]["num_undelivered"].must_equal num_undelivered
+      it 'must return the same values for the specific conversation it would have returned if no updated_at parameter had been included' do
+        @parsed_response[0].must_equal JSON.parse(@convo_include.metadata_for_person(@person2).to_json)
       end
-
-      it 'must still return the total number of unread mail' do
-        num_unread = Postoffice::Mail.where({correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person2.id)], status: "DELIVERED"}).count
-        @parsed_response[0]["num_unread"].must_equal num_unread
-      end
-
 
     end
 
@@ -1255,25 +1177,27 @@ describe app do
 
     before do
       @mail1.mail_it
-      @mail1.make_it_arrive_now
+      @mail1.deliver
+      @conversation = @mail1.conversation
     end
 
     describe 'get conversation' do
 
       before do
-        get "/person/id/#{@person2.id}/conversation/id/#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
+        get "/person/id/#{@person2.id}/conversation/id/#{@conversation.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
       end
 
       it 'must return a 200 status if the request is successful' do
         last_response.status.must_equal 200
       end
 
-      it 'must include mail to or from person2' do
-        last_response.body.match(/#{@person2.username}/).must_be_instance_of MatchData
-      end
+      it 'must include all of the mail for @person2 in this conversation' do
+        mail = @conversation.mail_for_person(@person2).to_a
+        mail_as_documents = Postoffice::AppService.convert_objects_to_documents(mail)
+        expected_response = JSON.parse(mail_as_documents.to_json)
 
-      it 'must not include mail to or from person3' do
-        last_response.body.match(/#{@person3.username}/).must_equal nil
+        response = JSON.parse(last_response.body)
+        response.must_equal expected_response
       end
 
     end
@@ -1286,7 +1210,7 @@ describe app do
       end
 
       it 'must return a 401 status if the request is not properly authorized' do
-        get "/person/id/#{@person2.id}/conversation/id/#{@person1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        get "/person/id/#{@person3.id}/conversation/id/#{@conversation.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
         last_response.status.must_equal 401
       end
 
@@ -1298,17 +1222,15 @@ describe app do
 
 		before do
 			@mail1.mail_it
-			@mail1.make_it_arrive_now
-			@mail1.update_delivery_status
-
+			@mail1.deliver
 			post "/mail/id/#{@mail1.id}/read", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
 		end
 
-		it 'must mark the mail as read' do
+		it 'must indicate that the person has read the mail' do
 			mail = Postoffice::Mail.find(@mail1.id)
-			mail.status.must_equal "READ"
+      correspondent = mail.correspondents.where(person_id: @person2.id).first
+      correspondent.status.must_equal "READ"
 		end
-
 
 		it 'must return a 204 status code' do
 			last_response.status.must_equal 204
@@ -1370,8 +1292,7 @@ describe app do
 
       before do
         @mail3.mail_it
-        @mail3.make_it_arrive_now
-        @mail3.update_delivery_status
+        @mail3.deliver
         @mail3.updated_at = Time.now + 5.minutes
         @mail3.save
 

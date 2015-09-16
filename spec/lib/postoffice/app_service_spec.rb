@@ -141,19 +141,6 @@ describe Postoffice::AppService do
 
   describe 'check admin or mail ownership' do
 
-    # def self.not_admin_or_mail_owner? request, scope, mail
-    #   correspondent_ids = mail.people_correspondent_ids
-    #   payload = self.get_payload_from_authorization_header request
-    #   person_id = BSON::ObjectId(payload["id"])
-    #   if self.unauthorized?(request, "admin") == false
-    #     false
-    #   elsif correspondent_ids.include?(person_id) && self.unauthorized?(request, scope)
-    #     false
-    #   else
-    #     true
-    #   end
-    # end
-
     it 'must return false if the token has the admin scope' do
       get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
       Postoffice::AppService.not_admin_or_mail_owner?(last_request, "can-read", @mail1).must_equal false
@@ -229,6 +216,27 @@ describe Postoffice::AppService do
         @query.selector.keys.include?("updated_at").must_equal false
       end
 
+    end
+
+  end
+
+  describe 'convert objects to documents' do
+
+    before do
+      array = [@person1, @person2, @person3]
+      @documents = Postoffice::AppService.convert_objects_to_documents array
+    end
+
+    it 'must return Hash documents' do
+      @documents[0].must_be_instance_of Hash
+    end
+
+    it 'must convert the objects to these documents' do
+      @documents[0].must_equal @person1.as_document
+    end
+
+    it 'must return all of the documents' do
+      @documents.count.must_equal 3
     end
 
   end
