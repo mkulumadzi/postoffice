@@ -250,6 +250,8 @@ Reponse body:
 
 ### Mail
 
+#### To Do: Update this for newest mail model
+
 Create new mail in DRAFT state:
 
 ```
