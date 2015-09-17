@@ -437,6 +437,62 @@ describe Postoffice::Mail do
 
 	end
 
+	describe 'to people ids' do
+
+		before do
+			@to_people_ids = @mail1.to_people_ids
+		end
+
+		it 'must return an array of strings' do
+			@to_people_ids[0].must_be_instance_of String
+		end
+
+		it 'must return the ids for the people the mail was sent to, as strings' do
+			@to_people_ids.must_equal [@person2.id.to_s]
+		end
+
+		describe 'mail with no ToPeople' do
+
+			before do
+				@no_to_people = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up"), build(:image_attachment, image_uid: @uid)])
+			end
+
+			it 'must return an empty array' do
+				@no_to_people.to_people_ids.must_equal []
+			end
+
+		end
+
+	end
+
+	describe 'to emails' do
+
+		before do
+			@to_emails = @mail1.to_emails
+		end
+
+		it 'must return an array of strings' do
+			@to_emails[0].must_be_instance_of String
+		end
+
+		it 'must return the ids for the people the mail was sent to, as strings' do
+			@to_emails.must_equal ["test@test.com"]
+		end
+
+		describe 'mail with no Emails' do
+
+			before do
+				@no_emails = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)], attachments: [build(:note, content: "Hey what is up"), build(:image_attachment, image_uid: @uid)])
+			end
+
+			it 'must return an empty array' do
+				@no_emails.to_emails.must_equal []
+			end
+
+		end
+
+	end
+
 	describe 'read by person' do
 
 		describe 'read by a recipient' do

@@ -808,10 +808,20 @@ describe app do
 				last_response.status.must_equal 200
 			end
 
-			it 'must return the expected JSON document for the mail in the response body' do
-				response = JSON.parse(last_response.body)
-				response.must_equal expected_json_fields_for_mail(@mail1)
+			it 'must return appropriate fields for the person from the mail in the response body' do
+        expected_result = Postoffice::MailService.hash_of_mail_for_person(@mail1, @person1).to_json
+				last_response.body.must_equal expected_result
 			end
+
+      describe 'admin request' do
+        before do
+          get "/mail/id/#{@mail1.id}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+        end
+
+        it 'must return the complete mail document' do
+          last_response.body.must_equal @mail1.as_document.to_json
+        end
+      end
 
       describe 'resource not found' do
 
@@ -1049,9 +1059,8 @@ describe app do
 
 		it 'must return the expected fields for the mail' do
 			response = JSON.parse(last_response.body)
-			mail = get_mail_object_from_mail_response response[0]
-
-			response[0].must_equal expected_json_fields_for_mail(mail)
+      expected_result = JSON.parse(Postoffice::MailService.hash_of_mail_for_person(@mail1, @person2).to_json)
+			response[0].must_equal expected_result
 		end
 
 	end
@@ -1071,10 +1080,10 @@ describe app do
 			last_response.body.match(/#{@mail3.id}/).must_equal nil
 		end
 
-		it 'must return the expected fields for the mail' do
+    it 'must return the expected fields for the mail' do
 			response = JSON.parse(last_response.body)
-			mail = get_mail_object_from_mail_response response[0]
-			response[0].must_equal expected_json_fields_for_mail(mail)
+      expected_result = JSON.parse(Postoffice::MailService.hash_of_mail_for_person(@mail1, @person1).to_json)
+			response[0].must_equal expected_result
 		end
 
 	end
@@ -1181,13 +1190,10 @@ describe app do
         last_response.status.must_equal 200
       end
 
-      it 'must include all of the mail for @person2 in this conversation' do
-        mail = @conversation.mail_for_person(@person2).to_a
-        mail_as_documents = Postoffice::AppService.convert_objects_to_documents(mail)
-        expected_response = JSON.parse(mail_as_documents.to_json)
-
+      it 'must return the expected fields for the mail' do
         response = JSON.parse(last_response.body)
-        response.must_equal expected_response
+        expected_result = JSON.parse(Postoffice::MailService.hash_of_mail_for_person(@mail1, @person2).to_json)
+        response[0].must_equal expected_result
       end
 
     end
@@ -1386,123 +1392,6 @@ describe app do
     end
 
   end
-
-  # describe '/mail/id/:id/image' do
-  #
-  #   before do
-  #     @image = File.open('spec/resources/image2.jpg')
-  #     @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
-  #
-  #     data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
-  #     @mail5 = Postoffice::MailService.create_mail @person1.id, data
-  #
-  #     get "/mail/id/#{@mail5.id}/image", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-  #   end
-  #
-  #   after do
-  #     @image.close
-  #   end
-  #
-  #   describe 'redirect to AWS for basic image_uid' do
-  #
-  #     it 'must redirect the request and return a 302 status' do
-  #       last_response.status.must_equal 302
-  #     end
-  #
-  #   end
-  #
-  #   describe 'resize image with thumb parameter' do
-  #
-  #     it 'must resize the image if a thumbnail parameter is given' do
-  #       get "/mail/id/#{@mail5.id}/image?thumb=400x", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-  #       assert_operator last_response.headers["Content-Length"].to_i, :<, @image.size
-  #     end
-  #
-  #     describe 'unrecognized thumbnail parameter' do
-  #
-  #       before do
-  #         get "/mail/id/#{@mail5.id}/image?thumb=foo", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-  #       end
-  #
-  #       it 'must return a 403 status code if an unrecognized thumbnail parameter is entered' do
-  #         last_response.status.must_equal 403
-  #       end
-  #
-  #       it 'must return an error message' do
-  #         response = JSON.parse(last_response.body)
-  #         response["message"].must_equal "Could not process thumbnail parameter."
-  #       end
-  #
-  #     end
-  #
-  #   end
-  #
-  # end
-  #
-  # describe 'attempt to get mail image that does not exist.' do
-  #
-  #   before do
-  #     get "/mail/id/#{@mail1.id}/image", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-  #   end
-  #
-  #   it 'must return a 404 status' do
-  #     last_response.status.must_equal 404
-  #   end
-  #
-  #   it 'must return an empty response body' do
-  #     last_response.body.must_equal ""
-  #   end
-  #
-  # end
-  #
-  # describe '/mail/id/:id/thumbnail' do
-  #
-  #   before do
-  #     @image = File.open('spec/resources/image2.jpg')
-  #     @uid = Dragonfly.app.store(@image.read, 'name' => 'image2.jpg')
-  #
-  #     data = Hash["to", @person2.username, "content", "Hey whats up", "image_uid", @uid]
-  #     @mail5 = Postoffice::MailService.create_mail @person1.id, data
-  #   end
-  #
-  #   after do
-  #     @image.close
-  #   end
-  #
-  #   describe 'get thumbnail' do
-  #
-  #     before do
-  #       get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-  #     end
-  #
-  #     it 'must redirect and return a 302 status if the image is found' do
-  #       last_response.status.must_equal 302
-  #     end
-  #
-  #   end
-  #
-  #   describe 'get thumbnail that does not already exist' do
-  #
-  #     before do
-  #       @mail5.thumbnail = nil
-  #       @mail5.save
-  #     end
-  #
-  #     it 'must return a 404 status if the mail does not have an image' do
-  #       @mail5.image = nil
-  #       @mail5.save
-  #       get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-  #       last_response.status.must_equal 404
-  #     end
-  #
-  #     it 'must create the thumbnail while fulfilling the request and then redirecting, returning status 200, if the image exists' do
-  #       get "/mail/id/#{@mail5.id}/thumbnail", nil, { "HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-  #       last_response.status.must_equal 302
-  #     end
-  #
-  #   end
-  #
-  # end
 
   describe 'get a list of cards available' do
 

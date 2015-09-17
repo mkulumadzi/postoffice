@@ -13,6 +13,11 @@ module Postoffice
 		extend Dragonfly::Model
 		dragonfly_accessor :image
 		field :image_uid, type: String
+
+		def url
+			"#{ENV['POSTOFFICE_BASE_URL']}/image/#{self.image_uid}"
+		end
+
 	end
 
 end

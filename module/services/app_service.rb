@@ -105,6 +105,22 @@ module Postoffice
       document_array
     end
 
+    def self.create_json_of_mail_for_person mail_array, person
+      hash_array = []
+      mail_array.each { |mail| hash_array << Postoffice::MailService.hash_of_mail_for_person(mail, person) }
+      hash_array.to_json
+    end
+
+    def self.single_mail_response request, mail
+      payload = self.get_payload_from_authorization_header request
+      if payload["scope"].include?("admin")
+        mail.as_document.to_json
+      elsif payload["id"]
+        person = Postoffice::Person.find(payload["id"])
+        Postoffice::MailService.hash_of_mail_for_person(mail, person).to_json
+      end
+    end
+
   end
 
 end

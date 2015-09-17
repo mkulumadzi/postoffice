@@ -292,58 +292,13 @@ get '/mail/id/:id' do
   begin
     mail = Postoffice::Mail.find(params[:id])
     if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
-
-    response_body = mail.as_document.to_json
+    response_body = Postoffice::AppService.single_mail_response request, mail
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
   end
 
 end
-
-# # Retrieve image for a piece of mail
-# # Scope: admin OR (can-read, is to or from person)
-# get '/mail/id/:id/image' do
-#
-#   begin
-#     mail = Postoffice::Mail.find(params[:id])
-#     if mail.image_uid == nil
-#       [404, nil]
-#     else
-#       if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
-#       if params["thumb"]
-#         Postoffice::FileService.fetch_image(mail.image_uid, params).to_response
-#       else
-#         redirect Postoffice::FileService.get_presigned_url mail.image_uid
-#       end
-#     end
-#   rescue ArgumentError
-#     response_body = Hash["message", "Could not process thumbnail parameter."].to_json
-#     [403, nil, response_body]
-#   end
-#
-# end
-#
-# # Retrieve image for a piece of mail
-# # Scope: admin OR (can-read, is to or from person)
-# get '/mail/id/:id/thumbnail' do
-#
-#   mail = Postoffice::Mail.find(params[:id])
-#
-#   ## For legacy purposes, creating the thumbnail if it does not already exist
-#   if mail.thumbnail_uid == nil && mail.image_uid != nil
-#     mail.thumbnail = mail.image.thumb('x96')
-#     mail.save
-#   end
-#
-#   if mail.thumbnail_uid == nil
-#     [404, nil, nil]
-#   else
-#     if Postoffice::AppService.not_admin_or_mail_owner?(request, "can-read", mail) then return [401, nil] end
-#     redirect Postoffice::FileService.get_presigned_url mail.thumbnail_uid
-#   end
-#
-# end
 
 # View all mail in the system
 # Scope: admin
@@ -358,7 +313,6 @@ get '/mail' do
 end
 
 # Send a piece of mail
-# Known issue: You can send mail to an invalid username (not sure if this needs to be fixed)
 # Scope: admin OR (can_write, is 'from' person)
 post '/mail/id/:id/send' do
 
@@ -424,7 +378,8 @@ get '/person/id/:id/mailbox' do
 
   begin
     mail = Postoffice::MailService.mailbox(params)
-    response_body = Postoffice::AppService.convert_objects_to_documents(mail).to_json
+    person = Postoffice::Person.find(params[:id])
+    response_body = Postoffice::AppService.create_json_of_mail_for_person mail, person
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
@@ -441,7 +396,8 @@ get '/person/id/:id/outbox' do
 
   begin
     mail = Postoffice::MailService.outbox(params)
-    response_body = Postoffice::AppService.convert_objects_to_documents(mail).to_json
+    person = Postoffice::Person.find(params[:id])
+    response_body = Postoffice::AppService.create_json_of_mail_for_person mail, person
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
@@ -475,7 +431,8 @@ get '/person/id/:person_id/conversation/id/:conversation_id' do
 
   begin
     mail = Postoffice::ConversationService.conversation_mail(params)
-    response_body = Postoffice::AppService.convert_objects_to_documents(mail).to_json
+    person = Postoffice::Person.find(params[:person_id])
+    response_body = Postoffice::AppService.create_json_of_mail_for_person mail, person
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]

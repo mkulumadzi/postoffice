@@ -146,6 +146,37 @@ module Postoffice
 			Proc.new { |person| Hash(:correspondents.elem_match => {"_type" => "Postoffice::FromPerson", "person_id" => person.id} ) }
 		end
 
+		## Custom hash for returning mail for a persons consumption in an app
+
+		def self.hash_of_mail_for_person mail, person
+			mail_hash = self.mail_hash_removing_correspondents_key mail
+			mail_hash["from_person_id"] = mail.from_person.id.to_s
+			mail_hash["to_people_ids"] = mail.to_people_ids
+			mail_hash["to_emails"] = mail.to_emails
+			mail_hash["my_info"] = self.mail_info_for_person mail, person
+			self.replace_image_uids_with_urls mail_hash
+			mail_hash
+		end
+
+		def self.mail_hash_removing_correspondents_key mail
+			JSON.parse(mail.as_document.to_json(:except => ["correspondents"]))
+		end
+
+		def self.mail_info_for_person mail, person
+			correspondent = mail.correspondents.find_by(person_id: person.id)
+			correspondent.as_document
+		end
+
+		def self.replace_image_uids_with_urls mail_hash
+			image_attachments = mail_hash["attachments"].select {|a| a["_type"] == "Postoffice::ImageAttachment"}
+			if image_attachments.count > 0
+				image_attachments.each do |i|
+					i["url"] = "#{ENV['POSTOFFICE_BASE_URL']}/image/#{i["image_uid"]}"
+					i.delete("image_uid")
+				end
+			end
+		end
+
 		### Scheduled tasks for delivering mail and sending notifications and emails
 
 		def self.deliver_mail_and_notify_correspondents email_api_key = "POSTMARK_API_TEST"
@@ -216,7 +247,7 @@ module Postoffice
 				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
 				to: correspondent.email,
 				subject: "You've received a Slowpost!",
-				html_body: correspondent.mail.content,
+				html_body: correspondent.mail.notes[0].content,
 				track_opens: true
 			]
 		end

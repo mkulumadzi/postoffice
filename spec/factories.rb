@@ -15,7 +15,7 @@ FactoryGirl.define do
   end
 
   factory :mail, class: Postoffice::Mail do
-    content "I love this app"
+    attachments { [FactoryGirl.build(:note)] }
   end
 
   factory :contact, class: Postoffice::Contact do

@@ -241,4 +241,26 @@ describe Postoffice::AppService do
 
   end
 
+  describe 'create json of mail for person' do
+
+    before do
+      @mail_array = [@mail1]
+      @json = Postoffice::AppService.create_json_of_mail_for_person @mail_array, @person2
+    end
+
+    it 'must return a string' do
+      @json.must_be_instance_of String
+    end
+
+    it 'must return an array' do
+      JSON.parse(@json).must_be_instance_of Array
+    end
+
+    it 'must contain the custom hash for a mail to be shown to a person' do
+      expected_result = JSON.parse(Postoffice::MailService.hash_of_mail_for_person(@mail1, @person2).to_json)
+      JSON.parse(@json)[0].must_equal expected_result
+    end
+
+  end
+
 end

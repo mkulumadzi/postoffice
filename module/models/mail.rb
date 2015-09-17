@@ -131,6 +131,20 @@ module Postoffice
 			Postoffice::Person.find(from_person_id)
 		end
 
+		def to_people_ids
+			to_people_ids = []
+			to_people = self.correspondents.where(_type: "Postoffice::ToPerson")
+			to_people.each { |to_person| to_people_ids << to_person.person_id.to_s }
+			to_people_ids
+		end
+
+		def to_emails
+			to_emails = []
+			emails = self.correspondents.where(_type: "Postoffice::Email")
+			emails.each { |email| to_emails << email.email }
+			to_emails
+		end
+
 		def read_by person
 			if self.status != "DELIVERED" then raise "Mail must be DELIVERED to read" end
 			correspondent = self.correspondents.find_by(person_id: person.id, _type: "Postoffice::ToPerson")

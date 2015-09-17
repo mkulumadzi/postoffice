@@ -70,6 +70,14 @@ describe Postoffice::Attachment do
       @image_attachment.image.size.must_be_instance_of Fixnum
     end
 
+    describe 'url' do
+
+      it 'must generate a url for the image using the base url' do
+        @image_attachment.url.must_equal "#{ENV['POSTOFFICE_BASE_URL']}/image/#{@image_attachment.image_uid}"
+      end
+
+    end
+
   end
 
 end
