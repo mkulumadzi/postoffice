@@ -75,6 +75,12 @@ module Postoffice
       people_array
     end
 
+    ### Create converesations for any mail that does not already have them
+    def self.initialize_conversations_for_all_mail
+      mail = Postoffice::Mail.where({})
+      mail.each { |mail| mail.conversation }
+    end
+
   end
 
 end

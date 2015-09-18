@@ -224,6 +224,28 @@ describe Postoffice::ConversationService do
       people.must_equal [@person2, @person3]
     end
 
+  end
+
+  describe 'create conversations for any mail that does not already have them' do
+
+    before do
+      @personA = create(:person, username: random_username)
+      @personB = create(:person, username: random_username)
+      @personC = create(:person, username: random_username)
+
+      @mail_convo_A = create(:mail, correspondents: [build(:from_person, person_id: @personA.id), build(:to_person, person_id: @personB.id)])
+      @mail_convo_A.mail_it
+
+      @mail_convo_B = create(:mail, correspondents: [build(:from_person, person_id: @personA.id), build(:to_person, person_id: @personC.id)])
+      @mail_convo_B.mail_it
+
+      Postoffice::ConversationService.initialize_conversations_for_all_mail
+    end
+
+    it 'must have created the conversations' do
+      hex_hashes = [@mail_convo_A.conversation_hash[:hex_hash], @mail_convo_B.conversation_hash[:hex_hash]]
+      Postoffice::Conversation.where(hex_hash: {"$in" => hex_hashes}).count.must_equal 2
+    end
 
   end
 

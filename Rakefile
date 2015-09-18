@@ -148,6 +148,8 @@ task :setup_demo_data do
 
 		mail5.mail_it
 
+		Postoffice::ConversationService.initialize_conversations_for_all_mail
+
 end
 
 task :notify_recipients do
