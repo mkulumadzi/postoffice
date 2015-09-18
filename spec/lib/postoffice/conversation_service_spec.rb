@@ -98,7 +98,7 @@ describe Postoffice::ConversationService do
     it 'must return the conversation metadata' do
       params = Hash(id: @person1.id)
       conversation_metadata = Postoffice::ConversationService.get_conversation_metadata params
-      conversation_metadata[0].must_equal @convo_1.metadata_for_person(@person1)
+      (conversation_metadata[0].keys - @convo_1.metadata_for_person(@person1).keys).must_equal []
     end
 
   end

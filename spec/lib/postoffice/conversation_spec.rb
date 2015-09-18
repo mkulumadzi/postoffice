@@ -377,15 +377,6 @@ describe Postoffice::Conversation do
 
     describe 'conversation metadata for person' do
 
-      # def metadata_for_person person
-      #   Hash(
-      #     updated_at: self.mail_for_person(person).order_by(updated_at: "desc").first[:updated_at],
-      #     num_unread: self.unread_mail_for_person(person).count,
-      #     num_undelivered: self.undelivered_mail_for_person(person).count,
-      #     person_sent_most_recent_mail: self.person_sent_most_recent_mail?(person)
-      #   )
-      # end
-
       before do
         undelivered_1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")])
         undelivered_1.mail_it
@@ -405,16 +396,16 @@ describe Postoffice::Conversation do
         @metadata = @conversation.metadata_for_person @person1
       end
 
+      it 'must include its conversation id' do
+        @metadata[:_id].must_equal @conversation.id
+      end
+
       it 'must list the people' do
         @metadata[:people].must_equal @conversation.people
       end
 
       it 'must list the emails' do
         @metadata[:emails].must_equal @conversation.emails
-      end
-
-      it 'must give the date and time that the last mail was updated' do
-        @metadata[:updated_at].to_i.must_equal @last_update.to_i
       end
 
       it 'must give the nubmer of unread mail' do
@@ -427,6 +418,14 @@ describe Postoffice::Conversation do
 
       it 'must indicate whether or not the last mail was sent by the person' do
         @metadata[:person_sent_most_recent_mail].must_equal true
+      end
+
+      it 'must include the date it was created' do
+        @metadata[:created_at].must_equal @conversation.created_at
+      end
+
+      it 'must give the date and time that the last mail was updated' do
+        @metadata[:updated_at].to_i.must_equal @last_update.to_i
       end
 
     end

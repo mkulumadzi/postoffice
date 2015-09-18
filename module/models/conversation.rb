@@ -78,12 +78,14 @@ module Postoffice
 
 		def metadata_for_person person
 			Hash(
+				_id: self.id,
 				people: self.people,
 				emails: self.emails,
-				updated_at: self.mail_for_person(person).order_by(updated_at: "desc").first[:updated_at],
 				num_unread: self.unread_mail_for_person(person).count,
 				num_undelivered: self.undelivered_mail_from_person(person).count,
-				person_sent_most_recent_mail: self.person_sent_most_recent_mail?(person)
+				person_sent_most_recent_mail: self.person_sent_most_recent_mail?(person),
+				created_at: self.created_at,
+				updated_at: self.mail_for_person(person).order_by(updated_at: "desc").first[:updated_at]
 			)
 		end
 
