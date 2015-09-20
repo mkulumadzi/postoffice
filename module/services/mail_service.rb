@@ -150,6 +150,7 @@ module Postoffice
 
 		def self.hash_of_mail_for_person mail, person
 			mail_hash = self.mail_hash_removing_correspondents_key mail
+			mail_hash["conversation_id"] = mail.conversation.id.to_s
 			mail_hash["from_person_id"] = mail.from_person.id.to_s
 			mail_hash["to_people_ids"] = mail.to_people_ids
 			mail_hash["to_emails"] = mail.to_emails

@@ -733,7 +733,7 @@ describe Postoffice::MailService do
 			it 'must return the custom keys' do
 				expected_keys = JSON.parse(@mail.as_document.to_json).keys
 				expected_keys.delete("correspondents")
-				expected_keys += ["from_person_id", "to_people_ids", "to_emails", "my_info"]
+				expected_keys += ["conversation_id", "from_person_id", "to_people_ids", "to_emails", "my_info"]
 				(expected_keys - @hash.keys).must_equal []
 			end
 
