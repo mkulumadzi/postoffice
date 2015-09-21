@@ -71,7 +71,6 @@ module Postoffice
 
     def self.get_unique_people_from_conversation_people_list people_array, person
       people_array = people_array.uniq
-      people_array.delete(person)
       people_array
     end
 

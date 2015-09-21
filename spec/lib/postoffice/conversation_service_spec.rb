@@ -209,19 +209,15 @@ describe Postoffice::ConversationService do
         @unique_people = Postoffice::ConversationService.get_unique_people_from_conversation_people_list @people_array, @person1
       end
 
-      it 'must not include the person' do
-        @unique_people.include?(@person1).must_equal false
-      end
-
-      it 'must be a unique list of the people the person has communicated with' do
-        @unique_people.must_equal [@person2, @person3]
+      it 'must be a unique list of the people the person has communicated with, including the person' do
+        @unique_people.must_equal [@person1, @person2, @person3]
       end
 
     end
 
     it 'must return a unique list of people the person has commnicated with' do
       people = Postoffice::ConversationService.people_from_conversations @params
-      people.must_equal [@person2, @person3]
+      people.must_equal [@person1, @person2, @person3]
     end
 
   end
