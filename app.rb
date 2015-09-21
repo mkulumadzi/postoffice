@@ -444,7 +444,7 @@ end
 # Scope: admin OR (can-read, is person)
 get '/person/id/:id/contacts' do
   content_type :json
-  Postoffice::AppService.add_if_modified_since_to_request_parameters self
+  Postoffice::AppService.add_if_modified_since_to_request_as_date self
   if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
