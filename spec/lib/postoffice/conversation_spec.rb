@@ -424,6 +424,10 @@ describe Postoffice::Conversation do
         @metadata[:created_at].must_equal @conversation.created_at
       end
 
+      it 'must have formatted the date created as utc' do
+        @metadata[:created_at].to_s.include?("UTC").must_equal true
+      end
+
       it 'must give the date and time that the last mail was updated' do
         @metadata[:updated_at].to_i.must_equal @last_update.to_i
       end

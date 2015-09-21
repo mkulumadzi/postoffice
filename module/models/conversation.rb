@@ -84,7 +84,7 @@ module Postoffice
 				num_unread: self.unread_mail_for_person(person).count,
 				num_undelivered: self.undelivered_mail_from_person(person).count,
 				person_sent_most_recent_mail: self.person_sent_most_recent_mail?(person),
-				created_at: self.created_at,
+				created_at: self.created_at.utc,
 				updated_at: self.mail_for_person(person).order_by(updated_at: "desc").first[:updated_at]
 			)
 		end
