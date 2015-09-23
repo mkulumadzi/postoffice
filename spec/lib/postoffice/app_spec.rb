@@ -1431,14 +1431,9 @@ describe app do
         @uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
       end
 
-      it 'must succeed if the token has admin scope' do
-        get "/image/#{@uid}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
-        last_response.status.must_equal 302
-      end
-
-      it 'must fail if the token does not have admin scope' do
+      it 'must succeed if the token has can-read scope' do
         get "/image/#{@uid}", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
-        last_response.status.must_equal 401
+        last_response.status.must_equal 302
       end
 
     end

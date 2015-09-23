@@ -488,14 +488,9 @@ get '/cards' do
 end
 
 # Get a specific image
-# Scope: can-read can get images in /resources only, admin can get any image
+# Scope: can-read
 get '/image/*' do
     uid = params['splat'][0]
-    if uid.include?("resources") == false && Postoffice::AppService.unauthorized?(request, "admin")
-      return [401, nil]
-    elsif Postoffice::AppService.unauthorized?(request, "can-read")
-      return [401, nil]
-    end
-
+    if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
     redirect Postoffice::FileService.get_presigned_url uid
 end
