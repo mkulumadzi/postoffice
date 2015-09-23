@@ -405,6 +405,24 @@ get '/person/id/:id/outbox' do
 
 end
 
+# View all mail for a person
+# Scope: admin OR (can-read, is person)
+get '/person/id/:id/all_mail' do
+  content_type :json
+  Postoffice::AppService.add_if_modified_since_to_request_parameters self
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
+
+  begin
+    mail = Postoffice::MailService.all_mail_for_person(params)
+    person = Postoffice::Person.find(params[:id])
+    response_body = Postoffice::AppService.create_json_of_mail_for_person mail, person
+    [200, response_body]
+  rescue Mongoid::Errors::DocumentNotFound
+    [404, nil]
+  end
+
+end
+
 # View metadata for conversations
 # Scope: admin OR (can-read, is person)
 get '/person/id/:id/conversations' do
@@ -490,7 +508,7 @@ end
 # Get a specific image
 # Scope: can-read
 get '/image/*' do
-    uid = params['splat'][0]
-    if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
-    redirect Postoffice::FileService.get_presigned_url uid
+  uid = params['splat'][0]
+  if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
+  redirect Postoffice::FileService.get_presigned_url uid
 end

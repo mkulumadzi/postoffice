@@ -1088,6 +1088,42 @@ describe app do
 
 	end
 
+  describe '/person/id/:id/all_mail' do
+
+    before do
+
+      @mail1.mail_it
+
+      @mail3.mail_it
+      @mail3.deliver
+
+      @exclude_mail = build(:mail, correspondents: [build(:from_person, person_id: @person2.id), build(:to_person, person_id: @person1.id)])
+      @exclude_mail.mail_it
+
+      get "/person/id/#{@person1.id}/all_mail", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+
+    end
+
+    it 'must return a collection of mail that was sent by the user' do
+      last_response.body.must_include @mail1.id
+    end
+
+    it 'must return mail sent to the user that has been delivered' do
+      last_response.body.must_include @mail3.id
+    end
+
+    it 'must not return any mail sent to the user that has not yet arrived' do
+      last_response.body.match(/#{@exclude_mail.id}/).must_equal nil
+    end
+
+    it 'must return the expected fields for the mail' do
+      response = JSON.parse(last_response.body)
+      expected_result = JSON.parse(Postoffice::MailService.hash_of_mail_for_person(@mail1, @person1).to_json)
+      response[0].must_equal expected_result
+    end
+
+  end
+
   describe '/person/id/:id/conversations' do
 
     before do

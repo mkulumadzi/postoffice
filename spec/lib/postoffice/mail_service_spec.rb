@@ -601,7 +601,7 @@ describe Postoffice::MailService do
 				@mail2.save
 			end
 
-			describe 'create a proc for a query that gets the mail sent by a person person' do
+			describe 'create a proc for a query that gets the mail sent by a person' do
 
 				it 'must return a Proc' do
 					Postoffice::MailService.query_mail_from_person.must_be_instance_of Proc
@@ -648,6 +648,96 @@ describe Postoffice::MailService do
 				end
 
 			end
+
+		end
+
+		describe 'all mail for person' do
+
+			before do
+
+				@mail1.mail_it
+
+				@mail2.mail_it
+				@mail2.deliver
+				@mail2.updated_at = Time.now + 5.minutes
+				@mail2.save
+
+				@mail3.mail_it
+				@mail3.deliver
+			end
+
+			describe 'create a proc for a query that gets all mail for a person' do
+
+				# def self.query_all_mail_for_person
+				# 	Proc.new { |person| Hash(or: [{:correspondents.elem_match => {"_type" => "Postoffice::FromPerson", "person_id" => person.id}}, {:status => "DELIVERED", :correspondents.elem_match => {"_type" => "Postoffice::ToPerson", "person_id" => person.id}} ) }
+				# end
+
+				it 'must return a Proc' do
+					Postoffice::MailService.query_all_mail_for_person.must_be_instance_of Proc
+				end
+
+				describe 'call the proc' do
+
+					before do
+						@query = Postoffice::MailService.query_all_mail_for_person.call(@person1)
+					end
+
+					it 'must return an OR query pointing to an array' do
+						@query["$or"].must_be_instance_of Array
+					end
+
+					it 'must include the same query as the outbox for the first part of the OR query' do
+						@mailbox_query = Postoffice::MailService.query_mail_to_person.call(@person1)
+						@mailbox_selector = Postoffice::Mail.where(@mailbox_query).selector
+						@query_selector = Postoffice::Mail.where(@query).selector
+						@query_selector["$or"][0].must_equal @mailbox_selector
+					end
+
+					it 'must include the same query as the outbox for the first part of the OR query' do
+						@outbox_query = Postoffice::MailService.query_mail_from_person.call(@person1)
+						@outbox_selector = Postoffice::Mail.where(@outbox_query).selector
+						@query_selector = Postoffice::Mail.where(@query).selector
+						@query_selector["$or"][1].must_equal @outbox_selector
+					end
+
+				end
+
+				describe 'get all mail for a person' do
+
+					before do
+						@params = Hash(id: @person1.id)
+						@all_mail = Postoffice::MailService.all_mail_for_person @params
+					end
+
+					it 'must return an array of mail' do
+						@all_mail[0].must_be_instance_of Postoffice::Mail
+					end
+
+					it 'must include mail that was sent by the person' do
+						@all_mail.include?(@mail1).must_equal true
+					end
+
+					it 'must include mail that was sent to the person and has been delivered' do
+						@all_mail.include?(@mail1).must_equal true
+					end
+
+					it 'must not include mail that is not for the person' do
+						exclude_mail = create(:mail, correspondents: [build(:from_person, person_id: @person3.id), build(:to_person, person_id: @person2.id)])
+						exclude_mail.mail_it
+						exclude_mail.deliver
+						all_mail = Postoffice::MailService.all_mail_for_person(@params)
+						all_mail.include?(exclude_mail).must_equal false
+					end
+
+					it 'must return all of the mail for the person' do
+						expected_mail = Postoffice::Mail.or({:correspondents.elem_match => {"_type" => "Postoffice::FromPerson", "person_id" => @person1.id}},{:status => "DELIVERED", :correspondents.elem_match => {"_type" => "Postoffice::ToPerson", "person_id" => @person1.id}}).to_a
+						expected_mail.must_equal @all_mail
+					end
+
+				end
+
+			end
+
 
 		end
 

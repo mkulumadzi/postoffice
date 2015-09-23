@@ -146,6 +146,15 @@ module Postoffice
 			Proc.new { |person| Hash(:correspondents.elem_match => {"_type" => "Postoffice::FromPerson", "person_id" => person.id} ) }
 		end
 
+		def self.all_mail_for_person params
+			self.get_person_and_perform_mail_query params, self.query_all_mail_for_person
+		end
+
+		def self.query_all_mail_for_person
+			Proc.new { |person| Hash("$or" => [{:status => "DELIVERED", :correspondents.elem_match => {"_type" => "Postoffice::ToPerson", "person_id" => person.id}},{:correspondents.elem_match => {"_type" => "Postoffice::FromPerson", "person_id" => person.id}}] ) }
+		end
+
+
 		## Custom hash for returning mail for a persons consumption in an app
 
 		def self.hash_of_mail_for_person mail, person
