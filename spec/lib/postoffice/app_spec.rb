@@ -1122,6 +1122,27 @@ describe app do
       response[0].must_equal expected_result
     end
 
+    describe 'get updates since a time' do
+
+      before do
+        sleep 1
+        updated_time = Time.now.to_s
+        @mail3.read_by @person1
+
+        get "/person/id/#{@person1.id}/all_mail", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}", "HTTP_IF_MODIFIED_SINCE" => updated_time}
+
+      end
+
+      it 'must include records that were modified on or after the time' do
+        last_response.body.must_include @mail3.id
+      end
+
+      it 'must not include records that were modified earlier' do
+        last_response.body.include?(@mail1.id).must_equal false
+      end
+
+    end
+
   end
 
   describe '/person/id/:id/conversations' do

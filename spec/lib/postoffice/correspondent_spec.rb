@@ -67,17 +67,34 @@ describe Postoffice::Correspondent do
 
 		describe 'person reads mail' do
 
-			before do
-				@to_person.read
-			end
+      describe 'read mail' do
 
-			it 'must set the status to READ' do
-				@to_person.status.must_equal "READ"
-			end
+  			before do
+  				@to_person.read
+  			end
 
-			it 'must set the date it was read to the current date and time' do
-				@to_person.date_read.to_i.must_equal Time.now.to_i
-			end
+  			it 'must set the status to READ' do
+  				@to_person.status.must_equal "READ"
+  			end
+
+  			it 'must set the date it was read to the current date and time' do
+  				@to_person.date_read.to_i.must_equal Time.now.to_i
+  			end
+
+      end
+
+      describe 'update parent record' do
+
+        before do
+          sleep 1
+          @to_person.read
+        end
+
+        it 'must have saved the parent mail as well, giving it the current date and time for its updated_at field' do
+          @mail1.updated_at.to_i.must_equal Time.now.to_i
+        end
+
+      end
 
 	  end
 

@@ -7,8 +7,8 @@ module Postoffice
 		dragonfly_accessor :image
 
 		# belongs_to :person, foreign_key: :from_person_id
-		embeds_many :correspondents
-		embeds_many :attachments
+		embeds_many :correspondents, cascade_callbacks: true
+		embeds_many :attachments, cascade_callbacks: true
 
 		# These fields are going to be migrated, then deleted
 		field :from, type: String

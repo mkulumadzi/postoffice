@@ -488,6 +488,20 @@ describe Postoffice::MailService do
 							@query.keys.must_equal [:status, :correspondents.elem_match, :updated_at]
 						end
 
+						describe 'query already includes an OR condition' do
+
+							before do
+								@or_query = Postoffice::MailService.query_mail_to_person.call(@person2)
+								@or_query["$or"] = [{type: "STANDARD"},{type: "SCHEDULED"}]
+								@or_query = Postoffice::MailService.add_updated_since_to_query @or_query, @params
+							end
+
+							it 'must have preserved the original OR query' do
+
+							end
+
+						end
+
 					end
 
 					describe 'params do not include updated_at' do

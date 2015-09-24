@@ -18,7 +18,7 @@ module Postoffice
 		def read
 			self.status = "READ"
 			self.date_read = Time.now
-			self.save
+			self.mail.save
 		end
 	end
 

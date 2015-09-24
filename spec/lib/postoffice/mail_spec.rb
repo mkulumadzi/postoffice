@@ -45,7 +45,7 @@ describe Postoffice::Mail do
 		end
 
 
-		it 'must be able to store a Slowpost correspondent' do
+		it 'must be able to store the person it is to' do
 			assert_operator @mail1.correspondents.select{|correspondent| correspondent.class == Postoffice::ToPerson}.count, :>=, 1
 		end
 
@@ -53,24 +53,33 @@ describe Postoffice::Mail do
 			assert_operator @mail1.correspondents.select{|correspondent| correspondent.class == Postoffice::Email}.count, :>=, 1
 		end
 
-		# describe 'add mail image' do
-		#
-		# 	before do
-		# 		image = File.open('spec/resources/image2.jpg')
-		# 		@uid = Dragonfly.app.store(image.read, 'name' => 'image2.jpg')
-		# 		image.close
-		#
-		# 		@mail1.image = Dragonfly.app.fetch(@uid).apply
-		# 	end
-		#
-		# 	it 'must store the Dragonfly UID for the mail' do
-		# 		@mail1.image.name.must_equal 'image2.jpg'
-		# 	end
-		#
-		# end
-
 		it 'must have a default status of "DRAFT"' do
 			@mail1.status.must_equal 'DRAFT'
+		end
+
+	end
+
+	describe 'cascading callbacks' do
+
+		before do
+			@to_person = @mail1.correspondents.select{|correspondent| correspondent.class == Postoffice::ToPerson}[0]
+			@to_person.status = "READ"
+			sleep 1
+			@mail1.save
+		end
+
+		it 'must have saved the correspondent records' do
+			mail_db_record = Postoffice::Mail.find(@mail1.id)
+			to_person_db_record = mail_db_record.correspondents.select{|correspondent| correspondent.class == Postoffice::ToPerson}[0]
+			to_person_db_record.status.must_equal "READ"
+		end
+
+		it 'must show that the mail was updated at the current date and time' do
+			@mail1.updated_at.to_i.must_equal Time.now.to_i
+		end
+
+		it 'must show that the correspondent was updated at the current date and time' do
+			@to_person.updated_at.to_i.must_equal Time.now.to_i
 		end
 
 	end
