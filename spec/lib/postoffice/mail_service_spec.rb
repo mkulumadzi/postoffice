@@ -1093,6 +1093,52 @@ describe Postoffice::MailService do
 
 		end
 
+		describe 'send the notifications and mail' do
+
+			# def self.deliver_mail_and_notify_correspondents email_api_key = "POSTMARK_API_TEST"
+			# 	delivered_mail = self.deliver_mail_that_has_arrived
+			# 	correspondents = self.get_correspondents_to_notify_from_mail delivered_mail
+			# 	self.send_notifications_to_people_receiving_mail correspondents[:to_people]
+			# 	self.send_emails_for_mail correspondents[:email], email_api_key
+			# end
+
+			# @personA = create(:person, username: random_username)
+			# @personB = create(:person, username: random_username)
+			# @personC = create(:person, username: random_username)
+			#
+			# # Mail that has arrived
+			# @mailA = create(:mail, scheduled_to_arrive: Time.now, status: "SENT", correspondents: [build(:from_person, person_id: @personA.id), build(:to_person, person_id: @personB.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up")])
+			#
+			# @mailB = create(:mail, scheduled_to_arrive: Time.now, status: "SENT", correspondents: [build(:from_person, person_id: @personA.id), build(:to_person, person_id: @personB.id), build(:to_person, person_id: @personC.id)], attachments: [build(:note, content: "Hey what is up")])
+			#
+			# @mailC = create(:mail, scheduled_to_arrive: Time.now, status: "SENT", correspondents: [build(:from_person, person_id: @personC.id), build(:to_person, person_id: @personA.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up")])
+			#
+			# # Mail that has not arrived
+			# @mailD = create(:mail, correspondents: [build(:from_person, person_id: @personB.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up")])
+
+			before do
+				Postoffice::MailService.deliver_mail_and_notify_correspondents
+			end
+
+			it 'must have marked the mail with notifications sent' do
+				mailAdb = Postoffice::Mail.find(@mailA.id)
+				to_person = mailAdb.correspondents.select {|c| c._type == "Postoffice::ToPerson"}[0]
+				to_person.attempted_to_notify.must_equal true
+			end
+
+			it 'must have marked the mail with emails sent' do
+				mailAdb = Postoffice::Mail.find(@mailA.id)
+				email = mailAdb.correspondents.select {|c| c._type == "Postoffice::Email"}[0]
+				email.attempted_to_send.must_equal true
+			end
+
+			it 'must not crash if there is no mail to deliver' do
+				sleep 1
+				Postoffice::MailService.deliver_mail_and_notify_correspondents
+			end
+
+		end
+
 	end
 
 end

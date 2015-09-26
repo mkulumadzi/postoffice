@@ -193,7 +193,7 @@ module Postoffice
 			delivered_mail = self.deliver_mail_that_has_arrived
 			correspondents = self.get_correspondents_to_notify_from_mail delivered_mail
 			self.send_notifications_to_people_receiving_mail correspondents[:to_people]
-			self.send_emails_for_mail correspondents[:email], email_api_key
+			self.send_emails_for_mail correspondents[:emails], email_api_key
 		end
 
 		def self.deliver_mail_that_has_arrived
@@ -236,7 +236,7 @@ module Postoffice
 		def self.mark_attempted_notification correspondents
 			correspondents.each do |c|
 				c.attempted_to_notify = true
-				c.save
+				c.mail.save
 			end
 		end
 
@@ -270,7 +270,7 @@ module Postoffice
 		def self.mark_attempt_to_send_email correspondents
 			correspondents.each do |c|
 				c.attempted_to_send = true
-				c.save
+				c.mail.save
 			end
 		end
 
