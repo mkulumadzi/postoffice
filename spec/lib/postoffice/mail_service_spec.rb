@@ -1031,12 +1031,29 @@ describe Postoffice::MailService do
 						@hash[:subject].must_equal "You've received a Slowpost!"
 					end
 
-					it 'must have an html body containing the content' do
-						@hash[:html_body].must_equal @example_correspondent.mail.notes[0].content
-					end
-
 					it 'must be configured to track opens' do
 						@hash[:track_opens].must_equal true
+					end
+
+					describe 'email content' do
+
+						describe 'generate email message body' do
+
+							before do
+								@content = Postoffice::MailService.generate_email_message_body @example_correspondent
+							end
+
+							it 'must return an HTML string' do
+								@content.must_be_instance_of String
+							end
+
+						end
+
+						it 'must set the html body using the template' do
+							template = Postoffice::MailService.generate_email_message_body @example_correspondent
+							@hash[:html_body].must_equal template
+						end
+
 					end
 
 				end

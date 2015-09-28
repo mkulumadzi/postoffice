@@ -257,9 +257,16 @@ module Postoffice
 				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
 				to: correspondent.email,
 				subject: "You've received a Slowpost!",
-				html_body: correspondent.mail.notes[0].content,
+				html_body: self.generate_email_message_body(correspondent),
 				track_opens: true
 			]
+		end
+
+		def self.generate_email_message_body correspondent
+			template = File.open('resources/email_template.html', 'r')
+			content = template.read
+			template.close
+			content
 		end
 
 		def self.send_email email, email_api_key = "POSTMARK_API_TEST"
