@@ -86,7 +86,7 @@ module Postoffice
 		# end
 
 		def self.generate_welcome_message person
-			message_template = File.open("templates/Welcome Message.txt")
+			message_template = File.open("resources/Welcome Message.txt")
 			text = message_template.read
 			message_template.close
 
