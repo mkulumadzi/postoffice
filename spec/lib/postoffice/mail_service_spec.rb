@@ -856,11 +856,14 @@ describe Postoffice::MailService do
 			@personC = create(:person, username: random_username)
 
 			# Mail that has arrived
-			@mailA = create(:mail, scheduled_to_arrive: Time.now, status: "SENT", correspondents: [build(:from_person, person_id: @personA.id), build(:to_person, person_id: @personB.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up")])
+			@mailA = create(:mail, scheduled_to_arrive: Time.now, correspondents: [build(:from_person, person_id: @personA.id), build(:to_person, person_id: @personB.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up")])
+			@mailA.mail_it
 
-			@mailB = create(:mail, scheduled_to_arrive: Time.now, status: "SENT", correspondents: [build(:from_person, person_id: @personA.id), build(:to_person, person_id: @personB.id), build(:to_person, person_id: @personC.id)], attachments: [build(:note, content: "Hey what is up")])
+			@mailB = create(:mail, scheduled_to_arrive: Time.now, correspondents: [build(:from_person, person_id: @personA.id), build(:to_person, person_id: @personB.id), build(:to_person, person_id: @personC.id)], attachments: [build(:note, content: "Hey what is up")])
+			@mailB.mail_it
 
-			@mailC = create(:mail, scheduled_to_arrive: Time.now, status: "SENT", correspondents: [build(:from_person, person_id: @personC.id), build(:to_person, person_id: @personA.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up")])
+			@mailC = create(:mail, scheduled_to_arrive: Time.now, correspondents: [build(:from_person, person_id: @personC.id), build(:to_person, person_id: @personA.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up")])
+			@mailC.mail_it
 
 			# Mail that has not arrived
 			@mailD = create(:mail, correspondents: [build(:from_person, person_id: @personB.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up")])
@@ -909,16 +912,12 @@ describe Postoffice::MailService do
 				correspondent_to_notify.attempted_to_notify = true
 				correspondent_to_notify.save
 
-				correspondent_to_email = (@mailA.correspondents.select{|correspondent| correspondent._type == "Postoffice::Email"})[0]
-				correspondent_to_email.attempted_to_send = true
-				correspondent_to_email.save
-
 				@delivered_mail = Postoffice::MailService.deliver_mail_that_has_arrived
 				@correspondents = Postoffice::MailService.get_correspondents_to_notify_from_mail @delivered_mail
 			end
 
 			it 'must return an hash with keys for :to_people correspondents and :emails correspondents' do
-				@correspondents.keys.must_equal [:to_people, :emails]
+				@correspondents.keys.must_equal [:to_people]
 			end
 
 			describe 'slowpost correspondents' do
@@ -935,24 +934,6 @@ describe Postoffice::MailService do
 				it 'must only return correspondents who have not been attempted to be notified yet' do
 					not_notified = @slowpost_correspondents.select {|correspondent| correspondent.attempted_to_notify != true}
 					@slowpost_correspondents.count.must_equal not_notified.count
-				end
-
-			end
-
-			describe 'email correspondents' do
-
-				before do
-					@email_correspondents = @correspondents[:emails]
-				end
-
-				it 'must return correspondents whose type is Postoffice::Email' do
-					correct_type = @email_correspondents.select {|correspondent| correspondent._type == "Postoffice::Email"}
-					@email_correspondents.count.must_equal correct_type.count
-				end
-
-				it 'must only return correspondents who have not had emails attempted to be sent to yet' do
-					not_sent = @email_correspondents.select {|correspondent| correspondent.attempted_to_send != true}
-					@email_correspondents.count.must_equal not_sent.count
 				end
 
 			end
@@ -1007,60 +988,24 @@ describe Postoffice::MailService do
 
 			before do
 				@delivered_mail = Postoffice::MailService.deliver_mail_that_has_arrived
-				@email_correspondents = Postoffice::MailService.get_correspondents_to_notify_from_mail(@delivered_mail)[:emails]
 			end
 
 			describe 'create emails to send to correspondents' do
 
-				describe 'create email' do
-
-					before do
-						@example_correspondent = @email_correspondents[0]
-						@hash = Postoffice::MailService.create_email @example_correspondent
-					end
-
-					it 'must be from the Postman email account' do
-						@hash[:from].must_equal ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"]
-					end
-
-					it 'must be to the correct email address' do
-						@hash[:to].must_equal "test@test.com"
-					end
-
-					it 'must have a subject' do
-						@hash[:subject].must_equal "You've received a Slowpost!"
-					end
-
-					it 'must be configured to track opens' do
-						@hash[:track_opens].must_equal true
-					end
-
-					describe 'email content' do
-
-						describe 'generate email message body' do
-
-							before do
-								@content = Postoffice::MailService.generate_email_message_body @example_correspondent
-							end
-
-							it 'must return an HTML string' do
-								@content.must_be_instance_of String
-							end
-
-						end
-
-						it 'must set the html body using the template' do
-							template = Postoffice::MailService.generate_email_message_body @example_correspondent
-							@hash[:html_body].must_equal template
-						end
-
-					end
-
+				before do
+					@emails = Postoffice::MailService.create_emails_to_send_for_mail @delivered_mail
 				end
 
-				it 'must return an array of hashes with emails for each correspondent' do
-					email_hash = Postoffice::MailService.create_emails_to_send_to_correspondents @email_correspondents
-					email_hash[0][:from].must_equal ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"]
+				it 'must return an array of email hashes' do
+					@emails[0][:from].must_equal ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"]
+				end
+
+				it 'must return an email hash for each correspondent' do
+					correspondents = []
+					@delivered_mail.each do |mail|
+						correspondents += mail.correspondents.where(_type: "Postoffice::Email").to_a
+					end
+					@emails.length.must_equal correspondents.length
 				end
 
 			end
@@ -1090,22 +1035,9 @@ describe Postoffice::MailService do
 
 			end
 
-			describe 'mark attempt to send email' do
-
-				before do
-					Postoffice::MailService.mark_attempt_to_send_email @email_correspondents
-				end
-
-				it 'must indicate that an email has attempted to be sent to each correspondent' do
-					not_notified = @email_correspondents.select {|correspondent| correspondent.attempted_to_send != true }
-					not_notified.count.must_equal 0
-				end
-
-			end
-
 			# To Do: Figure out how to test that notifications were actually sent
 			it 'must not raise an error' do
-				Postoffice::MailService.send_emails_for_mail @email_correspondents
+				Postoffice::MailService.send_emails_for_mail @delivered_mail
 			end
 
 		end

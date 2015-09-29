@@ -131,6 +131,29 @@ module Postoffice
 			Postoffice::Person.find(from_person_id)
 		end
 
+		def to_list
+			list = ""
+			index = 0
+			self.correspondents.each do |c|
+				if c._type == "Postoffice::ToPerson"
+					if index > 0 then list += ", " end
+					person = Postoffice::Person.find(c.person_id)
+					list += person.name
+					index += 1
+				elsif c._type == "Postoffice::Email"
+					if index > 0 then list += ", " end
+					list += c.email
+					index += 1
+				end
+			end
+			list
+		end
+
+		def message_content
+			first_note = self.attachments.where(_type: "Postoffice::Note")[0]
+			first_note.content
+		end
+
 		def to_people_ids
 			to_people_ids = []
 			to_people = self.correspondents.where(_type: "Postoffice::ToPerson")
@@ -149,6 +172,86 @@ module Postoffice
 			if self.status != "DELIVERED" then raise "Mail must be DELIVERED to read" end
 			correspondent = self.correspondents.find_by(person_id: person.id, _type: "Postoffice::ToPerson")
 			correspondent.read
+		end
+
+		### Creating emails for mail
+		def emails
+			email_array = []
+			self.correspondents_to_email.each do |c|
+				email_array << self.email_hash(c)
+				c.attempted_to_send = true
+			end
+			self.save
+			email_array
+		end
+
+		def correspondents_to_email
+			self.correspondents.where(_type: "Postoffice::Email", attempted_to_send: {"$ne" => true})
+		end
+
+		def email_hash correspondent
+			banner_image_attachment = self.image_email_attachment("resources/slowpost_banner.png")
+			mail_image_attachment = self.mail_image_attachment
+			mail_image_cid = mail_image_attachment["ContentID"]
+
+			Hash[
+				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
+				to: correspondent.email,
+				subject: "You've received a Slowpost from #{self.from_person.name}",
+				html_body: self.generate_email_message_body(mail_image_cid),
+				track_opens: true,
+				attachments: [mail_image_attachment, banner_image_attachment]
+			]
+		end
+
+		def mail_image_attachment
+			if self.image_attachments.count > 0
+				self.create_attachment_from_mail_image
+			else
+				self.image_email_attachment("resources/default_card.png")
+			end
+		end
+
+		def create_attachment_from_mail_image
+			first_attachment = self.image_attachments[0]
+			filename = "tmp/#{first_attachment.image.name}"
+			Dragonfly.app.fetch(first_attachment.image_uid).to_file(filename)
+			attachment = self.image_email_attachment(filename)
+			File.delete(filename)
+			attachment
+		end
+
+		def image_email_attachment filename
+			Hash[
+				"Name" => filename,
+				"Content" => Postoffice::FileService.encode_file(filename),
+				"ContentType" => Postoffice::FileService.image_content_type(filename),
+				"ContentID" => "cid:#{filename}"
+			]
+		end
+
+		def generate_email_message_body mail_image_cid
+			self.create_temp_file_and_render_template mail_image_cid
+			message_body = Premailer.new(temp_filename, :warn_level => Premailer::Warnings::SAFE).to_inline_css
+			File.delete(temp_filename)
+			message_body
+		end
+
+		def temp_filename
+			"tmp/#{self.id}.html"
+		end
+
+		def create_temp_file_and_render_template mail_image_cid
+			temp_file = File.open(temp_filename, 'w')
+			temp_file.write(self.render_template(mail_image_cid))
+			temp_file.close
+		end
+
+		def render_template mail_image_cid
+			file = File.open('resources/email_template.html')
+			contents = file.read
+			file.close
+			ERB.new(contents).result(binding)
 		end
 
 	end

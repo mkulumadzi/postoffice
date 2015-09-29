@@ -103,7 +103,10 @@ describe Postoffice::Correspondent do
 	describe Postoffice::Email do
 
 	  before do
-			@mail1 = create(:mail, correspondents: [build(:email, email:"test@test.com")])
+      @person = create(:person, username: random_username)
+			@mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person.id),build(:email, email:"test@test.com")])
+      @mail1.mail_it
+      @mail1.deliver
 			@email = @mail1.correspondents.where(_type: "Postoffice::Email")[0]
 	  end
 

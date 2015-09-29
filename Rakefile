@@ -177,3 +177,36 @@ task :export_analytics do
 	filepath = "/Users/bigedubs/Desktop"
 	Postoffice::AnalyticsService.export_stats filepath
 end
+
+task :test_email do
+
+	if ENV["RACK_ENV"] == "production"
+		puts "Cannot setup demo data on production environment"
+		return nil
+	end
+
+	Mongoid.load!("config/mongoid.yml", ENV['RACK_ENV'])
+	Mongoid.logger.level = Logger::INFO
+	Mongo::Logger.logger.level = Logger::INFO
+
+	image = File.open('spec/resources/image1.jpg')
+	uid = Dragonfly.app.store(image.read, 'name' => 'image1.jpg')
+	image.close
+
+	person = Postoffice::Person.find_by(username:"postman")
+	f = Postoffice::FromPerson.new(person_id: person.id)
+	t = Postoffice::Email.new(email: "evan@slowpost.me")
+	n = Postoffice::Note.new(content: "Greetings from NOLA!")
+	i = Postoffice::ImageAttachment.new(image_uid: uid)
+	mail = Postoffice::Mail.create!({
+		correspondents: [f, t],
+		attachments: [n, i],
+		scheduled_to_arrive: Time.now,
+		type: "SCHEDULED"
+	})
+
+	mail.mail_it
+
+	Postoffice::MailService.deliver_mail_and_notify_correspondents ENV["POSTMARK_API_KEY"]
+
+end

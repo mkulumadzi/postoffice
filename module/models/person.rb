@@ -22,5 +22,14 @@ module Postoffice
 		index({ email: 1 })
 		index({ phone: 1 })
 
+		def initials
+			split_name = self.name.split(' ')
+			if split_name.length == 1
+				self.name[0..1]
+			else
+				split_name[0][0] + split_name[split_name.length - 1][0]
+			end
+		end
+
 	end
 end

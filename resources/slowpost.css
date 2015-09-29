@@ -1,40 +1,47 @@
 @font-face {
   font-family: 'OpenSans-Regular';
-  src: url('/resources/fonts/Regular/Opensans-Regular.eot'); /* IE9 Compat Modes */
-  src: url('/resources/fonts/Regular/OpenSans-Regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
-       url('/resources/fonts/Regular/OpenSans-Regular.woff2') format('woff2'), /* Super Modern Browsers */
-       url('/resources/fonts/Regular/OpenSans-Regular.woff') format('woff'), /* Pretty Modern Browsers */
-       url('/resources/fonts/Regular/OpenSans-Regular.ttf')  format('truetype'), /* Safari, Android, iOS */
-       url('/resources/fonts/Regular/OpenSans-Regular.svg') format('svg'); /* Legacy iOS */
+  src: url('fonts/Regular/Opensans-Regular.eot'); /* IE9 Compat Modes */
+  src: url('fonts/Regular/OpenSans-Regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('fonts/Regular/OpenSans-Regular.woff2') format('woff2'), /* Super Modern Browsers */
+       url('fonts/Regular/OpenSans-Regular.woff') format('woff'), /* Pretty Modern Browsers */
+       url('fonts/Regular/OpenSans-Regular.ttf')  format('truetype'), /* Safari, Android, iOS */
+       url('fonts/Regular/OpenSans-Regular.svg') format('svg'); /* Legacy iOS */
 
  font-family: 'OpenSans-Italic';
- src: url('/resources/fonts/Regular/Opensans-Italic.eot'); /* IE9 Compat Modes */
- src: url('/resources/fonts/Italic/OpenSans-Italic.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
-      url('/resources/fonts/Italic/OpenSans-Italic.woff2') format('woff2'), /* Super Modern Browsers */
-      url('/resources/fonts/Italic/OpenSans-Italic.woff') format('woff'), /* Pretty Modern Browsers */
-      url('/resources/fonts/Italic/OpenSans-Italic.ttf')  format('truetype'), /* Safari, Android, iOS */
-      url('/resources/fonts/Italic/OpenSans-Italic.svg') format('svg'); /* Legacy iOS */
+ src: url('fonts/Regular/Opensans-Italic.eot'); /* IE9 Compat Modes */
+ src: url('fonts/Italic/OpenSans-Italic.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+      url('fonts/Italic/OpenSans-Italic.woff2') format('woff2'), /* Super Modern Browsers */
+      url('fonts/Italic/OpenSans-Italic.woff') format('woff'), /* Pretty Modern Browsers */
+      url('fonts/Italic/OpenSans-Italic.ttf')  format('truetype'), /* Safari, Android, iOS */
+      url('fonts/Italic/OpenSans-Italic.svg') format('svg'); /* Legacy iOS */
 
   font-family: 'OpenSans-Light';
-  src: url('/resources/fonts/Light/Opensans-Light.eot'); /* IE9 Compat Modes */
-  src: url('/resources/fonts/Light/OpenSans-Light.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
-       url('/resources/fonts/Light/OpenSans-Light.woff2') format('woff2'), /* Super Modern Browsers */
-       url('/resources/fonts/Light/OpenSans-Light.woff') format('woff'), /* Pretty Modern Browsers */
-       url('/resources/fonts/Light/OpenSans-Light.ttf')  format('truetype'), /* Safari, Android, iOS */
-       url('/resources/fonts/Light/OpenSans-Light.svg') format('svg'); /* Legacy iOS */
+  src: url('fonts/Light/Opensans-Light.eot'); /* IE9 Compat Modes */
+  src: url('fonts/Light/OpenSans-Light.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('fonts/Light/OpenSans-Light.woff2') format('woff2'), /* Super Modern Browsers */
+       url('fonts/Light/OpenSans-Light.woff') format('woff'), /* Pretty Modern Browsers */
+       url('fonts/Light/OpenSans-Light.ttf')  format('truetype'), /* Safari, Android, iOS */
+       url('fonts/Light/OpenSans-Light.svg') format('svg'); /* Legacy iOS */
 }
 
 .background {
-    background-color: #00b6b9;
-    text-align: center;
-    margin: 0px;
+  background-color: #fff;
+  text-align: center;
+  margin: 0px;
+  padding: 0px;
+  border-width: 0px;
 }
 
 .card {
 	margin: auto;
-	width: 80%;
+  margin-top: 30px;
+  margin-bottom: 30px;
+	width: 100%;
 	background-color: #fff;
 	padding: 20px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #0f0f0f;
 	border-radius: 10px;
   box-shadow: 5px 5px 2px #00787a;
 }
@@ -101,18 +108,18 @@ h1 {
   font-size: 15px;
 }
 
-footer {
-  background-color: #00787a;
+.footer {
+  background-color: #00b6b9;
   color: #fff;
 	font-family: "OpenSans-Light", Arial, serif;
   font-style: normal;
   padding: 20px 20px 50px 20px;
-  margin-top: 50px;
+  margin-top: 50px 0px 0px 0px;
   text-align: center;
 }
 
 .footer-image {
-  height: 60px;
+  width: 100%;
   padding: 10px;
 }
 

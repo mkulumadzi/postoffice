@@ -446,6 +446,27 @@ describe Postoffice::Mail do
 
 	end
 
+	describe 'to list' do
+
+		it 'must return a list of all of the peoples names and email addresses it is to' do
+			person1 = create(:person, username: random_username, name: "Test Person")
+			person2 = create(:person, username: random_username, name: "Another Test")
+			mail = create(:mail, correspondents: [build(:from_person, person_id: person1.id), build(:to_person, person_id: person2.id), build(:email, email: "test@test.com")])
+
+			mail.to_list.must_equal "Another Test, test@test.com"
+		end
+
+	end
+
+	describe 'message content' do
+
+		it 'must return the content of the first note' do
+			mail = build(:mail, attachments: [build(:note, content: "This is a test")])
+			mail.message_content.must_equal "This is a test"
+		end
+
+	end
+
 	describe 'to people ids' do
 
 		before do
@@ -537,6 +558,272 @@ describe Postoffice::Mail do
 					@mail1.read_by @person2
 				end
 
+			end
+
+		end
+
+	end
+
+	describe 'generate emails for mail' do
+
+		before do
+			@mailA = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")], attachments: [build(:note, content: "Hey what is up"), build(:image_attachment, image_uid: @uid)])
+			@mailA.mail_it
+			@mailA.deliver
+		end
+
+		describe 'correspondents to email' do
+
+			# def correspondents_to_email
+			# 	self.correspondents.where(_type: "Postoffice::Email", attempted_to_send: nil)
+			# end
+
+			before do
+				@query = @mailA.correspondents_to_email
+			end
+
+			it 'must return a query' do
+				@query.must_be_instance_of Mongoid::Criteria
+			end
+
+			it 'must return email correspondents for the mail who have not been emailed yet' do
+				correspondent = @mailA.correspondents.where(_type: "Postoffice::Email").to_a.first
+				@query.to_a[0].must_equal correspondent
+			end
+
+			it 'must not return email correspondents for the mail who have already been emailed' do
+				emailed = @mailA.correspondents.where(_type: "Postoffice::Email").to_a.first
+				emailed.attempted_to_send = true
+				emailed.save
+				@query.to_a.to_s.include?(emailed.id.to_s).must_equal false
+			end
+
+		end
+
+		describe 'email hash' do
+
+			describe 'create image attachment for mail' do
+
+				describe 'create attachment from mail image' do
+
+					describe 'image email attachment' do
+						# def image_email_attachment filename
+						# 	Hash[
+						# 		"Name" => filename,
+						# 		"Content" => Postoffice::FileService.encode_file(filename),
+						# 		"ContentType" => Postoffice::FileService.image_content_type(filename),
+						# 		"ContentID" => "cid:#{filename}"
+						# 	]
+						# end
+
+						before do
+	            @filename = 'resources/slowpost_banner.png'
+	            @image_attachment = @mailA.image_email_attachment @filename
+	          end
+
+	          it 'must return a Hash' do
+	            @image_attachment.must_be_instance_of Hash
+	          end
+
+	          it 'must point Name to the filename' do
+	            @image_attachment["Name"].must_equal @filename
+	          end
+
+	          it 'must include the base64-encoded content for the file' do
+	            @image_attachment["Content"].must_equal Postoffice::FileService.encode_file(@filename)
+	          end
+
+	          it 'must include the content type' do
+	            @image_attachment["ContentType"].must_equal "image/png"
+	          end
+
+	          it 'must have prepended the filename with cid: for the ContentId' do
+	            @image_attachment["ContentID"].must_equal "cid:#{@filename}"
+	          end
+
+					end
+
+					describe 'create the image attachment' do
+
+						before do
+							@image_attachment = @mailA.image_attachments[0]
+							@image_attachment_hash = @mailA.create_attachment_from_mail_image
+						end
+
+						it 'must use the image name as the filename, prepended with tmp' do
+							@image_attachment_hash["Name"].must_equal "tmp/#{@image_attachment.image.name}"
+						end
+
+						it 'must have deleted the temporary file' do
+							File.exists?(@image_attachment_hash["Name"]).must_equal false
+						end
+
+					end
+
+				end
+
+				describe 'create the attachment' do
+
+					it 'must use the mail image if it has one' do
+						image_attachment = @mailA.image_attachments[0]
+						expected_name = "tmp/#{image_attachment.image.name}"
+
+						@mailA.mail_image_attachment["Name"].must_equal expected_name
+					end
+
+					it 'must use a default card if there is no image attachment' do
+						mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")], attachments: [build(:note, content: "Hey what is up")])
+
+						mail.mail_image_attachment["Name"].must_equal "resources/default_card.png"
+					end
+
+				end
+
+			end
+
+			describe 'generate the email message body' do
+
+				describe 'temp filename' do
+
+					it 'must prepend tmp/ and append .html to the correspondent id' do
+						@mailA.temp_filename.must_equal "tmp/#{@mailA.id}.html"
+					end
+
+				end
+
+				describe 'create temp file and render template' do
+
+					before do
+						@mail_image_attachment = @mailA.mail_image_attachment
+						@cid = @mail_image_attachment["ContentID"]
+						@mailA.create_temp_file_and_render_template @cid
+					end
+
+					after do
+						File.delete(@mailA.temp_filename)
+					end
+
+					describe 'render template' do
+
+						before do
+							@rendered_template = @mailA.render_template @cid
+						end
+
+						it 'must return an HTML string' do
+							@rendered_template.include?("<head>").must_equal true
+						end
+
+						it 'must have rendered the template using ERB and added the necessary variables' do
+							@rendered_template.include?(@cid).must_equal true
+						end
+
+					end
+
+					it 'must have created a temporary file using the email attachments temporary filename' do
+						File.exist?(@mailA.temp_filename).must_equal true
+					end
+
+					it 'must have saved the rendered content of the email template to this file' do
+						file = File.open(@mailA.temp_filename)
+						contents = file.read
+						file.close
+						contents.must_equal @mailA.render_template @cid
+					end
+
+				end
+
+				describe 'generate message' do
+					# def generate_email_message_body mail_image_cid
+					# 	self.create_temp_file_and_render_template mail_image_cid
+					# 	message_body = Premailer.new(temp_filename, :warn_level => Premailer::Warnings::SAFE).to_inline_css
+					# 	File.delete(temp_filename)
+					# 	message_body
+					# end
+
+					before do
+            @message_body = @mailA.generate_email_message_body @cid
+          end
+
+          it 'must return a string' do
+            @message_body.must_be_instance_of String
+          end
+
+          it 'must have added inline css to the template' do
+            @message_body.include?("style=").must_equal true
+          end
+
+          it 'must haave deleted the temporary file' do
+            File.exists?(@mailA.temp_filename).must_equal false
+          end
+
+				end
+
+			end
+
+			describe 'generate the email hash' do
+
+				before do
+					@correspondnet = @mailA.correspondents.where(_type: "Postoffice::Email").first
+					@hash = @mailA.email_hash @correspondnet
+				end
+
+				it 'must be from the Postman email account' do
+					@hash[:from].must_equal ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"]
+				end
+
+				it 'must be to the correct email address' do
+					@hash[:to].must_equal @correspondnet.email
+				end
+
+				it 'must indicate that the person has received a Slowpost from the sender' do
+					expected_subject = "You've received a Slowpost from #{@mailA.from_person.name}"
+					@hash[:subject].must_equal expected_subject
+				end
+
+				it 'must be configured to track opens' do
+					@hash[:track_opens].must_equal true
+				end
+
+				it 'must add the attachments as an array' do
+					@hash[:attachments].must_be_instance_of Array
+				end
+
+				it 'must include the Slowpost banner as an attachment' do
+					@hash[:attachments][1]["Name"].must_equal "resources/slowpost_banner.png"
+				end
+
+				it 'must render the message body using a template' do
+					mail_image_attachment = @mailA.mail_image_attachment
+					cid = mail_image_attachment["ContentID"]
+					expected_result = 				 	@mailA.generate_email_message_body cid
+					@hash[:html_body].must_equal expected_result
+				end
+
+			end
+
+		end
+
+		describe 'create the emails' do
+
+			before do
+				@email_correspondents = @mailA.correspondents_to_email.to_a
+				@emails = @mailA.emails
+			end
+
+			it 'must return an array of email hashes' do
+				@emails[0].must_be_instance_of Hash
+			end
+
+			it 'must return one email for each correspondent' do
+				@emails.length.must_equal @email_correspondents.count
+			end
+
+			it 'must be addressed to the correspondents' do
+				@emails[0][:to].must_equal @email_correspondents[0].email
+			end
+
+			it 'must have indicated that the correspondents have been emailed' do
+				@email_correspondents[0].attempted_to_send.must_equal true
 			end
 
 		end

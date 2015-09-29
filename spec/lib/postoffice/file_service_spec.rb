@@ -162,4 +162,32 @@ describe Postoffice::FileService do
 
   end
 
+  describe 'base 64 encode a file' do
+
+    before do
+      @base64String = Postoffice::FileService.encode_file 'resources/slowpost_banner.png'
+    end
+
+    it 'must return a string' do
+      @base64String.must_be_instance_of String
+    end
+
+    it 'must be the base 64-encoded version of the file' do
+      file = File.open('resources/slowpost_banner.png')
+      encoded = Base64.encode64(file.read)
+      file.close
+      @base64String.must_equal encoded
+    end
+
+  end
+
+  describe 'get image content type from filename' do
+    
+    it 'must return a string with image/ and the file extension' do
+      filename = 'tmp/filename.png'
+      Postoffice::FileService.image_content_type(filename).must_equal "image/png"
+    end
+
+  end
+
 end

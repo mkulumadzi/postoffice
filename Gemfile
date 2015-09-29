@@ -23,6 +23,7 @@ gem 'factory_girl'
 gem 'aws-sdk', '~> 2'
 gem 'jwt'
 gem 'postmark'
+gem 'premailer'
 
 group :test do
 	gem 'turn'

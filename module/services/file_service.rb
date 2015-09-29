@@ -43,6 +43,18 @@ module Postoffice
 			presigner.presigned_url(:get_object, bucket: ENV['AWS_BUCKET'], key: key, expires_in: 60)
 		end
 
+		def self.encode_file filename
+			file = File.open(filename)
+			string = Base64.encode64(file.read)
+			file.close
+			string
+		end
+
+		def self.image_content_type filename
+			extension = filename.split('.').pop
+			"image/#{extension}"
+		end
+
 	end
 
 end

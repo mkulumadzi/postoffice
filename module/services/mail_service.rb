@@ -1,3 +1,5 @@
+require 'erb'
+
 module Postoffice
 
 	class MailService
@@ -193,7 +195,7 @@ module Postoffice
 			delivered_mail = self.deliver_mail_that_has_arrived
 			correspondents = self.get_correspondents_to_notify_from_mail delivered_mail
 			self.send_notifications_to_people_receiving_mail correspondents[:to_people]
-			self.send_emails_for_mail correspondents[:emails], email_api_key
+			self.send_emails_for_mail delivered_mail, email_api_key
 		end
 
 		def self.deliver_mail_that_has_arrived
@@ -207,13 +209,11 @@ module Postoffice
 		end
 
 		def self.get_correspondents_to_notify_from_mail mail_array
-			correspondents = Hash[:to_people, [], :emails, []]
+			correspondents = Hash[:to_people, []]
 			mail_array.each do |mail|
 				mail.correspondents.each do |c|
 					if c._type == "Postoffice::ToPerson" && c.attempted_to_notify != true
 						correspondents[:to_people] << c
-					elsif c._type == "Postoffice::Email" && c.attempted_to_send != true
-						correspondents[:emails] << c
 					end
 				end
 			end
@@ -240,45 +240,20 @@ module Postoffice
 			end
 		end
 
-		def self.send_emails_for_mail correspondents, email_api_key = "POSTMARK_API_TEST"
-			emails = self.create_emails_to_send_to_correspondents correspondents
+		def self.send_emails_for_mail delivered_mail, email_api_key = "POSTMARK_API_TEST"
+			emails = self.create_emails_to_send_for_mail delivered_mail
 			emails.each { |email| self.send_email email, email_api_key }
-			self.mark_attempt_to_send_email correspondents
 		end
 
-		def self.create_emails_to_send_to_correspondents correspondents
+		def self.create_emails_to_send_for_mail delivered_mail
 			emails = []
-			correspondents.each { |c| emails << self.create_email(c) }
+			delivered_mail.each { |mail| emails += mail.emails }
 			emails
-		end
-
-		def self.create_email correspondent
-			Hash[
-				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
-				to: correspondent.email,
-				subject: "You've received a Slowpost!",
-				html_body: self.generate_email_message_body(correspondent),
-				track_opens: true
-			]
-		end
-
-		def self.generate_email_message_body correspondent
-			template = File.open('resources/email_template.html', 'r')
-			content = template.read
-			template.close
-			content
 		end
 
 		def self.send_email email, email_api_key = "POSTMARK_API_TEST"
 			client = Postmark::ApiClient.new(email_api_key)
 			client.deliver(email)
-		end
-
-		def self.mark_attempt_to_send_email correspondents
-			correspondents.each do |c|
-				c.attempted_to_send = true
-				c.mail.save
-			end
 		end
 
 	end

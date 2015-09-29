@@ -1,34 +1,35 @@
 <head>
-<link rel="stylesheet" type="text/css" href="/resources/slowpost.css">
+	<link rel="stylesheet" type="text/css" href="../resources/slowpost.css">
 </head>
-<html class="background">
-	<h1>You've received a Slowpost from Corrina!</h1>
-	<div class="card">
-		<tr>
-			<img src="/resources/SlowpostPostman.png" class="card-image">
-		</tr>
-		<tr>
-			<div class="from-container">
-				<p class="avatar"> Co </p>
-				<p class="from-name"> Corrina</p>
-			</div>
-		</tr>
-		<tr>
-			<p class="to-names"> To: Evan Waters</p>
-		</tr>
-		<tr>
-			<p class="date"> Sent on 2015-9-22</p>
-		</tr>
-		<tr>
-			<p class="date"> Delivered  on 2015-09-24</p>
-		</tr>
-		<tr>
-			<p class="card-text"> Look at this nice group of people.</p>
-		</tr>
-	</div>
-	<footer>
-		<img src="/resources/Slowpost Banner.png" class="footer-image">
-		<p> Slowposts are beautiful, time-delayed messages evoking a postcard or a letter. Enjoy the surprising, delightful, deeper form of communication that happens when people stop chatting and start saying something meaningful to each other. </p>
-		<h2> Sign up for the private beta on iOS now by emailing <a>info@slowpost.me</a>.</h2>
-	</footer>
+<html>
+	<table class="background">
+		<table class="card">
+			<tr>
+				<img src= <%= mail_image_cid %> class="card-image">
+			</tr>
+			<tr>
+				<table class="from-container">
+					<p class="avatar"> <%= self.from_person.initials %></p>
+					<p class="from-name"><%= self.from_person.name %></p>
+				</table>
+			</tr>
+			<tr>
+				<p class="to-names">To <%= self.to_list %></p>
+			</tr>
+			<tr>
+				<p class="date"> Sent on <%= self.date_sent.to_date.to_s %></p>
+			</tr>
+			<tr>
+				<p class="date"> Delivered on <%= self.date_delivered.to_date.to_s %></p>
+			</tr>
+			<tr>
+				<p class="card-text"> <%= self.message_content %></p>
+			</tr>
+		</table>
+		<table class="footer">
+			<img src="cid:resources/slowpost_banner.png" class="footer-image">
+			<p> Slowposts are beautiful, time-delayed messages evoking a postcard or a letter. Enjoy the surprising, delightful, deeper form of communication that happens when people stop chatting and start saying something meaningful to each other. </p>
+			<h2> Sign up for the private beta on iOS now by emailing <a>info@slowpost.me</a>.</h2>
+		</table>
+	</table>
 </html>

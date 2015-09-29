@@ -1,3 +1,5 @@
+require 'erb'
+
 module Postoffice
 	class Correspondent
 		include Mongoid::Document

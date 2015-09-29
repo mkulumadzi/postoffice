@@ -75,4 +75,18 @@ describe Postoffice::Person do
 
 	end
 
+	describe 'initials' do
+
+		it 'must return the first letter of the first and last name, if two names are given' do
+			person = build(:person, name: "Test Person")
+			person.initials.must_equal "TP"
+		end
+
+		it 'must return the first two letters of the name if only one name is given' do
+			person = build(:person, name: "Test")
+			person.initials.must_equal "Te"
+		end
+
+	end
+
 end
