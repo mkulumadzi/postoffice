@@ -196,7 +196,7 @@ task :test_email do
 	person = Postoffice::Person.find_by(username:"postman")
 	f = Postoffice::FromPerson.new(person_id: person.id)
 	t = Postoffice::Email.new(email: "evan@slowpost.me")
-	n = Postoffice::Note.new(content: "Greetings from NOLA!")
+	n = Postoffice::Note.new(content: "Daly plays Forrest MacNeil, the host of Review — a show where, rather than reviewing any of the other things to which critics usually direct their attention, the host reviews 'life itself.' Forrest gets submissions for life experiences, goes out and does them, and then reports on his findings. He’s so deeply committed to being the host of Review that, in the show’s instant-classic third episode, he’s asked to review the experience of divorce and goes through with it, callously dumping his wife of over a decade. This is the first moment we realize the full extent to which Forrest MacNeil is insane, but it’s far from the last.")
 	i = Postoffice::ImageAttachment.new(image_uid: uid)
 	mail = Postoffice::Mail.create!({
 		correspondents: [f, t],
