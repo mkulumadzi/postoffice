@@ -2,33 +2,41 @@
 	<link rel="stylesheet" type="text/css" href="../resources/slowpost.css">
 </head>
 <html>
-	<table class="card">
+	<table class="container">
 		<tr>
-			<img src= <%= mail_image_cid %> class="card-image">
+			<td class="column">
+				<table class="header">
+					<tr>
+						<td class="column">
+							<img src="cid:resources/slowpost_banner.png" class="header-image">
+							<p clas="emphasis"> Slowposts are time-delayed messages evoking a postcard. Enjoy the deeper form of communication that happens when people stop chatting and start saying something meaningful to each other. </p>
+						</td>
+					</tr>
+				</table>
+				<table class="content">
+					<tr>
+						<td class="column">
+							<img src= <%= mail_image_cid %> class="card-image">
+							<table class="from-container">
+								<p class="avatar"> <%= self.from_person.initials %></p>
+								<p class="from-name"><%= self.from_person.name %></p>
+							</table>
+							<p class="to-names">To <%= self.to_list %></p>
+							<p class="date"> Sent on <%= self.date_sent.to_date.to_s %></p>
+							<p class="date"> Delivered on <%= self.date_delivered.to_date.to_s %></p>
+							<p class="card-text"> <%= self.message_content %></p>
+						</td>
+					</tr>
+				</table>
+				<table class="footer">
+					<tr>
+						<td class="column">
+							<h2> Sign up for the private beta on iOS now by emailing <a href="mailto:info@slowpost.me?subject=Sign me up!">info@slowpost.me</a>.</h2>
+							<h2> Learn more at <a href="https://slowpost.me">https://slowpost.me</a>.</h2>
+						</td>
+					</tr>
+				</table>
+			</td>
 		</tr>
-		<tr>
-			<table class="from-container">
-				<p class="avatar"> <%= self.from_person.initials %></p>
-				<p class="from-name"><%= self.from_person.name %></p>
-			</table>
-		</tr>
-		<tr>
-			<p class="to-names">To <%= self.to_list %></p>
-		</tr>
-		<tr>
-			<p class="date"> Sent on <%= self.date_sent.to_date.to_s %></p>
-		</tr>
-		<tr>
-			<p class="date"> Delivered on <%= self.date_delivered.to_date.to_s %></p>
-		</tr>
-		<tr>
-			<p class="card-text"> <%= self.message_content %></p>
-		</tr>
-	</table>
-	<table class="footer">
-		<img src="cid:resources/slowpost_banner.png" class="footer-image">
-		<p> Slowposts are beautiful, time-delayed messages evoking a postcard or a letter. Enjoy the surprising, delightful, deeper form of communication that happens when people stop chatting and start saying something meaningful to each other. </p>
-		<h2> Sign up for the private beta on iOS now by emailing <a href="mailto:info@slowpost.me?subject=Sign me up!">info@slowpost.me</a>.</h2>
-		<h3> Learn more at <a href="https://slowpost.me">https://slowpost.me</a>.</h3>
 	</table>
 </html>

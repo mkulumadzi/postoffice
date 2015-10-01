@@ -24,49 +24,48 @@
        url('fonts/Light/OpenSans-Light.svg') format('svg'); /* Legacy iOS */
 }
 
-.background {
-  background-color: #fff;
-  text-align: center;
-  margin: 0px;
-  padding: 0px;
-  border-width: 0px;
+.column {
+  width: 100%;
+  align-self: center;
 }
 
-.card {
-	margin: auto;
-  margin-top: 30px;
-  margin-bottom: 30px;
-	width: 100%;
-	background-color: #fff;
-	padding: 20px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #0f0f0f;
-	border-radius: 10px;
-  box-shadow: 5px 5px 2px #00787a;
+.container {
+	width: 98%;
+}
+
+.emphasis {
+  font-size: 20px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+.content {
+  padding: 10px;
 }
 
 .card-image {
 	width: 100%;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .card-text {
 	text-align: left;
 	margin: 16px 0px;
-  font-family: "OpenSans-Light", Arial, serif;
+  font-family: "OpenSans-Light", Arial, Geneva;
   font-size: 17px;
 }
 
 h1 {
   margin: 50px 0px 25px 0px;
-	color: #fff;
-	font-family: "OpenSans-Light", Arial, serif;
+	color: #ffffff;
+	font-family: "OpenSans-Light", Arial, Geneva;
 	font-style: normal;
   text-align: center;
 }
 
 .avatar {
-	color: #fff;
+	color: #ffffff;
 	height: 30px;
 	width: 30px;
 	border-radius: 15px;
@@ -74,53 +73,71 @@ h1 {
 	text-align:center;
 	float: left;
 	line-height:30px;
-  font-family: "OpenSans-Regular", Arial, serif;
+  font-family: "OpenSans-Regular", Arial, Geneva;
   font-size: 13px;
+  margin-top: 0px;
+  margin-bottom: 0px;
 }
 
 .from-container {
 	height: 30px;
 	vertical-align: middle;
+  margin-top: 0px;
+  margin-bottom: 0px;
 }
 
 .from-name {
-  font-family: "OpenSans-Regular", Arial, serif;
+  font-family: "OpenSans-Regular", Arial, Geneva;
 	text-align: left;
 	line-height:30px;
 	float: left;
 	padding-left: 5px;
   font-size: 17px;
+  margin-top: 0px;
+  margin-bottom: 0px;
 }
 
 .to-names {
-  font-family: "OpenSans-Regular", Arial, serif;
+  font-family: "OpenSans-Regular", Arial, Geneva;
 	text-align: left;
-	clear: left;
 	margin: 0px;
   font-size: 15px;
+  clear: left;
 }
 
 .date {
 	text-align: left;
 	margin: 0px;
-  font-family: "OpenSans-Italic", Arial, serif;
+  font-family: "OpenSans-Italic", Arial, Geneva;
   color: #757a7a;
   font-size: 15px;
 }
 
-.footer {
+.header {
+  width: 100%;
   background-color: #00b6b9;
-  color: #fff;
-	font-family: "OpenSans-Light", Arial, serif;
+  color: #ffffff;
+	font-family: "OpenSans-Light", Arial, Geneva;
   font-style: normal;
-  padding: 20px 20px 50px 20px;
-  margin-top: 50px 0px 0px 0px;
+  padding: 10px 10px 10px 10px;
+  text-align: center;
+  margin: 0px;
+}
+
+.footer {
+  width: 100%;
+  background-color: #00b6b9;
+  color: #ffffff;
+	font-family: "OpenSans-Light", Arial, Geneva;
+  font-style: normal;
+  padding: 10px 10px 10px 10px;
   text-align: center;
 }
 
-.footer-image {
-  width: 100%;
-  padding: 10px;
+.header-image {
+  width: 80%;
+  padding: 0px;
+  margin: 0px;
 }
 
 body {
