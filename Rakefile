@@ -74,6 +74,10 @@ task :setup_demo_data do
 	person2 = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message person2
 
+	data =  JSON.parse '{"name": "Cathie Murray", "username": "cmurray", "email": "cathie.murray@gmail.com", "password": "password"}'
+	person3 = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message person3
+
 	data =  JSON.parse '{"name": "Demo User", "username": "demo", "email": "demo@test.com", "phone": "(555) 444-4555", "password": "password"}'
 	demo = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message demo
