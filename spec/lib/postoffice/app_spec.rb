@@ -1370,45 +1370,38 @@ describe app do
 
 	end
 
-	describe '/people/bulk_search' do
+  describe '/people/find_matches' do
+    before do
+      @personA = create(:person, username: random_username, email: "person1@google.com")
+			@personB = create(:person, username: random_username, email: "person2@google.com")
+			@personC = create(:person, username: random_username, email: "person3@google.com")
+			@personD = create(:person, username: random_username, email: "person4@google.com")
 
-		before do
+      data = '{"emails": ["person1@google.com", "person2@google.com", "person@yahoo.com", "person@hotmail.com", "person4@google.com"]}'
 
-			@rando_name = random_username
+			post "/people/find_matches", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 
-			@person5 = create(:person, name: @rando_name, username: random_username)
-			@person6 = create(:person, name: @rando_name, username: random_username)
+      @parsed_response = JSON.parse(last_response.body)
+    end
 
-			data = '[{"emails": ["'+ @person5.email + '"], "phoneNumbers": ["' + @person5.phone + '"]}, {"emails": ["' + @person6.email + '"], "phoneNumbers": []}, {"emails": [], "phoneNumbers": ["55667"]}]'
+    it 'must return a 201 status code if matches are found' do
+      last_response.status.must_equal 201
+    end
 
-			post "/people/bulk_search", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+    it 'must return a JSON document with the relevant people records for people with matching emails' do
+      @parsed_response.to_s.include?("person1@google.com").must_equal true
+    end
 
-			@response = JSON.parse(last_response.body)
-		end
+    it 'must return all of the matching records' do
+      @parsed_response.count.must_equal 3
+    end
 
-		it 'must generate a 200 status code' do
-			last_response.status.must_equal 200
-		end
+    it 'must return the expected fields for a person' do
+      first_result = get_person_object_from_person_response @parsed_response[0]
+      @parsed_response[0].must_equal expected_json_fields_for_person(first_result)
+    end
 
-		it 'must return a JSON document with the relevant people records' do
-			not_in = 0
-			expected_ids = [@person5.id, @person6.id]
-
-			expected_ids.each do |id|
-				if @response.include? id == false
-					not_in += 1
-				end
-			end
-
-			not_in.must_equal 0
-		end
-
-		it 'must return the expected information for a person record' do
-			first_result = get_person_object_from_person_response @response[0]
-			@response[0].must_equal expected_json_fields_for_person(first_result)
-		end
-
-	end
+  end
 
   describe '/upload' do
 

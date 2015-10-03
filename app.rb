@@ -213,27 +213,18 @@ get '/people/search' do
 
 end
 
-# Do a bulk search of people (for example, when searching for contacts from a phone who are registered users of the service)
-# Scope: can-read
-post '/people/bulk_search' do
+post '/people/find_matches' do
   content_type :json
   data = JSON.parse request.body.read
   if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
-
   begin
-    people = Postoffice::PersonService.bulk_search data
-
-    people_bson = []
-    people.each do |person|
-      people_bson << person.as_document
-    end
-
-    response_body = people_bson.to_json( :except => ["salt", "hashed_password", "device_token"] )
-    [200, response_body]
+    people = Postoffice::PersonService.find_people_from_list_of_emails data["emails"]
+    documents = Postoffice::AppService.convert_objects_to_documents people
+    response_body = documents.to_json( :except => ["salt", "hashed_password", "device_token"])
+    [201, response_body]
   rescue Mongoid::Errors::DocumentNotFound
-    [404, response_body]
+    [404, nil]
   end
-
 end
 
 # Creae a new piece of mail

@@ -268,83 +268,27 @@ describe Postoffice::PersonService do
 
 		end
 
-		describe 'bulk search of people' do
+	end
 
-			describe 'get people from email array' do
+	describe 'find people from list of emails' do
 
-				before do
-					@email_array = [@person1.email, @person2.email, "not_in_the_database@test.com"]
-					@people = Postoffice::PersonService.get_people_from_email_array @email_array
-				end
+		before do
+			@personA = create(:person, username: random_username, email: "person1@google.com")
+			@personB = create(:person, username: random_username, email: "person2@google.com")
+			@personC = create(:person, username: random_username, email: "person3@google.com")
+			@personD = create(:person, username: random_username, email: "person4@google.com")
 
-				it 'must return an array of people do' do
-					@people[0].must_be_instance_of Postoffice::Person
-				end
+			@email_array = ["person1@google.com", "person2@google.com", "person@yahoo.com", "person@hotmail.com", "person4@google.com"]
 
-				it 'must return person records who match the search terms' do
-					@people[0].email.must_equal @person1.email || @person2.email
+			@people = Postoffice::PersonService.find_people_from_list_of_emails @email_array
+		end
 
-				end
+		it 'must return an array of people' do
+			@people[0].must_be_instance_of Postoffice::Person
+		end
 
-				it 'must return a person record for each successful search result' do
-					num_expected = Postoffice::Person.or({email: @person1.email}, {email: @person2.email}).count
-					@people.count.must_equal num_expected
-				end
-
-			end
-
-			describe 'get people from phone array' do
-
-				before do
-					@phone_array = [@person1.phone, @person2.phone, "1234"]
-					@people = Postoffice::PersonService.get_people_from_phone_array @phone_array
-				end
-
-				it 'must return an array of people do' do
-					@people[0].must_be_instance_of Postoffice::Person
-				end
-
-				it 'must return person records who match the search terms' do
-					@people[0].phone.must_equal @person1.phone || @person2.phone
-				end
-
-				it 'must return a person record for each successful search result' do
-					num_expected = Postoffice::Person.or({phone: @person1.phone}, {phone: @person2.phone}).count
-					@people.count.must_equal num_expected
-				end
-
-				it 'must remove special characters when searching phone strings' do
-					people = Postoffice::PersonService.get_people_from_phone_array ["()#{@person2.phone}"]
-					people[0].phone.must_equal @person2.phone
-				end
-
-			end
-
-			# Might need to break this down into multiple tests...
-			it 'must return a unique array of all people with matching email and phone records' do
-				data = []
-
-				entry1 = Hash.new
-				entry1["emails"] = ["evanw@test.com"]
-				entry1["phoneNumbers"] = ["5554443321"]
-
-				entry2 = Hash.new
-				entry2["emails"] = ["espiegs2013@test.com"]
-				entry2["phoneNumbers"] = []
-
-				data.append(entry1)
-				data.append(entry2)
-
-				people = Postoffice::PersonService.bulk_search data
-
-				expected_people = []
-				Postoffice::Person.or({email: "evanw@test.com"}, {email: "espiegs2013@test.com"}, {phone: "5554443321"}).each do |person|
-					expected_people << person
-				end
-
-				people.sort.must_equal expected_people.uniq.sort
-			end
-
+		it 'must return all people who have a matching email' do
+			@people.count.must_equal 3
 		end
 
 	end

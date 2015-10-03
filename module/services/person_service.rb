@@ -95,49 +95,13 @@ module Postoffice
 			term.gsub("+", " ")
 		end
 
-		#Search array is expected to contain JSON objects with a reference to the name of the person, and an array for emails and phone numbers
-		def self.bulk_search search_term_array
-
+		def self.find_people_from_list_of_emails email_array
 			people = []
-
-			search_term_array.each do |entry|
-
-				self.get_people_from_email_array(entry["emails"]).each do |person|
-					people << person
-				end
-
-				self.get_people_from_phone_array(entry["phoneNumbers"]).each do |person|
-					people << person
-				end
-
-			end
-
-			people.uniq
-
-		end
-
-		def self.get_people_from_email_array email_array
-			people = []
-
 			email_array.each do |email|
-				Postoffice::Person.where(email: email).each do |person|
-					people << person
+				if Postoffice::Person.where(email: email).count > 0
+					people << Postoffice::Person.where(email: email).first
 				end
 			end
-
-			people
-		end
-
-		def self.get_people_from_phone_array phone_array
-			people = []
-
-			phone_array.each do |phone|
-				phone = self.format_phone_number phone
-				Postoffice::Person.where(phone: phone).each do |person|
-					people << person
-				end
-			end
-
 			people
 		end
 
