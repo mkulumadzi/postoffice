@@ -381,6 +381,11 @@ describe Postoffice::MailService do
 			@welcome_mail.status.must_equal "DELIVERED"
 		end
 
+		it 'must have created the conversation' do
+			hash = @welcome_mail.conversation_hash[:hex_hash]
+			Postoffice::Conversation.where(hex_hash: hash).count.must_equal 1
+		end
+
 	end
 
 	describe 'operations to get mail' do

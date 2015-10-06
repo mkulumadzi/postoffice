@@ -105,6 +105,7 @@ module Postoffice
 
 			mail.mail_it
 			mail.deliver
+			mail.conversation
 			mail
 		end
 
