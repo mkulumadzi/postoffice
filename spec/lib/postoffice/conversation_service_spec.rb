@@ -173,13 +173,6 @@ describe Postoffice::ConversationService do
 
   describe 'get people from conversations' do
 
-    # def self.people_from_conversations params
-    #   person = Postoffice::Person.find(params[:id])
-    #   conversation_metadata = self.conversation_metadata params
-    #   people_array = self.get_people_from_conversations conversation_metadata
-    #   self.get_unique_people_from_conversation_people_list people_array, person
-    # end
-
     before do
       @params = Hash(id: @person1.id.to_s)
       @conversation_metadata = Postoffice::ConversationService.get_conversation_metadata @params
@@ -202,15 +195,20 @@ describe Postoffice::ConversationService do
 
     end
 
-    describe 'get unique people from conversation people list' do
+    describe 'get unique people from conversation people list and add person' do
 
       before do
         @people_array = Postoffice::ConversationService.collect_all_people_from_conversations @conversation_metadata
-        @unique_people = Postoffice::ConversationService.get_unique_people_from_conversation_people_list @people_array, @person1
+        @unique_people = Postoffice::ConversationService.get_unique_people_from_conversation_people_list_and_add_person @people_array, @person1
       end
 
       it 'must be a unique list of the people the person has communicated with, including the person' do
         @unique_people.must_equal [@person1, @person2, @person3]
+      end
+
+      it 'must always return the person' do
+        people = Postoffice::ConversationService.get_unique_people_from_conversation_people_list_and_add_person [], @person1
+        people.must_equal [@person1]
       end
 
     end

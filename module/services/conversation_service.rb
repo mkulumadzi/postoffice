@@ -56,7 +56,7 @@ module Postoffice
       person = Postoffice::Person.find(params[:id])
       conversation_metadata = self.get_conversation_metadata params
       people_array = self.collect_all_people_from_conversations conversation_metadata
-      self.get_unique_people_from_conversation_people_list people_array, person
+      self.get_unique_people_from_conversation_people_list_and_add_person people_array, person
     end
 
     def self.collect_all_people_from_conversations conversation_metadata
@@ -69,9 +69,9 @@ module Postoffice
       people_array
     end
 
-    def self.get_unique_people_from_conversation_people_list people_array, person
-      people_array = people_array.uniq
-      people_array
+    def self.get_unique_people_from_conversation_people_list_and_add_person people_array, person
+      people_array += [person]
+      people_array.uniq
     end
 
     ### Create converesations for any mail that does not already have them
