@@ -388,7 +388,7 @@ describe app do
 
 			it 'must not void fields that are not included in the update' do
 				person = Postoffice::Person.find(@person1.id)
-				person.name.must_equal @person1.name
+				person.given_name.must_equal @person1.given_name
 			end
 
 		end
@@ -1346,9 +1346,9 @@ describe app do
 
 			@rando_name = random_username
 
-			@person5 = create(:person, name: @rando_name, username: random_username)
-			@person6 = create(:person, name: @rando_name, username: random_username)
-			@person7 = create(:person, name: @rando_name, username: random_username)
+			@person5 = create(:person, given_name: @rando_name, username: random_username)
+			@person6 = create(:person, given_name: @rando_name, username: random_username)
+			@person7 = create(:person, given_name: @rando_name, username: random_username)
 
 			get "/people/search?term=#{@rando_name}&limit=2", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 			@response = JSON.parse(last_response.body)

@@ -138,7 +138,7 @@ module Postoffice
 				if c._type == "Postoffice::ToPerson"
 					if index > 0 then list += ", " end
 					person = Postoffice::Person.find(c.person_id)
-					list += person.name
+					list += person.full_name
 					index += 1
 				elsif c._type == "Postoffice::Email"
 					if index > 0 then list += ", " end
@@ -197,7 +197,7 @@ module Postoffice
 			Hash[
 				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
 				to: correspondent.email,
-				subject: "You've received a Slowpost from #{self.from_person.name}",
+				subject: "You've received a Slowpost from #{self.from_person.full_name}",
 				html_body: self.generate_email_message_body(mail_image_cid),
 				track_opens: true,
 				attachments: [mail_image_attachment, banner_image_attachment]

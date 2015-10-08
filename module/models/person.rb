@@ -8,6 +8,8 @@ module Postoffice
 
 		field :username, type: String
 		field :name, type: String
+		field :given_name, type: String
+		field :family_name, type: String
 		field :email, type: String
 		field :phone, type: String
 		field :hashed_password, type: String
@@ -23,11 +25,24 @@ module Postoffice
 		index({ phone: 1 })
 
 		def initials
-			split_name = self.name.split(' ')
-			if split_name.length == 1
-				self.name[0..1]
+			if given_name && family_name && given_name.length > 0 && family_name.length > 0
+				given_name[0] + family_name[0]
+			elsif given_name && given_name.length > 0
+				given_name[0..1]
+			elsif family_name && family_name.length > 0
+				family_name[0..1]
 			else
-				split_name[0][0] + split_name[split_name.length - 1][0]
+				""
+			end
+		end
+
+		def full_name
+			if given_name && family_name
+				given_name + " " + family_name
+			elsif given_name
+				given_name
+			else
+				family_name
 			end
 		end
 

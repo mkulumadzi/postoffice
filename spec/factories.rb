@@ -2,7 +2,8 @@ FactoryGirl.define do
 
   factory :person, class: Postoffice::Person do
     username "testuser"
-    name "Test User"
+    given_name "Test"
+    family_name "User"
     email "testuser@test.com"
     phone "5554441234"
     address1 "123 4th Street"

@@ -449,8 +449,8 @@ describe Postoffice::Mail do
 	describe 'to list' do
 
 		it 'must return a list of all of the peoples names and email addresses it is to' do
-			person1 = create(:person, username: random_username, name: "Test Person")
-			person2 = create(:person, username: random_username, name: "Another Test")
+			person1 = create(:person, username: random_username, given_name: "Test", family_name: "Person")
+			person2 = create(:person, username: random_username, given_name: "Another", family_name: "Test")
 			mail = create(:mail, correspondents: [build(:from_person, person_id: person1.id), build(:to_person, person_id: person2.id), build(:email, email: "test@test.com")])
 
 			mail.to_list.must_equal "Another Test, test@test.com"
@@ -776,7 +776,7 @@ describe Postoffice::Mail do
 				end
 
 				it 'must indicate that the person has received a Slowpost from the sender' do
-					expected_subject = "You've received a Slowpost from #{@mailA.from_person.name}"
+					expected_subject = "You've received a Slowpost from #{@mailA.from_person.full_name}"
 					@hash[:subject].must_equal expected_subject
 				end
 

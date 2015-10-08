@@ -296,7 +296,7 @@ describe Postoffice::MigrationService do
 
     end
 
-    describe 'run all of the migrations' do
+    describe 'run all of the mail migrations' do
 
       before do
         Postoffice::MigrationService.migrate_to_correspondents_and_attachments
@@ -329,6 +329,59 @@ describe Postoffice::MigrationService do
 
       it 'must have created the conversation' do
         Postoffice::Conversation.where(hex_hash: @migrated_mail.conversation_hash[:hex_hash]).count.must_equal 1
+      end
+
+    end
+
+    describe 'migrate name to given and family names' do
+
+      before do
+        @migrate1 = create(:person, username: random_username, name: "Test Person", given_name: nil, family_name: nil)
+        @migrate2 = create(:person, username: random_username, name: "Test", given_name: nil, family_name: nil)
+        @migrate3 = create(:person, username: random_username, name: "Test This Person", given_name: nil, family_name: nil)
+        @no_migrate = create(:person, username: random_username, given_name: "Test", family_name: "Person", given_name: nil, family_name: nil)
+      end
+
+      describe 'people with name and no given or family name' do
+        before do
+          @result = Postoffice::MigrationService.people_with_name_and_no_given_or_family_name
+        end
+
+        it 'must return people with name and no given_name or family_name' do
+          @result.include?(@migrate1).must_equal true
+        end
+
+        it 'must not reutrn people with given name and family name' do
+          @result.include?(@no_migrate).must_equal false
+        end
+      end
+
+      describe 'run the migration' do
+
+        before do
+          Postoffice::MigrationService.migrate_to_given_and_family_name
+        end
+
+        it 'must take the first part of a name with a space and put it in given name' do
+          person = Postoffice::Person.find(@migrate1.id)
+          person.given_name.must_equal "Test"
+        end
+
+        it 'must take the second part of a name with a space and put it in family name' do
+          person = Postoffice::Person.find(@migrate1.id)
+          person.family_name.must_equal "Person"
+        end
+
+        it 'must take put a name with no space into given_name' do
+          person = Postoffice::Person.find(@migrate2.id)
+          person.given_name.must_equal "Test"
+        end
+
+        it 'must combine all of the extra names into a single family name if there is more than one space in the name' do
+          person = Postoffice::Person.find(@migrate3.id)
+          person.family_name.must_equal "This Person"
+        end
+
       end
 
     end

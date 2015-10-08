@@ -140,6 +140,39 @@ module Postoffice
       Postoffice::ConversationService.initialize_conversations_for_all_mail
     end
 
+    # Migrating from name to given_name and family_name
+    # Find people with name and no_given_name or family_name
+    # Split name and put it in the right place
+
+    def self.people_with_name_and_no_given_or_family_name
+      Postoffice::Person.where(name: {"$ne" => nil}).or({given_name: nil}, {family_name: nil})
+    end
+
+    def self.migrate_to_given_and_family_name
+      people = self.people_with_name_and_no_given_or_family_name
+      people.each do |person|
+        names = person.name.split(" ")
+        if names.count == 1
+          person.given_name = names[0]
+        elsif names.count == 2
+          person.given_name = names[0]
+          person.family_name = names[1]
+        elsif names.count > 2
+          person.given_name = names[0]
+          index = 0
+          person.family_name = ""
+          names[1..(names.length-1)].each do |name|
+            if index > 0
+              person.family_name += " "
+            end
+            person.family_name += name
+            index += 1
+          end
+        end
+        person.save
+      end
+    end
+
   end
 
 end

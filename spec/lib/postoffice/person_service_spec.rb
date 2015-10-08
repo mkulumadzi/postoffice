@@ -10,7 +10,7 @@ describe Postoffice::PersonService do
 			@phone = rand(1000000000).to_s
 			@email = SecureRandom.uuid()
 
-			data = Hash["name", "Evan", "username", @username, "email", @email, "phone", @phone, "address1", "121 W 3rd St", "city", "New York", "state", "NY", "zip", "10012", "password", "password"]
+			data = Hash["given_name", "Evan", "family_name", "Waters", "username", @username, "email", @email, "phone", @phone, "address1", "121 W 3rd St", "city", "New York", "state", "NY", "zip", "10012", "password", "password"]
 			@person = Postoffice::PersonService.create_person data
 		end
 
@@ -22,8 +22,12 @@ describe Postoffice::PersonService do
 			@person.username.must_equal @username
 		end
 
-		it 'must store the name' do
-			@person.name.must_equal 'Evan'
+		it 'must store the given name' do
+			@person.given_name.must_equal 'Evan'
+		end
+
+		it 'must store the family name' do
+			@person.family_name.must_equal 'Waters'
 		end
 
 		describe 'validate required fields' do
@@ -163,7 +167,7 @@ describe Postoffice::PersonService do
 	describe 'get people' do
 
 		before do
-			@person = build(:person, name: "Joe Person", username: random_username)
+			@person = build(:person, given_name: "Joe", family_name: "Person", username: random_username)
 		end
 
 		it 'must get all of the people if no parameters are given' do
@@ -178,9 +182,9 @@ describe Postoffice::PersonService do
 			people.length.must_equal num_people
 		end
 
-		it 'must filter the records by username and name when both are passed in as a parameter' do
-			num_people = Postoffice::Person.where({username: "#{@person.username}", name: "Joe Person"}).count
-			params = Hash["username", @person.username, "name", "Joe Person"]
+		it 'must filter the records by username and given name when both are passed in as a parameter' do
+			num_people = Postoffice::Person.where({username: "#{@person.username}", given_name: "Joe", family_name: "Person"}).count
+			params = Hash["username", @person.username, "given_name", "Joe"]
 			people = Postoffice::PersonService.get_people params
 			people.length.must_equal num_people
 		end
@@ -189,82 +193,81 @@ describe Postoffice::PersonService do
 
 	describe 'search' do
 
-		before do
-
-			@person1 = create(:person, username: random_username, phone: random_phone, email: random_email)
-
-			@person2 = create(:person, name: "Evan Rachel Wood", username: "erach#{random_username}", phone: random_phone, email: random_email)
-
-			@person3 = create(:person, name: "Evan Spiegel", username: "espiegs#{random_username}", phone: random_phone, email: random_email)
-
-			@rando_name = random_username
-
-			@person4 = create(:person, name: "Neal #{@rando_name}", username: "Woodsman#{random_username}", phone: random_phone, email: random_email)
-
-			@person5 = create(:person, name: "Neal Waters", username: @rando_name + random_username, phone: random_phone, email: random_email)
-
-		end
-
 		describe 'simple search' do
 
-			before do
-				parameters = Hash["term", "Evan", "limit", 2]
-				@people_returned = Postoffice::PersonService.search_people parameters
-			end
+			describe 'create query for search term' do
 
-			it 'must return an array of people' do
-				@people_returned[0].must_be_instance_of Postoffice::Person
-			end
-
-			it 'must return only people whose name or username matches the search string' do
-				num_not_match = 0
-				@people_returned.each do |person|
-					if person.name.match(/Evan/) == nil && person.username.match(/Evan/) == nil
-						num_not_match += 1
-					end
+				it 'must return a Mongoid Selector' do
+					query = Postoffice::PersonService.create_query_for_search_term "Evan"
+					query.must_be_instance_of Mongoid::Criteria
 				end
 
-				num_not_match.must_equal 0
-			end
-
-			it 'must limit the number of records returned by the "limit" parameter' do
-				assert_operator @people_returned.count, :<=, 2
-			end
-
-			describe 'some additional search cases' do
-
-				it 'must limit the number of records returned to 25 by default, if no limit parameter is given' do
-					parameters = Hash["term", "Evan"]
-					people_returned = Postoffice::PersonService.search_people parameters
-
-					assert_operator people_returned.count, :<=, 25
-
+				it 'must search a single term for matches against given name, family name and username' do
+					query = Postoffice::PersonService.create_query_for_search_term "Evan"
+					query.selector.must_equal Hash("$or"=>[{"given_name"=>/Evan/}, {"family_name"=>/Evan/}, {"username"=>/Evan/}])
 				end
 
-				it 'must replace instances of + with a space' do
-					Postoffice::PersonService.format_search_term("A+term").must_equal "A term"
+				it 'must search two terms separated by a + against the given and family name, or the family and given name' do
+					query = Postoffice::PersonService.create_query_for_search_term "Evan+Waters"
+					query.selector.must_equal Hash("$or"=>[{"given_name"=>/Evan/, "family_name"=>/Waters/}, {"given_name"=>/Waters/, "family_name"=>/Evan/}])
 				end
 
-				it 'must format the search string and return correct results' do
-					parameters = Hash["term", "Evan+Rachel"]
-					people_returned = Postoffice::PersonService.search_people parameters
+				describe 'perform a search' do
 
-					assert_operator people_returned.count, :>=, 1
-				end
-
-				describe 'search term is valid for a username record and a name record' do
-
-					before do
-						@parameters = Hash["term", @rando_name]
-						@people_returned = Postoffice::PersonService.search_people @parameters
+					it 'must return an array of people' do
+						params = Hash("term" => "Eva")
+						people = Postoffice::PersonService.search_people params
+						people[0].must_be_instance_of Postoffice::Person
 					end
 
-					it 'must return matches for the name' do
-						@people_returned.must_include @person4
+					it 'must return partial matches of a single term with given name' do
+						person = create(:person, username: random_username, given_name: random_username)
+						term = person.given_name[0..2]
+						params = Hash("term" => "#{term}")
+						people = Postoffice::PersonService.search_people params
+						people.must_include person
 					end
 
-					it 'must return matches for the username' do
-						@people_returned.must_include @person5
+					it 'must return partial matches of a single term with family name' do
+						person = create(:person, username: random_username, family_name: random_username)
+						term = person.family_name[0..2]
+						params = Hash("term" => "#{term}")
+						people = Postoffice::PersonService.search_people params
+						people.must_include person
+					end
+
+					it 'must return partial matches of a single term with username' do
+						person = create(:person, username: random_username)
+						term = person.username[0..2]
+						params = Hash("term" => "#{term}")
+						people = Postoffice::PersonService.search_people params
+						people.must_include person
+					end
+
+					it 'must find matches of multiple terms by if the first two match given_name and family_name' do
+						person = create(:person, username: random_username, given_name: random_username, family_name: random_username)
+						term1 = person.given_name[0..2]
+						term2 = person.family_name[0..2]
+						params = Hash("term" => "#{term1}+#{term2}")
+						people = Postoffice::PersonService.search_people params
+						people.must_include person
+					end
+
+					it 'must find matches of multiple terms by if the first two match family_name and given_name' do
+						person = create(:person, username: random_username, given_name: random_username, family_name: random_username)
+						term1 = person.given_name[0..2]
+						term2 = person.family_name[0..2]
+						params = Hash("term" => "#{term2}+#{term1}")
+						people = Postoffice::PersonService.search_people params
+						people.must_include person
+					end
+
+					it 'must limit the number of results returned by a limit parameter if it is presented' do
+						person1 = create(:person, username: random_username, family_name: "Test")
+						person2 = create(:person, username: random_username, family_name: "Test")
+						params = Hash("term" => "Test", "limit" => 1)
+						people = Postoffice::PersonService.search_people params
+						people.count.must_equal 1
 					end
 
 				end

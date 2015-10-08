@@ -1,1 +1,2 @@
 Postoffice::MigrationService.migrate_to_correspondents_and_attachments
+Postoffice::MigrationService.migrate_to_given_and_family_name

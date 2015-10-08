@@ -24,7 +24,8 @@ module Postoffice
 
 			Postoffice::Person.create!({
 		      username: data["username"],
-		      name: data["name"],
+					given_name: data["given_name"],
+					family_name: data["family_name"],
 		      email: data["email"],
 		      phone: phone,
 		      address1: data["address1"],
@@ -76,7 +77,7 @@ module Postoffice
 
 		def self.search_people params
 			people = []
-			search_term = self.format_search_term(params["term"])
+			query = self.create_query_for_search_term params["term"]
 
 			if params["limit"]
 				search_limit = params["limit"]
@@ -84,16 +85,24 @@ module Postoffice
 				search_limit = 25
 			end
 
-			Postoffice::Person.or({name: /#{search_term}/}, {username: /#{search_term}/}).limit(search_limit).each do |person|
-				people << person
-			end
-
+			query.limit(search_limit).each { |person| people << person }
 			people
 		end
 
-		def self.format_search_term term
-			term.gsub("+", " ")
+		def self.create_query_for_search_term term
+			search_terms = term.split('+')
+			if search_terms.length == 1
+				Postoffice::Person.or({given_name: /#{term}/}, {family_name: /#{term}/}, {username: /#{term}/})
+			else
+				first_term = search_terms[0]
+				second_term = search_terms[1]
+				Postoffice::Person.or({given_name: /#{first_term}/, family_name: /#{second_term}/},{given_name: /#{second_term}/, family_name: /#{first_term}/})
+			end
 		end
+
+		# def self.format_search_term term
+		# 	term.gsub("+", " ")
+		# end
 
 		def self.find_people_from_list_of_emails email_array
 			people = []

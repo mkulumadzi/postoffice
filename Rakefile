@@ -62,27 +62,27 @@ task :setup_demo_data do
 			zip: nil
 		})
 
-  data =  JSON.parse '{"name": "Evan Waters", "username": "evan.waters", "email": "evan.waters@gmail.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
+  data =  JSON.parse '{"given_name": "Evan", "family_name": "Waters", "username": "evan.waters", "email": "evan.waters@gmail.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
   person = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message person
 
-	data =  JSON.parse '{"name": "Neal Waters", "username": "nwaters4", "email": "nwaters4@gmail.com", "phone": "(555) 444-1234", "address1": "44 Prichard St", "city": "Somerville", "state": "MA", "zip": "02132", "password": "password"}'
+	data =  JSON.parse '{"given_name": "Neal", "family_name": "Waters", "username": "nwaters4", "email": "nwaters4@gmail.com", "phone": "(555) 444-1234", "address1": "44 Prichard St", "city": "Somerville", "state": "MA", "zip": "02132", "password": "password"}'
 	person1 = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message person1
 
-	data =  JSON.parse '{"name": "Kristen Ulwelling", "username": "kulwelling", "email": "kulwelling@gmail.com", "phone": "(555) 444-4321", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
+	data =  JSON.parse '{"given_name": "Kristen", "family_name": "Ulwelling", "username": "kulwelling", "email": "kulwelling@gmail.com", "phone": "(555) 444-4321", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
 	person2 = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message person2
 
-	data =  JSON.parse '{"name": "Cathie Murray", "username": "cmurray", "email": "cathie.murray@gmail.com", "phone": "555-444-5671", "password": "password"}'
+	data =  JSON.parse '{"given_name": "Cathie", "family_name": "Murray", "username": "cmurray", "email": "cathie.murray@gmail.com", "phone": "555-444-5671", "password": "password"}'
 	person3 = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message person3
 
-	data =  JSON.parse '{"name": "Annie Haro", "username": "aharo", "email": "anna-haro@mac.com", "phone": "555-444-5431", "password": "password"}'
+	data =  JSON.parse '{"given_name": "Annie", "family_name": "Haro", "username": "aharo", "email": "anna-haro@mac.com", "phone": "555-444-5431", "password": "password"}'
 	person4 = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message person4
 
-	data =  JSON.parse '{"name": "Demo User", "username": "demo", "email": "demo@test.com", "phone": "(555) 444-4555", "password": "password"}'
+	data =  JSON.parse '{"given_name": "Demo", "family_name": "User", "username": "demo", "email": "demo@test.com", "phone": "(555) 444-4555", "password": "password"}'
 	demo = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message demo
 

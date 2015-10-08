@@ -24,15 +24,20 @@ describe Postoffice::Person do
 				assert_raises(Mongo::Error::OperationFailure) {
 					Postoffice::Person.create!(
 						username: person.username,
-						name: "test",
+						given_name: "test",
+						family_name: "user",
 						email: "test@test.com",
 						phone: "5554441234"
 					)
 				}
 			end
 
-			it 'must store the name' do
-				@person.name.must_equal @expected_attrs[:name]
+			it 'must store the given_name' do
+				@person.given_name.must_equal @expected_attrs[:given_name]
+			end
+
+			it 'must stor the family_name' do
+				@person.family_name.must_equal @expected_attrs[:family_name]
 			end
 
 			it 'must store the email' do
@@ -77,14 +82,43 @@ describe Postoffice::Person do
 
 	describe 'initials' do
 
-		it 'must return the first letter of the first and last name, if two names are given' do
-			person = build(:person, name: "Test Person")
-			person.initials.must_equal "TP"
+		it 'must return the initials if both given_name and family_name are available' do
+			person = build(:person, given_name: "Test", family_name: "User")
+			person.initials.must_equal "TU"
 		end
 
-		it 'must return the first two letters of the name if only one name is given' do
-			person = build(:person, name: "Test")
+		it 'must return the first two letters of the given name if the family name is not entered' do
+			person = build(:person, given_name: "Test", family_name: nil)
 			person.initials.must_equal "Te"
+		end
+
+		it 'must return the first two letters of the family name if the given name is not entered' do
+			person = build(:person, given_name: nil, family_name: "User")
+			person.initials.must_equal "Us"
+		end
+
+		it 'must return an empty string if no names are entered' do
+			person = build(:person, given_name: nil, family_name: nil)
+			person.initials.must_equal ""
+		end
+
+	end
+
+	describe 'full name' do
+
+		it 'must concatenate the given_name and family_name if both are availble' do
+			person = build(:person, username: random_username, given_name: "Test", family_name: "Person")
+			person.full_name.must_equal "Test Person"
+		end
+
+		it 'must return the given name if only it is available' do
+			person = build(:person, username: random_username, given_name: "Test", family_name: nil)
+			person.full_name.must_equal "Test"
+		end
+
+		it 'must family_name if only it is availble' do
+			person = build(:person, username: random_username, given_name: nil, family_name: "Person")
+			person.full_name.must_equal "Person"
 		end
 
 	end
