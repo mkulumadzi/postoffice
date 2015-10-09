@@ -39,8 +39,18 @@
   margin-bottom: 0px;
 }
 
-.content {
+.bold {
+  font-weight: bold;
+}
+
+.card {
+  margin-top: 20px;
+  margin-bottom: 20px;
   padding: 10px;
+  border-style: solid;
+  border-color: #7f7a7a;
+  border-width: 2px;
+  border-radius: 5px;
 }
 
 .card-image {
@@ -135,6 +145,7 @@ h1 {
 }
 
 .header-image {
+  max-width: 300px;
   width: 80%;
   padding: 0px;
   margin: 0px;
