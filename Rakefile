@@ -205,8 +205,8 @@ task :test_email do
 	person = Postoffice::Person.find_by(username:"postman")
 	f = Postoffice::FromPerson.new(person_id: person.id)
 	t1 = Postoffice::Email.new(email: "bigedubs44@yahoo.com")
-	t2 = Postoffice::Email.new(email: "kulwelling@gmail.com")
-	n = Postoffice::Note.new(content: "You're the best babe! Thanks as always for being such a great partner. Love ya.")
+	t2 = Postoffice::Email.new(email: "evan.waters@gmail.com")
+	n = Postoffice::Note.new(content: "Coming for it!")
 	i = Postoffice::ImageAttachment.new(image_uid: uid)
 	mail = Postoffice::Mail.create!({
 		correspondents: [f, t1, t2],
