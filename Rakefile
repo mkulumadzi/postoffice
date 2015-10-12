@@ -198,15 +198,15 @@ task :test_email do
 	Mongoid.logger.level = Logger::INFO
 	Mongo::Logger.logger.level = Logger::INFO
 
-	image = File.open('spec/resources/image1.jpg')
+	image = File.open('spec/resources/birthday.jpg')
 	uid = Dragonfly.app.store(image.read, 'name' => 'image1.jpg')
 	image.close
 
-	person = Postoffice::Person.find_by(username:"postman")
+	person = Postoffice::Person.find_by(username:"evan.waters")
 	f = Postoffice::FromPerson.new(person_id: person.id)
 	t1 = Postoffice::Email.new(email: "bigedubs44@yahoo.com")
-	t2 = Postoffice::Email.new(email: "evan.waters@gmail.com")
-	n = Postoffice::Note.new(content: "Coming for it!")
+	t2 = Postoffice::Email.new(email: "evan@slowpost.me")
+	n = Postoffice::Note.new(content: "Can't wait to celebrate Slowpost's birthday!")
 	i = Postoffice::ImageAttachment.new(image_uid: uid)
 	mail = Postoffice::Mail.create!({
 		correspondents: [f, t1, t2],
