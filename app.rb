@@ -11,7 +11,7 @@ end
 
 options "*" do
   response.headers["Allow"] = "GET,POST,OPTIONS"
-  response.headers["Access-Control-Allow-Headers"] = "X-Requested-With, X-HTTP-Method-Override, Content-Type, Cache-Control, Accept, Authorization"
+  response.headers["Access-Control-Allow-Headers"] = "X-Requested-With, X-HTTP-Method-Override, Content-Type, Cache-Control, Accept, Authorization Access-Control-Allow-Credentials"
   response.headers["Access-Control-Allow-Origin"] = "http://slowpost.me.s3-website-us-west-2.amazonaws.com"
 end
 
