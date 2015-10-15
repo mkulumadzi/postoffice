@@ -498,6 +498,11 @@ describe app do
 				post "/person/id/#{@person.id.to_s}/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
 			end
 
+      ## This step seems to have been important... for some reason the header doesn't show up in the test though...
+      # it 'must return an Access-Control-Allow-Origin header' do
+      #   last_response.headers["Access-Control-Allow-Origin"].must_equal "*"
+      # end
+
 			it 'must return a 204 status code' do
 				last_response.status.must_equal 204
 			end

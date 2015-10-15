@@ -156,6 +156,8 @@ post '/reset_password' do
   db_token = Postoffice::Token.new(value: token)
   db_token.mark_as_invalid
 
+  response.headers["Access-Control-Allow-Origin"] = "*"
+
   [204, nil]
 
 end
