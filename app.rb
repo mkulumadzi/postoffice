@@ -170,10 +170,23 @@ post '/request_password_reset' do
 
   begin
     person = Postoffice::Person.find_by(email: data["email"])
-    response = Postoffice::AuthService.get_response_for_requeseting_password_reset(person).to_json
-    [200, response]
+    if params["test"] == true
+      api_key = ENV["POSTMARK_API_KEY"]
+    else
+      api_key = "POSTMARK_API_TEST"
+    end
+    email_sent = Postoffice::AuthService.send_password_reset_email person, api_key
+    if email_sent[:error_code] == 0
+      [201, nil]
+    else
+      [403, nil]
+    end
   rescue Mongoid::Errors::DocumentNotFound
-    [403, nil]
+    response_body = Hash["message", "An account with that email does not exist."].to_json
+    [404, response_body]
+  rescue Postmark::InvalidMessageError
+    response_body = Hash["message", "Email address has been marked as inactive."].to_json
+    [403, response_body]
   end
 
 end

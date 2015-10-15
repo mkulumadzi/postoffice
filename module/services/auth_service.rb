@@ -45,15 +45,35 @@ module Postoffice
 			{:id => person.id.to_s, :exp => exp, :scope => scope}
 		end
 
+		def self.send_password_reset_email person, api_key = "POSTMARK_API_TEST"
+			token = self.get_password_reset_token person
+			email_hash = self.get_password_reset_email_hash person, token
+			Postoffice::EmailService.send_email email_hash, api_key
+		end
+
+		def self.get_password_reset_token person
+			payload = self.generate_payload_for_password_reset person
+			token = self.generate_token payload
+		end
+
 		def self.generate_payload_for_password_reset person
 			exp = Time.now.to_i + 3600 * 24
 			{:id => person.id.to_s, :exp => exp, :scope => "reset-password"}
 		end
 
-		def self.get_response_for_requeseting_password_reset person
-			payload = self.generate_payload_for_password_reset person
-			token = self.generate_token payload
-			Hash["token", token]
+		def self.get_password_reset_email_hash person, token
+			banner_image_attachment = Postoffice::EmailService.image_email_attachment("resources/slowpost_banner.png")
+			template = 'resources/password_reset_email_template.html'
+			variables = Hash(person: person, token: token)
+
+			Hash[
+				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
+				to: person.email,
+				subject: "We received a request to reset your password",
+				html_body: Postoffice::EmailService.generate_email_message_body(template, variables),
+				track_opens: true,
+				attachments: [banner_image_attachment]
+			]
 		end
 
 		def self.generate_token payload
@@ -74,12 +94,6 @@ module Postoffice
 		def self.generate_token_for_person person
 			payload = self.generate_payload_for_person person
       token = self.generate_token payload
-			token
-		end
-
-		def self.generate_password_reset_token person
-			payload = self.generate_payload_for_password_reset person
-			token = self.generate_token payload
 			token
 		end
 

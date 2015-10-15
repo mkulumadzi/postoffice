@@ -163,9 +163,17 @@ describe Postoffice::AuthService do
 
     end
 
-		describe 'temporary password reset token' do
+	end
 
-			describe 'payload' do
+	describe 'send password reset email' do
+
+		describe 'generate password reset token' do
+
+			before do
+				@token = Postoffice::AuthService.get_password_reset_token @person
+			end
+
+			describe 'generate payload or password reset' do
 
 				before do
 					@payload = Postoffice::AuthService.generate_payload_for_password_reset @person
@@ -185,75 +193,87 @@ describe Postoffice::AuthService do
 
 			end
 
-			describe 'token' do
+			it 'must return a string' do
+				@token.must_be_instance_of String
+			end
 
-				before do
-					token = Postoffice::AuthService.generate_password_reset_token @person
-					@token_payload = Postoffice::AuthService.decode_token token
-				end
-
-				it 'must generate a JWT token' do
-					@token_payload[1]["typ"].must_equal "JWT"
-				end
-
-				it 'must include the password_reset_payload for the person, including a token that will expire in 24 hours' do
-					@token_payload[0]["exp"].must_equal Time.now.to_i + 3600 * 24
-				end
-
+			it 'must include details from the password reset payload, including the expiration date' do
+				decoded_token = Postoffice::AuthService.decode_token @token
+				payload =  Postoffice::AuthService.generate_payload_for_password_reset @person
+				decoded_token[0]["exp"].must_equal payload[:exp]
 			end
 
 		end
 
-		describe 'check if a token is invalid' do
+		describe 'get password reset email hash' do
 
 			before do
-				@token1 = Postoffice::AuthService.generate_password_reset_token @person
-				db_token1 = Postoffice::Token.new(value: @token1)
-				db_token1.save
-				db_token1.mark_as_invalid
+				@token = Postoffice::AuthService.get_password_reset_token @person
+				@email_hash = Postoffice::AuthService.get_password_reset_email_hash @person, @token
 			end
 
-			it 'must return true if the token is invalid' do
-				Postoffice::AuthService.token_is_invalid(@token1).must_equal true
+			it 'must return a hash' do
+				@email_hash.must_be_instance_of Hash
 			end
 
-			it 'must return false if the token is valid' do
-				person2 = build(:person, username: random_username)
-				token2 = Postoffice::AuthService.generate_password_reset_token person2
-				db_token2 = Postoffice::Token.new(value: token2)
-				db_token2.save
-				Postoffice::AuthService.token_is_invalid(token2).must_equal false
+			it 'must be from the postman' do
+				@email_hash[:from].must_equal ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"]
 			end
 
-			it 'must return false if the token has not been saved to the database yet' do
-				person3 = build(:person, username: random_username)
-				token3 = Postoffice::AuthService.generate_password_reset_token person3
-				Postoffice::AuthService.token_is_invalid(token3).must_equal false
+			it 'must be to the person' do
+				@email_hash[:to].must_equal @person.email
 			end
 
+			it 'must have the correct subject' do
+				@email_hash[:subject].must_equal "We received a request to reset your password"
+			end
+
+			it 'must have generated the password reset email message' do
+				@email_hash[:html_body].must_equal Postoffice::EmailService.generate_email_message_body('resources/password_reset_email_template.html', Hash(person: @person, token: @token))
+			end
+
+			it 'must be configured to track opens' do
+				@email_hash[:track_opens].must_equal true
+			end
+
+			it 'must include the slowpost banner image as an attachment' do
+				@email_hash[:attachments][0]["ContentID"].must_equal "cid:resources/slowpost_banner.png"
+			end
+
+		end
+
+		it 'must send the email without errors' do
+			result = Postoffice::AuthService.send_password_reset_email @person
+			result[:error_code].must_equal 0
 		end
 
 	end
 
-	describe 'get response for password reset request' do
+	describe 'check if a token is invalid' do
 
 		before do
-			@app_token = Postoffice::AuthService.get_app_token
-			@response = Postoffice::AuthService.get_response_for_requeseting_password_reset @person
+			@token1 = Postoffice::AuthService.get_password_reset_token @person
+			db_token1 = Postoffice::Token.new(value: @token1)
+			db_token1.save
+			db_token1.mark_as_invalid
 		end
 
-		it 'must be a hash' do
-			@response.must_be_instance_of Hash
+		it 'must return true if the token is invalid' do
+			Postoffice::AuthService.token_is_invalid(@token1).must_equal true
 		end
 
-		it 'must return a password reset token' do
-			token_decoded = Postoffice::AuthService.decode_token @response["token"]
-			token_decoded[0]["scope"].must_equal "reset-password"
+		it 'must return false if the token is valid' do
+			person2 = build(:person, username: random_username)
+			token2 = Postoffice::AuthService.get_password_reset_token person2
+			db_token2 = Postoffice::Token.new(value: token2)
+			db_token2.save
+			Postoffice::AuthService.token_is_invalid(token2).must_equal false
 		end
 
-		it 'must contain the person id' do
-			token_decoded = Postoffice::AuthService.decode_token @response["token"]
-			token_decoded[0]["id"].must_equal @person.id.to_s
+		it 'must return false if the token has not been saved to the database yet' do
+			person3 = build(:person, username: random_username)
+			token3 = Postoffice::AuthService.get_password_reset_token person3
+			Postoffice::AuthService.token_is_invalid(token3).must_equal false
 		end
 
 	end

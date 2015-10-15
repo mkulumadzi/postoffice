@@ -556,7 +556,7 @@ describe app do
   describe '/reset_password' do
 
     before do
-      @token = Postoffice::AuthService.generate_password_reset_token @person1
+      @token = Postoffice::AuthService.get_password_reset_token @person1
       data = '{"password": "password123"}'
       post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@token}"}
     end
@@ -594,7 +594,7 @@ describe app do
       end
 
       it 'must return a 401 status if the same token is used twice' do
-        token = Postoffice::AuthService.generate_password_reset_token @person1
+        token = Postoffice::AuthService.get_password_reset_token @person1
         data = '{"password": "password123"}'
         post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
         post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
@@ -602,7 +602,7 @@ describe app do
       end
 
       it 'must return a 403 status if the data does not include a "password" field' do
-        token = Postoffice::AuthService.generate_password_reset_token @person2
+        token = Postoffice::AuthService.get_password_reset_token @person2
         data = '{"wrong": "password123"}'
         post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
         last_response.status.must_equal 403
@@ -618,19 +618,55 @@ describe app do
 
       before do
         data = '{"email": "' + @person1.email + '"}'
-        post "/request_password_reset", data, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
+        post "/request_password_reset?test=true", data, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
       end
 
-      it 'must return a 200 status' do
-        last_response.status.must_equal 200
+      it 'must return a 201 status' do
+        last_response.status.must_equal 201
       end
 
-      it 'must include the token in the response' do
-        response = JSON.parse(last_response.body)
-        response["token"].must_be_instance_of String
+      it 'must return an empty response' do
+        last_response.body.must_equal ""
       end
 
     end
+
+    describe 'email does not match an account' do
+
+      before do
+        data = '{"email": "notanemail@notaprovider.com"}'
+        post "/request_password_reset", data, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
+      end
+
+      it 'must return a 404 status' do
+        last_response.status.must_equal 404
+      end
+
+      it 'must return an error message' do
+        response = JSON.parse(last_response.body)
+        response["message"].must_equal "An account with that email does not exist."
+      end
+
+    end
+
+    ## This works; can't test it without sending a real email, don't want to do that in a test...
+    # describe 'email has been marked inactive' do
+    #
+    #   before do
+    #     data = '{"email": "' + @person1.email + '"}'
+    #     post "/request_password_reset", data, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
+    #   end
+    #
+    #   it 'must return a 403 status' do
+    #     last_response.status.must_equal 403
+    #   end
+    #
+    #   it 'must return an error message' do
+    #     response = JSON.parse(last_response.body)
+    #     response["message"].must_equal "Email address has been marked as inactive."
+    #   end
+    #
+    # end
 
   end
 

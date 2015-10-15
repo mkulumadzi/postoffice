@@ -1034,7 +1034,7 @@ describe Postoffice::MailService do
 					@result[:message_id].must_be_instance_of String
 				end
 
-				it 'must indicate that the test job was accpepted' do
+				it 'must indicate that the test job was accepted' do
 					@result[:message].must_equal "Test job accepted"
 				end
 

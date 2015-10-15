@@ -190,15 +190,17 @@ module Postoffice
 		end
 
 		def email_hash correspondent
-			banner_image_attachment = self.image_email_attachment("resources/slowpost_banner.png")
+			banner_image_attachment = Postoffice::EmailService.image_email_attachment("resources/slowpost_banner.png")
 			mail_image_attachment = self.mail_image_attachment
 			mail_image_cid = mail_image_attachment["ContentID"]
+			template = 'resources/email_template.html'
+			variables = Hash(mail: self, image_cid: mail_image_cid)
 
 			Hash[
 				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
 				to: correspondent.email,
 				subject: "You've received a Slowpost from #{self.from_person.full_name}",
-				html_body: self.generate_email_message_body(mail_image_cid),
+				html_body: Postoffice::EmailService.generate_email_message_body(template, variables),
 				track_opens: true,
 				attachments: [mail_image_attachment, banner_image_attachment]
 			]
@@ -208,7 +210,7 @@ module Postoffice
 			if self.image_attachments.count > 0
 				self.create_attachment_from_mail_image
 			else
-				self.image_email_attachment("resources/default_card.png")
+				Postoffice::EmailService.image_email_attachment("resources/default_card.png")
 			end
 		end
 
@@ -216,43 +218,43 @@ module Postoffice
 			first_attachment = self.image_attachments[0]
 			filename = "tmp/#{first_attachment.image.name}"
 			Dragonfly.app.fetch(first_attachment.image_uid).to_file(filename)
-			attachment = self.image_email_attachment(filename)
+			attachment = Postoffice::EmailService.image_email_attachment(filename)
 			File.delete(filename)
 			attachment
 		end
 
-		def image_email_attachment filename
-			Hash[
-				"Name" => filename,
-				"Content" => Postoffice::FileService.encode_file(filename),
-				"ContentType" => Postoffice::FileService.image_content_type(filename),
-				"ContentID" => "cid:#{filename}"
-			]
-		end
+		# def image_email_attachment filename
+		# 	Hash[
+		# 		"Name" => filename,
+		# 		"Content" => Postoffice::FileService.encode_file(filename),
+		# 		"ContentType" => Postoffice::FileService.image_content_type(filename),
+		# 		"ContentID" => "cid:#{filename}"
+		# 	]
+		# end
 
-		def generate_email_message_body mail_image_cid
-			self.create_temp_file_and_render_template mail_image_cid
-			message_body = Premailer.new(temp_filename, :warn_level => Premailer::Warnings::SAFE).to_inline_css
-			File.delete(temp_filename)
-			message_body
-		end
+		# def generate_email_message_body mail_image_cid
+		# 	self.create_temp_file_and_render_template mail_image_cid
+		# 	message_body = Premailer.new(temp_filename, :warn_level => Premailer::Warnings::SAFE).to_inline_css
+		# 	File.delete(temp_filename)
+		# 	message_body
+		# end
 
-		def temp_filename
-			"tmp/#{self.id}.html"
-		end
+		# def temp_filename
+		# 	"tmp/#{self.id}.html"
+		# end
 
-		def create_temp_file_and_render_template mail_image_cid
-			temp_file = File.open(temp_filename, 'w')
-			temp_file.write(self.render_template(mail_image_cid))
-			temp_file.close
-		end
+		# def create_temp_file_and_render_template mail_image_cid
+		# 	temp_file = File.open(temp_filename, 'w')
+		# 	temp_file.write(self.render_template(mail_image_cid))
+		# 	temp_file.close
+		# end
 
-		def render_template mail_image_cid
-			file = File.open('resources/email_template.html')
-			contents = file.read
-			file.close
-			ERB.new(contents).result(binding)
-		end
+		# def render_template mail_image_cid
+		# 	file = File.open('resources/email_template.html')
+		# 	contents = file.read
+		# 	file.close
+		# 	ERB.new(contents).result(binding)
+		# end
 
 	end
 

@@ -9,23 +9,23 @@
 					<tr>
 						<td class="column">
 							<img src="cid:resources/slowpost_banner.png" class="header-image">
-							<p class="emphasis">Your friend <%= self.from_person.name %> sent you a Slowpost - we delivered it by email because you don&#39;t have the app yet.</p>
-							<p class="emphasis bold">Get an invite for the beta on iOS now by emailing <a href="mailto:info@slowpost.me?subject=Sign me up!">info@slowpost.me</a>.</p>
+							<p class="emphasis">Your friend <%= hash[:mail].from_person.name %> sent you a Slowpost - we delivered it by email because you don&#39;t have the app yet.</p>
+							<p class="emphasis bold">Get an invite for the beta on iOS now by emailing <a class="yellow-link" href="mailto:info@slowpost.me?subject=Sign me up!">info@slowpost.me</a>.</p>
 						</td>
 					</tr>
 				</table>
 				<table class="card">
 					<tr>
 						<td class="column">
-							<img src= <%= mail_image_cid %> class="card-image">
+							<img src= <%= hash[:image_cid] %> class="card-image">
 							<table class="from-container">
-								<p class="avatar"> <%= self.from_person.initials %></p>
-								<p class="from-name"><%= self.from_person.name %></p>
+								<p class="avatar"> <%= hash[:mail].from_person.initials %></p>
+								<p class="from-name"><%= hash[:mail].from_person.name %></p>
 							</table>
-							<p class="to-names">To <%= self.to_list %></p>
-							<p class="date"> Sent on <%= self.date_sent.to_date.to_s %></p>
-							<p class="date"> Delivered on <%= self.date_delivered.to_date.to_s %></p>
-							<p class="card-text"> <%= self.message_content %></p>
+							<p class="to-names">To <%= hash[:mail].to_list %></p>
+							<p class="date"> Sent on <%= hash[:mail].date_sent.to_date.to_s %></p>
+							<p class="date"> Delivered on <%= hash[:mail].date_delivered.to_date.to_s %></p>
+							<p class="text"> <%= hash[:mail].message_content %></p>
 						</td>
 					</tr>
 				</table>
@@ -33,7 +33,7 @@
 					<tr>
 						<td class="column">
 							<p class="emphasis"> Slowposts are time-delayed messages evoking a postcard. Enjoy the deeper form of communication that happens when people stop chatting and start saying something meaningful to each other.</p>
-							<p class="emphasis bold"> Learn more at <a href="https://slowpost.me">https://slowpost.me</a>.</p>
+							<p class="emphasis bold"> Learn more at <a class="yellow-link" href="https://slowpost.me">https://slowpost.me</a>.</p>
 						</td>
 					</tr>
 				</table>

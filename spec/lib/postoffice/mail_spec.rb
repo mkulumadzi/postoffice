@@ -574,10 +574,6 @@ describe Postoffice::Mail do
 
 		describe 'correspondents to email' do
 
-			# def correspondents_to_email
-			# 	self.correspondents.where(_type: "Postoffice::Email", attempted_to_send: nil)
-			# end
-
 			before do
 				@query = @mailA.correspondents_to_email
 			end
@@ -605,43 +601,6 @@ describe Postoffice::Mail do
 			describe 'create image attachment for mail' do
 
 				describe 'create attachment from mail image' do
-
-					describe 'image email attachment' do
-						# def image_email_attachment filename
-						# 	Hash[
-						# 		"Name" => filename,
-						# 		"Content" => Postoffice::FileService.encode_file(filename),
-						# 		"ContentType" => Postoffice::FileService.image_content_type(filename),
-						# 		"ContentID" => "cid:#{filename}"
-						# 	]
-						# end
-
-						before do
-	            @filename = 'resources/slowpost_banner.png'
-	            @image_attachment = @mailA.image_email_attachment @filename
-	          end
-
-	          it 'must return a Hash' do
-	            @image_attachment.must_be_instance_of Hash
-	          end
-
-	          it 'must point Name to the filename' do
-	            @image_attachment["Name"].must_equal @filename
-	          end
-
-	          it 'must include the base64-encoded content for the file' do
-	            @image_attachment["Content"].must_equal Postoffice::FileService.encode_file(@filename)
-	          end
-
-	          it 'must include the content type' do
-	            @image_attachment["ContentType"].must_equal "image/png"
-	          end
-
-	          it 'must have prepended the filename with cid: for the ContentId' do
-	            @image_attachment["ContentID"].must_equal "cid:#{@filename}"
-	          end
-
-					end
 
 					describe 'create the image attachment' do
 
@@ -676,85 +635,6 @@ describe Postoffice::Mail do
 
 						mail.mail_image_attachment["Name"].must_equal "resources/default_card.png"
 					end
-
-				end
-
-			end
-
-			describe 'generate the email message body' do
-
-				describe 'temp filename' do
-
-					it 'must prepend tmp/ and append .html to the correspondent id' do
-						@mailA.temp_filename.must_equal "tmp/#{@mailA.id}.html"
-					end
-
-				end
-
-				describe 'create temp file and render template' do
-
-					before do
-						@mail_image_attachment = @mailA.mail_image_attachment
-						@cid = @mail_image_attachment["ContentID"]
-						@mailA.create_temp_file_and_render_template @cid
-					end
-
-					after do
-						File.delete(@mailA.temp_filename)
-					end
-
-					describe 'render template' do
-
-						before do
-							@rendered_template = @mailA.render_template @cid
-						end
-
-						it 'must return an HTML string' do
-							@rendered_template.include?("<head>").must_equal true
-						end
-
-						it 'must have rendered the template using ERB and added the necessary variables' do
-							@rendered_template.include?(@cid).must_equal true
-						end
-
-					end
-
-					it 'must have created a temporary file using the email attachments temporary filename' do
-						File.exist?(@mailA.temp_filename).must_equal true
-					end
-
-					it 'must have saved the rendered content of the email template to this file' do
-						file = File.open(@mailA.temp_filename)
-						contents = file.read
-						file.close
-						contents.must_equal @mailA.render_template @cid
-					end
-
-				end
-
-				describe 'generate message' do
-					# def generate_email_message_body mail_image_cid
-					# 	self.create_temp_file_and_render_template mail_image_cid
-					# 	message_body = Premailer.new(temp_filename, :warn_level => Premailer::Warnings::SAFE).to_inline_css
-					# 	File.delete(temp_filename)
-					# 	message_body
-					# end
-
-					before do
-            @message_body = @mailA.generate_email_message_body @cid
-          end
-
-          it 'must return a string' do
-            @message_body.must_be_instance_of String
-          end
-
-          it 'must have added inline css to the template' do
-            @message_body.include?("style=").must_equal true
-          end
-
-          it 'must haave deleted the temporary file' do
-            File.exists?(@mailA.temp_filename).must_equal false
-          end
 
 				end
 
@@ -795,7 +675,9 @@ describe Postoffice::Mail do
 				it 'must render the message body using a template' do
 					mail_image_attachment = @mailA.mail_image_attachment
 					cid = mail_image_attachment["ContentID"]
-					expected_result = 				 	@mailA.generate_email_message_body cid
+					variables = Hash(mail: @mailA, image_cid: cid)
+					template = "resources/email_template.html"
+					expected_result = 				 	Postoffice::EmailService.generate_email_message_body template, variables
 					@hash[:html_body].must_equal expected_result
 				end
 

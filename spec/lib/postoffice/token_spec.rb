@@ -6,7 +6,7 @@ describe Postoffice::Token do
 
     before do
       person = build(:person, username: random_username)
-      @token = Postoffice::AuthService.generate_password_reset_token person
+      @token = Postoffice::AuthService.get_password_reset_token person
       @db_token = Postoffice::Token.new(value: @token)
     end
 
