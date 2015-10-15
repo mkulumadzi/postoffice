@@ -1,5 +1,4 @@
 require 'erb'
-require 'SecureRandom'
 
 module Postoffice
 
