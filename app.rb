@@ -171,11 +171,8 @@ post '/request_password_reset' do
 
   begin
     person = Postoffice::Person.find_by(email: data["email"])
-    if params["test"] == true
-      api_key = ENV["POSTMARK_API_KEY"]
-    else
-      api_key = "POSTMARK_API_TEST"
-    end
+    api_key = ENV["POSTMARK_API_KEY"]
+    if params["test"] == "true" then api_key = "POSTMARK_API_TEST" end
     email_sent = Postoffice::AuthService.send_password_reset_email person, api_key
     if email_sent[:error_code] == 0
       [201, nil]
