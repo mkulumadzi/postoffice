@@ -140,6 +140,7 @@ end
 post '/reset_password' do
   content_type :json
   data = JSON.parse(request.body.read)
+  response.headers["Access-Control-Allow-Origin"] = "*"
 
   # Check the token
   if Postoffice::AppService.unauthorized?(request, "reset-password") then return [401, nil] end
@@ -155,8 +156,6 @@ post '/reset_password' do
 
   db_token = Postoffice::Token.new(value: token)
   db_token.mark_as_invalid
-
-  response.headers["Access-Control-Allow-Origin"] = "*"
 
   [204, nil]
 

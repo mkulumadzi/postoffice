@@ -71,7 +71,7 @@ describe app do
     end
 
     it 'must indicate which headers are allowed' do
-        last_response.headers["Access-Control-Allow-Headers"].must_equal "X-Requested-With, X-HTTP-Method-Override, Content-Type, Cache-Control, Accept, Authorization"
+        last_response.headers["Access-Control-Allow-Headers"].must_equal "X-Requested-With, X-HTTP-Method-Override, Content-Type, Cache-Control, Accept, Authorization, Access-Control-Allow-Credentials"
     end
 
   end
@@ -498,11 +498,6 @@ describe app do
 				post "/person/id/#{@person.id.to_s}/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
 			end
 
-      ## This step seems to have been important... for some reason the header doesn't show up in the test though...
-      # it 'must return an Access-Control-Allow-Origin header' do
-      #   last_response.headers["Access-Control-Allow-Origin"].must_equal "*"
-      # end
-
 			it 'must return a 204 status code' do
 				last_response.status.must_equal 204
 			end
@@ -564,6 +559,10 @@ describe app do
       @token = Postoffice::AuthService.get_password_reset_token @person1
       data = '{"password": "password123"}'
       post "/reset_password", data, {"HTTP_AUTHORIZATION" => "Bearer #{@token}"}
+    end
+
+    it 'must return an Access-Control-Allow-Origin header' do
+      last_response.headers["Access-Control-Allow-Origin"].must_equal "*"
     end
 
     it 'must return a 204 status' do
