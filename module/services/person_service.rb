@@ -57,7 +57,7 @@ module Postoffice
 			phone.tr('^0-9', '')
 		end
 
-		def self.update_person person_id, data
+		def self.update_person person_id, data, api_key = "POSTMARK_API_TEST"
 			person = Postoffice::Person.find(person_id)
 
 			if data["username"]
@@ -68,8 +68,16 @@ module Postoffice
 				raise "An account with that email already exists!"
 			end
 
+			self.send_email_to_validate_email_address_change person, data, api_key
+
 			person.update_attributes!(data)
 
+		end
+
+		def self.send_email_to_validate_email_address_change person, data, api_key = "POSTMARK_API_TEST"
+	    if data["email"] != nil && data["email"] != person.email
+	      Postoffice::AuthService.send_email_validation_email person, api_key
+	    end
 		end
 
 		def self.get_people params = {}

@@ -216,6 +216,32 @@ describe Postoffice::PersonService do
 
 		end
 
+		describe 'send email to validate email address change' do
+
+			before do
+				@personA = create(:person, username: random_username, email: "#{random_username}@test.com")
+			end
+
+			it 'must send an email asking for the new email address to be validated if the email address is changed' do
+				data = Hash("email" => "#{random_username}@test.com")
+				result = Postoffice::PersonService.send_email_to_validate_email_address_change @personA, data
+				result[:message].must_equal "Test job accepted"
+			end
+
+			it 'must not send an email if the email address has not changed' do
+				data = Hash("email" => @personA.email)
+				result = Postoffice::PersonService.send_email_to_validate_email_address_change @personA, data
+				result.must_equal nil
+			end
+
+			it 'must not send an email if an email address is not included in the data' do
+				data = Hash("given_name" => "Harold")
+				result = Postoffice::PersonService.send_email_to_validate_email_address_change @personA, data
+				result.must_equal nil
+			end
+
+		end
+
 	end
 
 	describe 'get people' do

@@ -111,13 +111,9 @@ post '/person/id/:id' do
   data = JSON.parse request.body.read
   if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
   begin
-    Postoffice::PersonService.update_person params[:id], data
-    person = Postoffice::Person.find(params[:id])
-    if data["email"] != nil && data["email"] != person.email
-      api_key = ENV["POSTMARK_API_KEY"]
-      if params["test"] == "true" then api_key = "POSTMARK_API_TEST" end
-      Postoffice::AuthService.send_email_validation_email person, api_key
-    end
+    api_key = ENV["POSTMARK_API_KEY"]
+    if params["test"] == "true" then api_key = "POSTMARK_API_TEST" end
+    Postoffice::PersonService.update_person params[:id], data, api_key
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]

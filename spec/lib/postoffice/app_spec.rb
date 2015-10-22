@@ -374,7 +374,7 @@ describe app do
 
 			before do
 				data = '{"city": "New York", "state": "NY"}'
-				post "person/id/#{@person1.id}", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+				post "person/id/#{@person1.id}?test=true", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must return a 204 status code' do
@@ -397,7 +397,7 @@ describe app do
 
 			it 'must return a 403 status if the username is attempted to be updated' do
 				data = '{"username": "new_username"}'
-				post "person/id/#{@person1.id}", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+				post "person/id/#{@person1.id}?test=true", data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 				last_response.status.must_equal 403
 			end
 
