@@ -64,6 +64,10 @@ module Postoffice
 				raise ArgumentError
 			end
 
+			if data["email"] && Postoffice::Person.where(email: data["email"]).exists?
+				raise "An account with that email already exists!"
+			end
+
 			person.update_attributes!(data)
 
 		end

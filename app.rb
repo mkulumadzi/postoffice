@@ -29,7 +29,7 @@ post '/person/new' do
 
     api_key = ENV["POSTMARK_API_KEY"]
     if params["test"] == "true" then api_key = "POSTMARK_API_TEST" end
-    Postoffice::AuthService.send_email_validation_email person, ENV["POSTMARK_API_KEY"]
+    Postoffice::AuthService.send_email_validation_email person, api_key
     person_link = "#{ENV['POSTOFFICE_BASE_URL']}/person/id/#{person.id}"
 
     headers = { "location" => person_link }
@@ -111,12 +111,20 @@ post '/person/id/:id' do
   if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
   begin
     Postoffice::PersonService.update_person params[:id], data
+    person = Postoffice::Person.find(params[:id])
+    if data["email"] != nil && data["email"] != person.email
+      api_key = ENV["POSTMARK_API_KEY"]
+      if params["test"] == "true" then api_key = "POSTMARK_API_TEST" end
+      Postoffice::AuthService.send_email_validation_email person, api_key
+    end
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
   rescue Mongo::Error::OperationFailure
     [403, nil]
   rescue ArgumentError
+    [403, nil]
+  rescue RuntimeError
     [403, nil]
   end
 end

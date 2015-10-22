@@ -168,6 +168,52 @@ describe Postoffice::PersonService do
 
 	end
 
+	describe 'update person' do
+
+		before do
+			@person = create(:person, username: random_username)
+		end
+
+		describe 'successful update' do
+
+			before do
+				data = Hash("given_name" => "New", "family_name" => "Name", "email" => "#{random_username}@test.com")
+				Postoffice::PersonService.update_person @person.id, data
+				@updated_record = Postoffice::Person.find(@person.id)
+			end
+
+			it 'must have updated the attributes that were provided' do
+				@updated_record.given_name.must_equal "New"
+			end
+
+			it 'must not update any fields that were not included in the data' do
+				@updated_record.phone.must_equal @person.phone
+			end
+
+		end
+
+		describe 'error conditions' do
+
+			it 'must raise an ArgumentError if the username is attempted to be updated' do
+				data = Hash("username" => "newusername")
+				assert_raises ArgumentError do
+					Postoffice::PersonService.update_person @person.id, data
+				end
+			end
+
+			it 'must raise an ArgumentError if the data includes an emial address that already exists' do
+				another_person = create(:person, username: random_username, email: "#{random_username}@test.com")
+				data = Hash("email" => another_person.email)
+				assert_raises RuntimeError do
+					Postoffice::PersonService.update_person @person.id, data
+				end
+			end
+
+
+		end
+
+	end
+
 	describe 'get people' do
 
 		before do
