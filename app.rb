@@ -136,6 +136,29 @@ post '/person/id/:id/reset_password' do
 
 end
 
+# Validate email using a temporary token, via a webapp
+post '/validate_email' do
+  content_type :json
+  response.headers["Access-Control-Allow-Origin"] = "*"
+
+  # Check the token
+  if Postoffice::AppService.unauthorized?(request, "validate-email") then return [401, nil] end
+
+  token = Postoffice::AppService.get_token_from_authorization_header request
+  if Postoffice::AuthService.token_is_invalid(token) then return [401, nil] end
+
+  payload =  Postoffice::AppService.get_payload_from_authorization_header request
+  person = Postoffice::Person.find(payload["id"])
+
+  person.mark_email_as_valid
+
+  db_token = Postoffice::Token.new(value: token)
+  db_token.mark_as_invalid
+
+  [204, nil]
+
+end
+
 # Reset password using a temporary token, via a webapp
 post '/reset_password' do
   content_type :json

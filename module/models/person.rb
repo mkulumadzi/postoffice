@@ -11,6 +11,7 @@ module Postoffice
 		field :given_name, type: String
 		field :family_name, type: String
 		field :email, type: String
+		field :email_address_validated, type: Boolean
 		field :phone, type: String
 		field :hashed_password, type: String
 		field :salt, type: String
@@ -44,6 +45,11 @@ module Postoffice
 			else
 				family_name
 			end
+		end
+
+		def mark_email_as_valid
+			self.email_address_validated = true
+			self.save
 		end
 
 	end

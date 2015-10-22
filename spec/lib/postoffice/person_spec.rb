@@ -3,7 +3,7 @@ require_relative '../../spec_helper'
 describe Postoffice::Person do
 
 	before do
-		@person = build(:person)
+		@person = create(:person, username: random_username)
 		@expected_attrs = attributes_for(:person)
 	end
 
@@ -16,7 +16,7 @@ describe Postoffice::Person do
 			end
 
 			it 'must store the username' do
-				@person.username.must_equal @expected_attrs[:username]
+				@person.username.must_be_instance_of String
 			end
 
 			it 'must thrown an error if a record is submitted with a duplicate username' do
@@ -44,24 +44,12 @@ describe Postoffice::Person do
 				@person.email.must_equal @expected_attrs[:email]
 			end
 
+			it 'must store whether the email address was validated' do
+				@person.email_address_validated.must_equal @expected_attrs[:email_address_validated]
+			end
+
 			it 'must store the phone' do
 				@person.phone.must_equal @expected_attrs[:phone]
-			end
-
-			it 'must store the address' do
-				@person.address1.must_equal @expected_attrs[:address1]
-			end
-
-			it 'must store the city' do
-				@person.city.must_equal @expected_attrs[:city]
-			end
-
-			it 'must store the state' do
-				@person.state.must_equal @expected_attrs[:state]
-			end
-
-			it 'must store the zip code' do
-				@person.zip.must_equal @expected_attrs[:zip]
 			end
 
 			it 'must store the salt' do
@@ -119,6 +107,23 @@ describe Postoffice::Person do
 		it 'must family_name if only it is availble' do
 			person = build(:person, username: random_username, given_name: nil, family_name: "Person")
 			person.full_name.must_equal "Person"
+		end
+
+	end
+
+	describe 'mark email as valid' do
+
+		before do
+			@person.mark_email_as_valid
+		end
+
+		it 'must have marked the email address as valid' do
+			@person.email_address_validated.must_equal true
+		end
+
+		it 'must have saved the changes' do
+			person = Postoffice::Person.find(@person.id)
+			person.email_address_validated.must_equal true
 		end
 
 	end

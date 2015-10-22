@@ -225,3 +225,8 @@ task :test_password_reset_email do
 	person = Postoffice::Person.find_by(username: "evan.waters")
 	Postoffice::AuthService.send_password_reset_email person, ENV["POSTMARK_API_KEY"]
 end
+
+task :test_email_validation do
+	person = Postoffice::Person.find_by(username: "evan.waters")
+	Postoffice::AuthService.send_email_validation_email person, ENV["POSTMARK_API_KEY"]
+end

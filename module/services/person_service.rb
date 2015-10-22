@@ -27,6 +27,7 @@ module Postoffice
 					given_name: data["given_name"],
 					family_name: data["family_name"],
 		      email: data["email"],
+					email_address_validated: false,
 		      phone: phone,
 		      address1: data["address1"],
 		      city: data["city"],

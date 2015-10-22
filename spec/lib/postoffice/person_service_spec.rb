@@ -115,6 +115,10 @@ describe Postoffice::PersonService do
 			@person.email.must_equal @email
 		end
 
+		it 'must indicate that the email address has not been validated' do
+			@person.email_address_validated.must_equal false
+		end
+
 		describe 'store the phone number' do
 
 			it 'must remove spaces from the phone number' do

@@ -553,6 +553,58 @@ describe app do
 
 	end
 
+  describe '/validate_email' do
+
+    before do
+      @token = Postoffice::AuthService.get_email_validation_token @person1
+      post "/validate_email", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@token}"}
+    end
+
+    it 'must return an Access-Control-Allow-Origin header' do
+      last_response.headers["Access-Control-Allow-Origin"].must_equal "*"
+    end
+
+    it 'must return a 204 status' do
+      last_response.status.must_equal 204
+    end
+
+    it 'must mark the email address as valid' do
+      person = Postoffice::Person.find(@person1.id)
+      person.email_address_validated.must_equal true
+    end
+
+    it 'must flag the token as invalid so that it cannot be used again' do
+      db_token = Postoffice::Token.find_by(value: @token)
+      db_token.is_invalid.must_equal true
+    end
+
+    describe 'error conditions' do
+
+      it 'must return a 401 status if the token has expired' do
+        payload = Postoffice::AuthService.generate_payload_for_email_validation @person1
+        payload[:exp] = Time.now.to_i - 60
+        token = Postoffice::AuthService.generate_token payload
+        post "/validate_email", nil, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+
+        last_response.status.must_equal 401
+      end
+
+      it 'must return a 401 status if the token does not have the validate-email scope' do
+        post "/validate_email", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 401
+      end
+
+      it 'must return a 401 status if the same token is used twice' do
+        token = Postoffice::AuthService.get_email_validation_token @person1
+        post "/validate_email", nil, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+        post "/validate_email", nil, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+        last_response.status.must_equal 401
+      end
+
+    end
+
+  end
+
   describe '/reset_password' do
 
     before do

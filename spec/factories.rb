@@ -5,11 +5,8 @@ FactoryGirl.define do
     given_name "Test"
     family_name "User"
     email "testuser@test.com"
-    phone "5554441234"
-    address1 "123 4th Street"
-    city "New York"
-    state "NY"
-    zip "10012"
+    email_address_validated false
+    phone "5554443333"
     hashed_password "hash"
     salt "salt"
     device_token "abc123"

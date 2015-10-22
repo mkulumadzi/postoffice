@@ -76,6 +76,37 @@ module Postoffice
 			]
 		end
 
+		def self.send_email_validation_email person, api_key = "POSTMARK_API_TEST"
+			token = self.get_email_validation_token person
+			email_hash = self.get_email_validation_hash person, token
+			Postoffice::EmailService.send_email email_hash, api_key
+		end
+
+		def self.get_email_validation_token person
+			payload = self.generate_payload_for_email_validation person
+			token = self.generate_token payload
+		end
+
+		def self.generate_payload_for_email_validation person
+			exp = Time.now.to_i + 3600 * 24
+			{:id => person.id.to_s, :exp => exp, :scope => "validate-email"}
+		end
+
+		def self.get_email_validation_hash person, token
+			banner_image_attachment = Postoffice::EmailService.image_email_attachment("resources/slowpost_banner.png")
+			template = 'resources/validate_email_template.html'
+			variables = Hash(person: person, token: token)
+
+			Hash[
+				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
+				to: person.email,
+				subject: "Please validate your email address",
+				html_body: Postoffice::EmailService.generate_email_message_body(template, variables),
+				track_opens: true,
+				attachments: [banner_image_attachment]
+			]
+		end
+
 		def self.generate_token payload
 			rsa_private = self.get_private_key
 			token = JWT.encode payload, rsa_private, 'RS256'
