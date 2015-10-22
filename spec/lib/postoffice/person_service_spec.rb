@@ -201,7 +201,7 @@ describe Postoffice::PersonService do
 				end
 			end
 
-			it 'must raise an ArgumentError if the data includes an emial address that already exists' do
+			it 'must raise a RuntimeError if the data includes an emial address that already exists' do
 				another_person = create(:person, username: random_username, email: "#{random_username}@test.com")
 				data = Hash("email" => another_person.email)
 				assert_raises RuntimeError do
@@ -209,6 +209,10 @@ describe Postoffice::PersonService do
 				end
 			end
 
+			it 'must not raise a RuntimeError if the email address equals the persons email address' do
+				data = Hash("email" => @person.email)
+				Postoffice::PersonService.update_person @person.id, data
+			end
 
 		end
 

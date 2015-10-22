@@ -401,13 +401,24 @@ describe app do
 				last_response.status.must_equal 403
 			end
 
-      it 'must return a 403 error if the update would duplicate an existing email address' do
-        personA = create(:person, username: random_username, email: "#{random_username}@test.com")
-        personB = create(:person, username: random_username, email: "#{random_username}@test.com")
+      describe 'duplicate an existing email address' do
 
-        data = '{"email": "' + personA.email + '"}'
-        post "person/id/#{personB.id}?test=true", data, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
-        last_response.status.must_equal 403
+        before do
+          personA = create(:person, username: random_username, email: "#{random_username}@test.com")
+          personB = create(:person, username: random_username, email: "#{random_username}@test.com")
+          data = '{"email": "' + personA.email + '"}'
+          post "person/id/#{personB.id}?test=true", data, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+        end
+
+        it 'must return a 403 error if the update would duplicate an existing email address' do
+          last_response.status.must_equal 403
+        end
+
+        it 'must return an error message in the response body' do
+          message = JSON.parse(last_response.body)["message"]
+          message.must_be_instance_of String
+        end
+
       end
 
 		end

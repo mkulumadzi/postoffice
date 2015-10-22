@@ -124,8 +124,10 @@ post '/person/id/:id' do
     [403, nil]
   rescue ArgumentError
     [403, nil]
-  rescue RuntimeError
-    [403, nil]
+  rescue RuntimeError => error
+    status = 403
+    response_body = Hash["message", error.to_s].to_json
+    [403, nil, response_body]
   end
 end
 
