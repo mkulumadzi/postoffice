@@ -178,7 +178,7 @@ describe Postoffice::PersonService do
 
 			before do
 				data = Hash("given_name" => "New", "family_name" => "Name", "email" => "#{random_username}@test.com")
-				Postoffice::PersonService.update_person @person.id, data
+				@result = Postoffice::PersonService.update_person @person.id, data
 				@updated_record = Postoffice::Person.find(@person.id)
 			end
 
@@ -188,6 +188,10 @@ describe Postoffice::PersonService do
 
 			it 'must not update any fields that were not included in the data' do
 				@updated_record.phone.must_equal @person.phone
+			end
+
+			it 'must have sent an email to validate a new email address' do
+				@result[:message].must_equal "Test job accepted"
 			end
 
 		end
@@ -222,21 +226,36 @@ describe Postoffice::PersonService do
 				@personA = create(:person, username: random_username, email: "#{random_username}@test.com")
 			end
 
-			it 'must send an email asking for the new email address to be validated if the email address is changed' do
-				data = Hash("email" => "#{random_username}@test.com")
-				result = Postoffice::PersonService.send_email_to_validate_email_address_change @personA, data
-				result[:message].must_equal "Test job accepted"
+			describe 'send email' do
+
+				before do
+					@new_email = "#{random_username}@test.com"
+					@old_email = @personA.email
+					@personA.email = @new_email
+					@personA.save
+					data = Hash("email" => @new_email)
+					@result = Postoffice::PersonService.send_email_to_validate_email_address_change @personA, data, @old_email
+				end
+
+				it 'must send an email asking for the new email address to be validated if the email address is changed' do
+					@result[:message].must_equal "Test job accepted"
+				end
+
+				it 'must have sent the email to the new email address' do
+					@result[:to].must_equal @new_email
+				end
+
 			end
 
 			it 'must not send an email if the email address has not changed' do
 				data = Hash("email" => @personA.email)
-				result = Postoffice::PersonService.send_email_to_validate_email_address_change @personA, data
+				result = Postoffice::PersonService.send_email_to_validate_email_address_change @personA, data, @personA.email
 				result.must_equal nil
 			end
 
 			it 'must not send an email if an email address is not included in the data' do
 				data = Hash("given_name" => "Harold")
-				result = Postoffice::PersonService.send_email_to_validate_email_address_change @personA, data
+				result = Postoffice::PersonService.send_email_to_validate_email_address_change @personA, data, @personA.email
 				result.must_equal nil
 			end
 

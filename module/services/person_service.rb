@@ -64,18 +64,19 @@ module Postoffice
 				raise ArgumentError
 			end
 
+			old_email = person.email
 			if data["email"] && data["email"] != person.email && Postoffice::Person.where(email: data["email"]).exists?
 				raise "An account with that email already exists!"
 			end
 
-			self.send_email_to_validate_email_address_change person, data, api_key
-
 			person.update_attributes!(data)
+
+			self.send_email_to_validate_email_address_change person, data, old_email, api_key
 
 		end
 
-		def self.send_email_to_validate_email_address_change person, data, api_key = "POSTMARK_API_TEST"
-	    if data["email"] != nil && data["email"] != person.email
+		def self.send_email_to_validate_email_address_change person, data, old_email, api_key = "POSTMARK_API_TEST"
+	    if data["email"] != nil && data["email"] != old_email
 	      Postoffice::AuthService.send_email_validation_email person, api_key
 	    end
 		end
