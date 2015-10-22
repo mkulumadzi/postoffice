@@ -132,7 +132,7 @@ describe app do
   		before do
   			@username = random_username
   			data = '{"username": "' + @username + '", "phone": "' + random_phone + '", "email": "' + random_email + '", "password": "password"}'
-  			post "/person/new", data, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
+  			post "/person/new?test=true", data, {"HTTP_AUTHORIZATION" => "Bearer #{@app_token}"}
   		end
 
   		it 'must return a 201 status code' do

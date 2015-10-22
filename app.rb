@@ -26,6 +26,10 @@ post '/person/new' do
   begin
     person = Postoffice::PersonService.create_person data
     Postoffice::MailService.generate_welcome_message person
+
+    api_key = ENV["POSTMARK_API_KEY"]
+    if params["test"] == "true" then api_key = "POSTMARK_API_TEST" end
+    Postoffice::AuthService.send_email_validation_email person, ENV["POSTMARK_API_KEY"]
     person_link = "#{ENV['POSTOFFICE_BASE_URL']}/person/id/#{person.id}"
 
     headers = { "location" => person_link }
