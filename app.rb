@@ -107,6 +107,7 @@ end
 # Update a person record
 # Scope: admin or (can_write & is person)
 post '/person/id/:id' do
+  content_type :json
   data = JSON.parse request.body.read
   if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
   begin
