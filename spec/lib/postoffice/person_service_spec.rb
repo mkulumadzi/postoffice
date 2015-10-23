@@ -229,6 +229,7 @@ describe Postoffice::PersonService do
 			describe 'send email' do
 
 				before do
+					@personA.email_address_validated = true
 					@new_email = "#{random_username}@test.com"
 					@old_email = @personA.email
 					@personA.email = @new_email
@@ -239,6 +240,11 @@ describe Postoffice::PersonService do
 
 				it 'must send an email asking for the new email address to be validated if the email address is changed' do
 					@result[:message].must_equal "Test job accepted"
+				end
+
+				it 'must mark the email address as not validated' do
+					person = Postoffice::Person.find(@personA.id)
+					person.email_address_validated.must_equal false
 				end
 
 				it 'must have sent the email to the new email address' do

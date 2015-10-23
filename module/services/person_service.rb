@@ -77,6 +77,8 @@ module Postoffice
 
 		def self.send_email_to_validate_email_address_change person, data, old_email, api_key = "POSTMARK_API_TEST"
 	    if data["email"] != nil && data["email"] != old_email
+				person.email_address_validated = false
+				person.save
 	      Postoffice::AuthService.send_email_validation_email person, api_key
 	    end
 		end
