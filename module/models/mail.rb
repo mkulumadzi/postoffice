@@ -199,7 +199,7 @@ module Postoffice
 			Hash[
 				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
 				to: correspondent.email,
-				subject: "You've received a Slowpost from #{self.from_person.full_name}",
+				subject: "#{self.from_person.full_name} sent you a Slowpost!",
 				html_body: Postoffice::EmailService.generate_email_message_body(template, variables),
 				track_opens: true,
 				attachments: [mail_image_attachment, banner_image_attachment]
@@ -223,38 +223,43 @@ module Postoffice
 			attachment
 		end
 
-		# def image_email_attachment filename
-		# 	Hash[
-		# 		"Name" => filename,
-		# 		"Content" => Postoffice::FileService.encode_file(filename),
-		# 		"ContentType" => Postoffice::FileService.image_content_type(filename),
-		# 		"ContentID" => "cid:#{filename}"
-		# 	]
-		# end
+		def send_preview_email_if_necessary api_key = "POSTMARK_API_TEST"
+			if self.to_emails.count > 0 && Postoffice::QueueService.action_has_occurred?("SEND_PREVIEW_EMAIL", self.from_person.id) == false
+				self.send_preview_email api_key
+			end
+		end
 
-		# def generate_email_message_body mail_image_cid
-		# 	self.create_temp_file_and_render_template mail_image_cid
-		# 	message_body = Premailer.new(temp_filename, :warn_level => Premailer::Warnings::SAFE).to_inline_css
-		# 	File.delete(temp_filename)
-		# 	message_body
-		# end
+		def send_preview_email api_key = "POSTMARK_API_TEST"
+			Postoffice::QueueService.log_action_occurrence "SEND_PREVIEW_EMAIL", self.from_person.id
+			Postoffice::EmailService.send_email self.preview_email_hash, api_key
+		end
 
-		# def temp_filename
-		# 	"tmp/#{self.id}.html"
-		# end
+		def preview_email_hash
+			banner_image_attachment = Postoffice::EmailService.image_email_attachment("resources/slowpost_banner.png")
+			mail_image_attachment = self.mail_image_attachment
+			mail_image_cid = mail_image_attachment["ContentID"]
+			template = 'resources/preview_email_template.html'
+			variables = Hash(mail: self, image_cid: mail_image_cid)
 
-		# def create_temp_file_and_render_template mail_image_cid
-		# 	temp_file = File.open(temp_filename, 'w')
-		# 	temp_file.write(self.render_template(mail_image_cid))
-		# 	temp_file.close
-		# end
+			Hash[
+				from: ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"],
+				to: self.from_person.email,
+				subject: "Preview of your Slowpost to #{self.to_email_list_shorthand}",
+				html_body: Postoffice::EmailService.generate_email_message_body(template, variables),
+				track_opens: true,
+				attachments: [mail_image_attachment, banner_image_attachment]
+			]
+		end
 
-		# def render_template mail_image_cid
-		# 	file = File.open('resources/email_template.html')
-		# 	contents = file.read
-		# 	file.close
-		# 	ERB.new(contents).result(binding)
-		# end
+		def to_email_list_shorthand
+			if self.to_emails.count == 1
+				self.to_emails[0]
+			elsif self.to_emails.count == 2
+				"#{self.to_emails[0]} and #{self.to_emails[1]}"
+			elsif self.to_emails.count > 2
+				"#{self.to_emails[0]} and #{self.to_emails.count - 1} others"
+			end
+		end
 
 	end
 

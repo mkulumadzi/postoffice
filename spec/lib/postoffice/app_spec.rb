@@ -874,7 +874,7 @@ describe app do
 		describe 'post /person/id/:id/mail/send' do
 
 			before do
-				post "/person/id/#{@person1.id}/mail/send", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+				post "/person/id/#{@person1.id}/mail/send?test=true", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
 			end
 
 			it 'must get a status of 201' do
@@ -895,12 +895,16 @@ describe app do
 				mail.status.must_equal "SENT"
 			end
 
+      it 'must have sent a preview email if this is the first time the person has sent a Slowpost by email' do
+        Postoffice::QueueService.action_has_occurred?("SEND_PREVIEW_EMAIL", @person1.id).must_equal true
+      end
+
 		end
 
     describe 'unauthorized request' do
 
       it 'must return a 401 error if a person tries to create mail for another user id' do
-        post "/person/id/#{@person2.id}/mail/send", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        post "/person/id/#{@person2.id}/mail/send?test=true", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
         last_response.status.must_equal 401
       end
 

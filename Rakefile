@@ -20,8 +20,8 @@ task :create_indexes do
 	Mongoid.load!("config/mongoid.yml", ENV['RACK_ENV'])
 	Postoffice::Person.create_indexes
 	Postoffice::Token.create_indexes
-	Postoffice::Contact.create_indexes
 	Postoffice::Conversation.create_indexes
+	Postoffice::QueueItem.create_indexes
 
 end
 
@@ -30,8 +30,9 @@ task :remove_indexes do
   Mongoid.load!("config/mongoid.yml", ENV['RACK_ENV'])
   Postoffice::Person.remove_indexes
 	Postoffice::Token.remove_indexes
-	Postoffice::Contact.remove_indexes
 	Postoffice::Conversation.remove_indexes
+	Postoffice::QueueItem.remove_indexes
+
 end
 
 task :setup_demo_data do
@@ -190,7 +191,7 @@ end
 task :test_email do
 
 	if ENV["RACK_ENV"] == "production"
-		puts "Cannot setup demo data on production environment"
+		puts "Cannot run this task on production environment"
 		return nil
 	end
 
@@ -229,4 +230,36 @@ end
 task :test_email_validation do
 	person = Postoffice::Person.find_by(username: "evan.waters")
 	Postoffice::AuthService.send_email_validation_email person, ENV["POSTMARK_API_KEY"]
+end
+
+task :test_preview_email do
+	if ENV["RACK_ENV"] == "production"
+		puts "Cannot run this task on production environment"
+		return nil
+	end
+
+	Mongoid.load!("config/mongoid.yml", ENV['RACK_ENV'])
+	Mongoid.logger.level = Logger::INFO
+	Mongo::Logger.logger.level = Logger::INFO
+
+	image = File.open('spec/resources/birthday.jpg')
+	uid = Dragonfly.app.store(image.read, 'name' => 'image1.jpg')
+	image.close
+
+	person = Postoffice::Person.find_by(username:"evan.waters")
+	f = Postoffice::FromPerson.new(person_id: person.id)
+	t1 = Postoffice::Email.new(email: "bigedubs44@yahoo.com")
+	t2 = Postoffice::Email.new(email: "evan@slowpost.me")
+	n = Postoffice::Note.new(content: "Can't wait to celebrate Slowpost's birthday!")
+	i = Postoffice::ImageAttachment.new(image_uid: uid)
+	mail = Postoffice::Mail.create!({
+		correspondents: [f, t1, t2],
+		attachments: [n, i],
+		scheduled_to_arrive: Time.now,
+		type: "SCHEDULED"
+	})
+
+	mail.mail_it
+	mail.send_preview_email ENV["POSTMARK_API_KEY"]
+
 end

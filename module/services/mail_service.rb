@@ -243,18 +243,13 @@ module Postoffice
 
 		def self.send_emails_for_mail delivered_mail, email_api_key = "POSTMARK_API_TEST"
 			emails = self.create_emails_to_send_for_mail delivered_mail
-			emails.each { |email| self.send_email email, email_api_key }
+			emails.each { |email| Postoffice::EmailService.send_email email, email_api_key }
 		end
 
 		def self.create_emails_to_send_for_mail delivered_mail
 			emails = []
 			delivered_mail.each { |mail| emails += mail.emails }
 			emails
-		end
-
-		def self.send_email email, email_api_key = "POSTMARK_API_TEST"
-			client = Postmark::ApiClient.new(email_api_key)
-			client.deliver(email)
 		end
 
 	end

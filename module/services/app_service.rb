@@ -121,6 +121,14 @@ module Postoffice
       end
     end
 
+    def self.email_api_key request
+      if request.params["test"] == "true"
+        "POSTMARK_API_TEST"
+      else
+        ENV["POSTMARK_API_KEY"]
+      end
+    end
+
   end
 
 end

@@ -263,4 +263,18 @@ describe Postoffice::AppService do
 
   end
 
+  describe 'email api key' do
+
+    it 'must return the test key for test requests' do
+      get '/?test=true'
+      Postoffice::AppService.email_api_key(last_request).must_equal "POSTMARK_API_TEST"
+    end
+
+    it 'must return the api key for real requests' do
+      get '/'
+      Postoffice::AppService.email_api_key(last_request).must_equal ENV["POSTMARK_API_KEY"]
+    end
+
+  end
+
 end

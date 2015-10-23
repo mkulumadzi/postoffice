@@ -1,0 +1,44 @@
+<head>
+	<link rel="stylesheet" type="text/css" href="../resources/slowpost.css">
+</head>
+<html>
+	<table class="container">
+		<tr>
+			<td class="column">
+				<table class="header">
+					<tr>
+						<td class="column">
+							<img src="cid:resources/slowpost_banner.png" class="header-image">
+              <p class="emphasis bold">Good news. You can send Slowposts to friends and family who haven&#39;t downloaded the app yet.</p>
+              <p class="emphasis">Since <%= hash[:mail].to_email_list_shorthand%> don’t have the app, your Slowpost will be delivered via email. Here's a preview of what they will see when it arrives!</p>
+						</td>
+					</tr>
+				</table>
+				<table class="card">
+					<tr>
+						<td class="column">
+							<img src= <%= hash[:image_cid] %> class="card-image">
+							<table class="from-container">
+								<p class="avatar"> <%= hash[:mail].from_person.initials %></p>
+								<p class="from-name"><%= hash[:mail].from_person.name %></p>
+							</table>
+							<p class="to-names">To <%= hash[:mail].to_list %></p>
+							<p class="date"> Sent on <%= hash[:mail].date_sent.to_date.to_s %></p>
+							<p class="text"> <%= hash[:mail].message_content %></p>
+						</td>
+					</tr>
+				</table>
+				<table class="footer">
+					<tr>
+						<td class="column">
+							<p class="emphasis">We only send you this preview the first time you send a Slowpost by email.</p>
+							<p class="emphasis">Keep on Slowpostin’ and encourage your friends to download the app!</p>
+							<p class="emphasis bold"> Visit us at <a class="yellow-link" href="https://slowpost.me">https://slowpost.me</a>.</p>
+							<p class="emphasis bold">Send feedback to <a class="yellow-link" href="mailto:feedback@slowpost.me?subject=Sign me up!">feedback@slowpost.me</a>.</p>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+</html>

@@ -656,7 +656,7 @@ describe Postoffice::Mail do
 				end
 
 				it 'must indicate that the person has received a Slowpost from the sender' do
-					expected_subject = "You've received a Slowpost from #{@mailA.from_person.full_name}"
+					expected_subject = "#{@mailA.from_person.full_name} sent you a Slowpost!"
 					@hash[:subject].must_equal expected_subject
 				end
 
@@ -706,6 +706,125 @@ describe Postoffice::Mail do
 
 			it 'must have indicated that the correspondents have been emailed' do
 				@email_correspondents[0].attempted_to_send.must_equal true
+			end
+
+		end
+
+		describe 'send preview email if necessary' do
+
+			before do
+				@mail_to_preview = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up"), build(:image_attachment, image_uid: @uid)])
+				@mail_to_preview.mail_it
+			end
+
+			describe 'send preview email' do
+
+				describe 'preview email hash' do
+
+					describe 'to email list shorthand' do
+
+						it 'must return a single email address if the mail has only 1 email recipient' do
+							mail = build(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com")], attachments: [build(:note, content: "Hey what is up")])
+							mail.to_email_list_shorthand.must_equal "test@test.com"
+						end
+
+						it 'must return two email addresses if the mail has 2 email recipients' do
+							mail = build(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")], attachments: [build(:note, content: "Hey what is up")])
+							mail.to_email_list_shorthand.must_equal "test@test.com and test2@test.com"
+						end
+
+						it 'must return one plus the number remaining if it has more than 2 email recipients' do
+							mail = build(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com"), build(:email, email: "test3@test.com")], attachments: [build(:note, content: "Hey what is up")])
+							mail.to_email_list_shorthand.must_equal "test@test.com and 2 others"
+						end
+
+					end
+
+					before do
+						@hash = @mail_to_preview.preview_email_hash
+					end
+
+					it 'must return a hash' do
+						@hash.must_be_instance_of Hash
+					end
+
+					it 'must be from the Postman email account' do
+						@hash[:from].must_equal ENV["POSTOFFICE_POSTMAN_EMAIL_ADDRESS"]
+					end
+
+					it 'must be to the person who sent the mail' do
+						@hash[:to].must_equal @person1.email
+					end
+
+					it 'must give a clear description of why they are getting an email' do
+						expected_subject = "Preview of your Slowpost to #{@mail_to_preview.to_email_list_shorthand}"
+						@hash[:subject].must_equal expected_subject
+					end
+
+					it 'must be configured to track opens' do
+						@hash[:track_opens].must_equal true
+					end
+
+					it 'must add the attachments as an array' do
+						@hash[:attachments].must_be_instance_of Array
+					end
+
+					it 'must include the Slowpost banner as an attachment' do
+						@hash[:attachments][1]["Name"].must_equal "resources/slowpost_banner.png"
+					end
+
+					it 'must render the message body using a template' do
+						mail_image_attachment = @mail_to_preview.mail_image_attachment
+						cid = mail_image_attachment["ContentID"]
+						variables = Hash(mail: @mail_to_preview, image_cid: cid)
+						template = "resources/preview_email_template.html"
+						expected_result = 				 	Postoffice::EmailService.generate_email_message_body template, variables
+						@hash[:html_body].must_equal expected_result
+					end
+
+				end
+
+				describe 'send the email' do
+
+					before do
+						@result = @mail_to_preview.send_preview_email
+					end
+
+					it 'must have sent the email' do
+						@result[:message].must_equal "Test job accepted"
+					end
+
+					it 'must record that the person has had a preview email sent' do
+						Postoffice::QueueService.action_has_occurred?("SEND_PREVIEW_EMAIL", @person1.id).must_equal true
+					end
+
+				end
+
+			end
+
+			describe 'send the email if necessary' do
+
+				it 'must send a preview email if the mail has email recipients, and the sender has not seen a preview email yet' do
+					@mail_to_preview.send_preview_email_if_necessary
+					Postoffice::QueueService.action_has_occurred?("SEND_PREVIEW_EMAIL", @person1.id).must_equal true
+				end
+
+				it 'must return a hash with the email information if one is sent' do
+					@mail_to_preview.send_preview_email_if_necessary.must_be_instance_of Hash
+				end
+
+				it 'must not send a preview email if the mail does not include emai recipients' do
+					no_preview = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)], attachments: [build(:note, content: "Hey what is up"), build(:image_attachment, image_uid: @uid)])
+					no_preview.mail_it
+					no_preview.send_preview_email_if_necessary
+					Postoffice::QueueService.action_has_occurred?("SEND_PREVIEW_EMAIL", @person1.id).must_equal false
+				end
+
+				it 'must not send a preview email if person has already received a preview email' do
+					Postoffice::QueueService.log_action_occurrence "SEND_PREVIEW_EMAIL", @person1.id
+					@mail_to_preview.send_preview_email_if_necessary.must_equal nil
+				end
+
 			end
 
 		end

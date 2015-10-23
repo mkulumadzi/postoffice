@@ -26,9 +26,7 @@ post '/person/new' do
   begin
     person = Postoffice::PersonService.create_person data
     Postoffice::MailService.generate_welcome_message person
-
-    api_key = ENV["POSTMARK_API_KEY"]
-    if params["test"] == "true" then api_key = "POSTMARK_API_TEST" end
+    api_key = Postoffice::AppService.email_api_key request
     Postoffice::AuthService.send_email_validation_email person, api_key
     person_link = "#{ENV['POSTOFFICE_BASE_URL']}/person/id/#{person.id}"
 
@@ -111,8 +109,7 @@ post '/person/id/:id' do
   data = JSON.parse request.body.read
   if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
   begin
-    api_key = ENV["POSTMARK_API_KEY"]
-    if params["test"] == "true" then api_key = "POSTMARK_API_TEST" end
+    api_key = Postoffice::AppService.email_api_key request
     Postoffice::PersonService.update_person params[:id], data, api_key
     [204, nil]
   rescue Mongoid::Errors::DocumentNotFound
@@ -205,8 +202,7 @@ post '/request_password_reset' do
 
   begin
     person = Postoffice::Person.find_by(email: data["email"])
-    api_key = ENV["POSTMARK_API_KEY"]
-    if params["test"] == "true" then api_key = "POSTMARK_API_TEST" end
+    api_key = Postoffice::AppService.email_api_key request
     email_sent = Postoffice::AuthService.send_password_reset_email person, api_key
     if email_sent[:error_code] == 0
       [201, nil]
@@ -306,6 +302,8 @@ post '/person/id/:id/mail/send' do
   begin
     mail = Postoffice::MailService.create_mail params, data
     mail.mail_it
+    api_key = Postoffice::AppService.email_api_key request
+    mail.send_preview_email_if_necessary api_key
     mail_link = "#{ENV['POSTOFFICE_BASE_URL']}/mail/id/#{mail.id}"
     headers = { "location" => mail_link }
     [201, headers, nil]

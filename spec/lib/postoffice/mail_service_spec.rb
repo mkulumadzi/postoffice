@@ -1019,7 +1019,7 @@ describe Postoffice::MailService do
 
 				before do
 					@email_hash = Hash[from: "postman@slowpost.me", to: "evan@slowpost.me", subject: "This is a test", html_body: "<strong>Hello</strong> Evan!", track_opens: false]
-					@result = Postoffice::MailService.send_email @email_hash
+					@result = Postoffice::EmailService.send_email @email_hash
 				end
 
 				it 'must not get an error' do

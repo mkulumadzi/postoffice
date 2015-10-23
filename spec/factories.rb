@@ -16,13 +16,6 @@ FactoryGirl.define do
     attachments { [FactoryGirl.build(:note)] }
   end
 
-  factory :contact, class: Postoffice::Contact do
-    person_id "abc"
-    contact_person_id "def"
-    in_address_book false
-    is_penpal true
-  end
-
   factory :email, class: Postoffice::Email do
     email "test@test.com"
   end
@@ -41,6 +34,12 @@ FactoryGirl.define do
 
   factory :image_attachment, class: Postoffice::ImageAttachment do
     image_uid "image.jpg"
+  end
+
+  factory :queue_item, class: Postoffice::QueueItem do
+    person_id "abc"
+    description "SHOULD_GET_A_HUG"
+    status "OPEN"
   end
 
 end
