@@ -49,8 +49,8 @@ task :setup_demo_data do
 	Postoffice::Mail.delete_all
 	Postoffice::Person.delete_all
 	Postoffice::Token.delete_all
-	Postoffice::Contact.delete_all
 	Postoffice::Conversation.delete_all
+	Postoffice::QueueItem.delete_all
 
 	Postoffice::Person.create!({
 			username: "postman",
