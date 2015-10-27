@@ -226,6 +226,10 @@ module Postoffice
 			notifications = Postoffice::NotificationService.create_notification_for_people people, "You've received new mail!", "New Mail"
 			puts ("Sending notifications")
 			puts notifications
+			notifications.each do |notification|
+				puts notification.device_token
+				puts notification.badge
+			end
 			APNS.send_notifications(notifications)
 			self.mark_attempted_notification to_people
 		end
