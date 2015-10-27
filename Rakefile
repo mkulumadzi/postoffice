@@ -182,7 +182,7 @@ end
 
 task :test_notification do
   puts "Sending test notification for #{ENV['RACK_ENV']} environment"
-  people = Postoffice::Person.where(:device_token.exists => true, :device_token.ne => "abc123")
+  people = Postoffice::Person.where(username: "evan.waters")
   notifications = Postoffice::NotificationService.create_notification_for_people people, "Test notification", "Test"
   puts "Sending notifications: #{notifications}"
   APNS.send_notifications(notifications)
