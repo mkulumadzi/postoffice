@@ -382,6 +382,24 @@ post '/mail/id/:id/deliver' do
 
 end
 
+# Deliver a piece of mail
+# Scope: admin
+post '/mail/id/:id/arrive_now' do
+
+   begin
+    mail = Postoffice::Mail.find(params[:id])
+    from_id = mail.from_person.id.to_s
+    if Postoffice::AppService.not_admin_or_owner?(request, "can-write", from_id) then return [401, nil] end
+    mail.arrive_now
+    [204, nil]
+  rescue Mongoid::Errors::DocumentNotFound
+    [404, nil]
+  rescue ArgumentError
+    [403, nil]
+  end
+
+end
+
 # Mark a piece of mail as read
 # Scope: admin OR (can_write, is 'from' person)
 post '/mail/id/:id/read' do

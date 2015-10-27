@@ -434,6 +434,23 @@ describe Postoffice::Mail do
 
 	end
 
+	describe 'arrive now' do
+
+		it 'must make the mail arrive now' do
+			@mail1.mail_it
+			@mail1.arrive_now
+			db_record = Postoffice::Mail.find(@mail1.id)
+			db_record.scheduled_to_arrive.to_i.must_equal Time.now.to_i
+		end
+
+		it 'must return an Argument Error if the mail is not in a sent state' do
+			assert_raises ArgumentError do
+				@mail1.arrive_now
+			end
+		end
+
+	end
+
 	describe 'from person' do
 
 		before do

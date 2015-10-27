@@ -126,6 +126,12 @@ module Postoffice
 			self.save
 		end
 
+		def arrive_now
+			raise ArgumentError, "Mail must be in SENT state to deliver" unless self.status == "SENT"
+			self.scheduled_to_arrive = Time.now
+			self.save
+		end
+
 		def from_person
 			from_person_id = self.correspondents.where(_type: "Postoffice::FromPerson").first.person_id
 			Postoffice::Person.find(from_person_id)
