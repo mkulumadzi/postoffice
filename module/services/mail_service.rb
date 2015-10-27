@@ -224,6 +224,8 @@ module Postoffice
 		def self.send_notifications_to_people_receiving_mail to_people
 			people = self.get_people_from_correspondents to_people
 			notifications = Postoffice::NotificationService.create_notification_for_people people, "You've received new mail!", "New Mail"
+			puts ("Sending notifications")
+			puts notifications
 			APNS.send_notifications(notifications)
 			self.mark_attempted_notification to_people
 		end
