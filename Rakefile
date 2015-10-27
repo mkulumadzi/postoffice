@@ -158,6 +158,19 @@ task :setup_demo_data do
 
 		mail5.mail_it
 
+		f6 = Postoffice::FromPerson.new(person_id: demo.id)
+		t6 = Postoffice::ToPerson.new(person_id: person.id)
+		n6 = Postoffice::Note.new(content: "Can't wait to receive a few more Slowposts!")
+		i6 = Postoffice::ImageAttachment.new(image_uid: uid1)
+		mail6 = Postoffice::Mail.create!({
+			correspondents: [f6, t6],
+			attachments: [n6, i6]
+		})
+
+		mail6.mail_it
+		mail6.scheduled_to_arrive = Time.now
+		mail6.save
+
 		Postoffice::ConversationService.initialize_conversations_for_all_mail
 
 end
