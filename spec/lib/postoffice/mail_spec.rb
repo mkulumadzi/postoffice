@@ -512,6 +512,34 @@ describe Postoffice::Mail do
 
 	end
 
+	describe 'to people' do
+
+		before do
+			@to_people = @mail1.to_people
+		end
+
+		it 'must return an array of people' do
+			@to_people[0].must_be_instance_of Postoffice::Person
+		end
+
+		it 'must return the people who the mail was sent to' do
+			@to_people.must_equal [@person2]
+		end
+
+		describe 'mail with invalid correspondents' do
+
+			before do
+				@mail_with_invalid_correspondents = build(:mail, correspondents: [build(:to_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:to_person, person_id: "abc")])
+			end
+
+			it 'must only return valid people' do
+				@mail_with_invalid_correspondents.to_people.must_equal [@person1, @person2]
+			end
+
+		end
+
+	end
+
 	describe 'to emails' do
 
 		before do
@@ -575,6 +603,125 @@ describe Postoffice::Mail do
 					@mail1.read_by @person2
 				end
 
+			end
+
+		end
+
+	end
+
+	describe 'notifications' do
+
+		describe 'notification for sender' do
+
+			before do
+				@notifications = @mail1.notification_for_sender
+			end
+
+			it 'must return an array with an APNS notification' do
+				@notifications[0].must_be_instance_of APNS::Notification
+			end
+
+			it 'must only return one notification' do
+				@notifications.count.must_equal 1
+			end
+
+			it 'must be to the senders device token' do
+				@notifications[0].device_token.must_equal @mail1.from_person.device_token
+			end
+
+			it 'must tell the sender that their Slowpost has been delivered' do
+				@notifications[0].alert.must_equal "Your Slowpost has been delivered"
+			end
+
+			it 'must not contain a badge' do
+				@notifications[0].badge.must_equal nil
+			end
+
+			it 'must be of type Delivered Mail' do
+				@notifications[0].other[:type].must_equal "Delivered Mail"
+			end
+
+			it 'must return an empty array if the sender does not have a device token' do
+				person = create(:person, username: random_username, device_token: nil)
+				mail = build(:mail, correspondents: [build(:from_person, person_id: person.id)])
+				mail.notification_for_sender.must_equal []
+			end
+
+		end
+
+		describe 'notifications for recipients' do
+
+			before do
+				@notifications = @mail1.notifications_for_recipients
+				@notification = @notifications[0]
+			end
+
+			it 'must return an array of notifications' do
+				@notification.must_be_instance_of APNS::Notification
+			end
+
+			describe 'recipient notification' do
+
+				before do
+					@notification = @mail1.recipient_notification @person2
+				end
+
+				it 'must be to the recipients device token' do
+					@notification.device_token.must_equal @person2.device_token
+				end
+
+				it 'must tell the recipient that they have received a Slowpost from the sender' do
+					@notification.alert.must_equal "You've received a Slowpost from #{@person1.full_name}"
+				end
+
+				it 'must contain a badge with the total number of unread mail for the person' do
+					@notification.badge.must_equal @person2.number_unread_mail
+				end
+
+				it 'must be of type New Mail' do
+					@notification.other[:type].must_equal "New Mail"
+				end
+
+			end
+
+			it 'must return the correct recipient notifications' do
+				@notification.alert.must_equal @mail1.recipient_notification(@person2).alert
+			end
+
+			it 'must only return notifications for recipients who have a device token does not have a device token' do
+				sender = create(:person, username: random_username)
+				person1 = create(:person, username: random_username, device_token: nil)
+				person2 = create(:person, username: random_username, device_token: "abc")
+				mail = build(:mail, correspondents: [build(:from_person, person_id: sender.id), build(:to_person, person_id: person1.id), build(:to_person, person_id: person2.id)])
+				mail.notification_for_sender.count.must_equal 1
+			end
+
+		end
+
+		describe 'the notifications' do
+
+			before do
+				@notifications = @mail1.notifications
+			end
+
+			it 'must return a notification for all of the people' do
+				@notifications.count.must_equal 2
+			end
+
+			it 'must return the sender notification' do
+				@notifications[0].alert.must_equal @mail1.notification_for_sender[0].alert
+			end
+
+			it 'must return the recipient notifications' do
+				@notifications[1].alert.must_equal @mail1.recipient_notification(@person2).alert
+			end
+
+			it 'must only return notifications for people with device tokens' do
+				sender = create(:person, username: random_username, device_token: nil)
+				person1 = create(:person, username: random_username, device_token: nil)
+				person2 = create(:person, username: random_username, device_token: "abc")
+				mail = build(:mail, correspondents: [build(:from_person, person_id: sender.id), build(:to_person, person_id: person1.id), build(:to_person, person_id: person2.id)])
+				mail.notifications.count.must_equal 1
 			end
 
 		end

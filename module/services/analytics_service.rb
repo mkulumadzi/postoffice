@@ -5,7 +5,7 @@ module Postoffice
     def self.export_mail_metadata
       export_array = []
       Postoffice::Mail.each do |mail|
-        export_array << [mail.from, mail.to, mail.created_at.to_s, mail.image_uid, mail.status, mail.scheduled_to_arrive.to_s, mail.updated_at.to_s]
+        export_array << [mail.from_person.name, mail.to_list, mail.created_at.to_s, mail.image_uid, mail.status, mail.scheduled_to_arrive.to_s, mail.updated_at.to_s]
       end
       export_array
     end
@@ -17,7 +17,7 @@ module Postoffice
         today = Time.now().to_date
         days_active = today - registration_date
         sent_mail_stats = Array.new(days_active + 1){0}
-        Postoffice::Mail.where(from: person.username).each do |mail|
+        Postoffice::Mail.where(:correspondents.elem_match => {"_type" => "Postoffice::FromPerson", "person_id" => person.id}).each do |mail|
           mail_created_date = mail.created_at.to_date
           index = (mail_created_date - registration_date).to_i
           sent_mail_stats[index] += 1

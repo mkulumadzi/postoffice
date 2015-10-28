@@ -32,6 +32,23 @@ describe app do
     @person2_token = Postoffice::AuthService.generate_token_for_person @person2
 	end
 
+	describe 'APNS configuration' do
+
+		it 'must set the port to 2195' do
+			APNS.port.must_equal 2195
+		end
+
+		it 'must set the gateway' do
+			APNS.host.must_equal 'gateway.sandbox.push.apple.com'
+		end
+
+		it 'must point to a pem file' do
+			File.exist?(APNS.pem).must_equal true
+		end
+
+	end
+
+
 	describe 'app_root' do
 
 		describe 'get /' do

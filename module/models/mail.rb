@@ -167,6 +167,15 @@ module Postoffice
 			to_people_ids
 		end
 
+		def to_people
+			to_people = []
+			self.correspondents.where(_type: "Postoffice::ToPerson").each do |to_person|
+				person = Postoffice::Person.where(id: to_person.person_id).first
+				if person != nil then to_people << person end
+			end
+			to_people
+		end
+
 		def to_emails
 			to_emails = []
 			emails = self.correspondents.where(_type: "Postoffice::Email")
@@ -178,6 +187,35 @@ module Postoffice
 			if self.status != "DELIVERED" then raise "Mail must be DELIVERED to read" end
 			correspondent = self.correspondents.find_by(person_id: person.id, _type: "Postoffice::ToPerson")
 			correspondent.read
+		end
+
+		### Sending notifications
+		def notifications
+			notifications = self.notification_for_sender
+			notifications += self.notifications_for_recipients
+			notifications
+		end
+
+		def notification_for_sender
+			person = self.from_person
+			if person.device_token != nil
+				[APNS::Notification.new(person.device_token, alert: "Your Slowpost has been delivered", badge: nil, other: {type: "Delivered Mail"})]
+			else
+				[]
+			end
+		end
+
+		def notifications_for_recipients
+			notifications = []
+			self.to_people.each do |person|
+				if person.device_token != nil then notifications << self.recipient_notification(person) end
+			end
+			notifications
+		end
+
+		def recipient_notification person
+			num_unread = person.number_unread_mail
+			APNS::Notification.new(person.device_token, alert: "You've received a Slowpost from #{self.from_person.full_name}", badge: num_unread, other: {type: "New Mail"})
 		end
 
 		### Creating emails for mail

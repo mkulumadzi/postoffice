@@ -935,84 +935,121 @@ describe Postoffice::MailService do
 
 		end
 
-		describe 'get correspondents to notify from mail' do
+		describe 'send notifications for mail' do
 
 			before do
-				correspondent_to_notify = (@mailA.correspondents.select{|correspondent| correspondent._type == "Postoffice::ToPerson"})[0]
-				correspondent_to_notify.attempted_to_notify = true
-				correspondent_to_notify.save
-
 				@delivered_mail = Postoffice::MailService.deliver_mail_that_has_arrived
-				@correspondents = Postoffice::MailService.get_correspondents_to_notify_from_mail @delivered_mail
 			end
 
-			it 'must return an hash with keys for :to_people correspondents and :emails correspondents' do
-				@correspondents.keys.must_equal [:to_people]
-			end
-
-			describe 'slowpost correspondents' do
+			describe 'get notifications for mail' do
 
 				before do
-					@slowpost_correspondents = @correspondents[:to_people]
+					@notifications = Postoffice::MailService.get_notifications_for_mail @delivered_mail
 				end
 
-				it 'must return correspondents whose type is Postoffice::ToPerson' do
-					correct_type = @slowpost_correspondents.select {|correspondent| correspondent._type == "Postoffice::ToPerson"}
-					@slowpost_correspondents.count.must_equal correct_type.count
+				it 'must return an array of notifications' do
+					@notifications[0].must_be_instance_of APNS::Notification
 				end
 
-				it 'must only return correspondents who have not been attempted to be notified yet' do
-					not_notified = @slowpost_correspondents.select {|correspondent| correspondent.attempted_to_notify != true}
-					@slowpost_correspondents.count.must_equal not_notified.count
+				it 'must return notifications for all of correspondents on the delivered mail' do
+					num_correspondents = 0
+					@delivered_mail.each do |mail|
+						num_correspondents += 1
+						num_correspondents += mail.to_people.count
+					end
+					@notifications.count.must_equal num_correspondents
+				end
+
+			end
+
+			describe 'send the notifications' do
+
+				it 'must not return an error' do
+					Postoffice::MailService.send_notifications_for_mail(@delivered_mail).must_equal nil
 				end
 
 			end
 
 		end
 
-		describe 'send notifications to people receiving mail' do
-
-			before do
-				@delivered_mail = Postoffice::MailService.deliver_mail_that_has_arrived
-				@slowpost_correspondents = Postoffice::MailService.get_correspondents_to_notify_from_mail(@delivered_mail)[:to_people]
-			end
-
-			describe 'get people from correspondents' do
-
-				before do
-					@people = Postoffice::MailService.get_people_from_correspondents @slowpost_correspondents
-				end
-
-				it 'must return an array of people' do
-					@people[0].must_be_instance_of Postoffice::Person
-				end
-
-				it 'must return people who are correspondents of the mail' do
-					example_person = Postoffice::Person.find(@slowpost_correspondents[0].person_id)
-					@people.include?(example_person).must_equal true
-				end
-
-			end
-
-			describe 'mark atempted notification of correspondents' do
-
-				before do
-					Postoffice::MailService.mark_attempted_notification @slowpost_correspondents
-				end
-
-				it 'must indicate that each correspondent has attempted to be notified' do
-					not_notified = @slowpost_correspondents.select {|correspondent| correspondent.attempted_to_notify != true }
-					not_notified.count.must_equal 0
-				end
-
-			end
-
-			# To Do: Figure out how to test that notifications were actually sent
-			it 'must not raise an error' do
-				Postoffice::MailService.send_notifications_to_people_receiving_mail @slowpost_correspondents
-			end
-
-		end
+		# describe 'get correspondents to notify from mail' do
+		#
+		# 	before do
+		# 		correspondent_to_notify = (@mailA.correspondents.select{|correspondent| correspondent._type == "Postoffice::ToPerson"})[0]
+		# 		correspondent_to_notify.attempted_to_notify = true
+		# 		correspondent_to_notify.save
+		#
+		# 		@delivered_mail = Postoffice::MailService.deliver_mail_that_has_arrived
+		# 		@correspondents = Postoffice::MailService.get_correspondents_to_notify_from_mail @delivered_mail
+		# 	end
+		#
+		# 	it 'must return an hash with keys for :to_people correspondents and :emails correspondents' do
+		# 		@correspondents.keys.must_equal [:to_people]
+		# 	end
+		#
+		# 	describe 'slowpost correspondents' do
+		#
+		# 		before do
+		# 			@slowpost_correspondents = @correspondents[:to_people]
+		# 		end
+		#
+		# 		it 'must return correspondents whose type is Postoffice::ToPerson' do
+		# 			correct_type = @slowpost_correspondents.select {|correspondent| correspondent._type == "Postoffice::ToPerson"}
+		# 			@slowpost_correspondents.count.must_equal correct_type.count
+		# 		end
+		#
+		# 		it 'must only return correspondents who have not been attempted to be notified yet' do
+		# 			not_notified = @slowpost_correspondents.select {|correspondent| correspondent.attempted_to_notify != true}
+		# 			@slowpost_correspondents.count.must_equal not_notified.count
+		# 		end
+		#
+		# 	end
+		#
+		# end
+		#
+		# describe 'send notifications to people receiving mail' do
+		#
+		# 	before do
+		# 		@delivered_mail = Postoffice::MailService.deliver_mail_that_has_arrived
+		# 		@slowpost_correspondents = Postoffice::MailService.get_correspondents_to_notify_from_mail(@delivered_mail)[:to_people]
+		# 	end
+		#
+		# 	describe 'get people from correspondents' do
+		#
+		# 		before do
+		# 			@people = Postoffice::MailService.get_people_from_correspondents @slowpost_correspondents
+		# 		end
+		#
+		# 		it 'must return an array of people' do
+		# 			@people[0].must_be_instance_of Postoffice::Person
+		# 		end
+		#
+		# 		it 'must return people who are correspondents of the mail' do
+		# 			example_person = Postoffice::Person.find(@slowpost_correspondents[0].person_id)
+		# 			@people.include?(example_person).must_equal true
+		# 		end
+		#
+		# 	end
+		#
+		# 	describe 'mark atempted notification of correspondents' do
+		#
+		# 		before do
+		# 			Postoffice::MailService.mark_attempted_notification @slowpost_correspondents
+		# 		end
+		#
+		# 		it 'must indicate that each correspondent has attempted to be notified' do
+		# 			not_notified = @slowpost_correspondents.select {|correspondent| correspondent.attempted_to_notify != true }
+		# 			not_notified.count.must_equal 0
+		# 		end
+		#
+		# 	end
+		#
+		# 	# To Do: Figure out how to test that notifications were actually sent
+		# 	it 'must not raise an error' do
+		# 		Postoffice::MailService.send_notifications_to_people_receiving_mail @slowpost_correspondents
+		# 	end
+		#
+		# end
 
 		describe 'send emails for mail' do
 
@@ -1076,12 +1113,6 @@ describe Postoffice::MailService do
 
 			before do
 				Postoffice::MailService.deliver_mail_and_notify_correspondents
-			end
-
-			it 'must have marked the mail with notifications sent' do
-				mailAdb = Postoffice::Mail.find(@mailA.id)
-				to_person = mailAdb.correspondents.select {|c| c._type == "Postoffice::ToPerson"}[0]
-				to_person.attempted_to_notify.must_equal true
 			end
 
 			it 'must have marked the mail with emails sent' do

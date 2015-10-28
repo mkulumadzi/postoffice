@@ -202,8 +202,7 @@ module Postoffice
 
 		def self.deliver_mail_and_notify_correspondents email_api_key = "POSTMARK_API_TEST"
 			delivered_mail = self.deliver_mail_that_has_arrived
-			correspondents = self.get_correspondents_to_notify_from_mail delivered_mail
-			self.send_notifications_to_people_receiving_mail correspondents[:to_people]
+			self.send_notifications_for_mail delivered_mail
 			self.send_emails_for_mail delivered_mail, email_api_key
 		end
 
@@ -217,36 +216,17 @@ module Postoffice
 			Postoffice::Mail.where({status: "SENT", scheduled_to_arrive: { "$lte" => Time.now } }).to_a
 		end
 
-		def self.get_correspondents_to_notify_from_mail mail_array
-			correspondents = Hash[:to_people, []]
-			mail_array.each do |mail|
-				mail.correspondents.each do |c|
-					if c._type == "Postoffice::ToPerson" && c.attempted_to_notify != true
-						correspondents[:to_people] << c
-					end
-				end
-			end
-			correspondents
-		end
-
-		def self.send_notifications_to_people_receiving_mail to_people
-			people = self.get_people_from_correspondents to_people
-			notifications = Postoffice::NotificationService.create_notification_for_people people, "You've received new mail!", "New Mail"
+		def self.send_notifications_for_mail delivered_mail
+			notifications = self.get_notifications_for_mail delivered_mail
 			APNS.send_notifications(notifications)
-			self.mark_attempted_notification to_people
 		end
 
-		def self.get_people_from_correspondents correspondents
-			people = []
-			correspondents.each { |c| people << Postoffice::Person.find(c.person_id) }
-			people
-		end
-
-		def self.mark_attempted_notification correspondents
-			correspondents.each do |c|
-				c.attempted_to_notify = true
-				c.mail.save
+		def self.get_notifications_for_mail delivered_mail
+			notifications = []
+			delivered_mail.each do |mail|
+				notifications += mail.notifications
 			end
+			notifications
 		end
 
 		def self.send_emails_for_mail delivered_mail, email_api_key = "POSTMARK_API_TEST"

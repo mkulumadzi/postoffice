@@ -52,5 +52,9 @@ module Postoffice
 			self.save
 		end
 
+		def number_unread_mail
+			Postoffice::Mail.where(status: "DELIVERED", :correspondents.elem_match => { :_type => "Postoffice::ToPerson", :person_id => self.id, :status => {"$ne" => "READ"}}).count
+		end
+
 	end
 end

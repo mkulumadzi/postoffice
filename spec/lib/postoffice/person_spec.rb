@@ -128,4 +128,29 @@ describe Postoffice::Person do
 
 	end
 
+	describe 'number unread mail' do
+
+		before do
+
+			@person1 = create(:person, username: random_username, phone: random_phone, email: random_email, device_token: nil)
+			@person2 = create(:person, username: random_username, phone: random_phone, email: random_email, device_token: "abc123")
+
+			@mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
+			@mail2 = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id)])
+
+			@mail1.mail_it
+			@mail1.deliver
+			@mail1.read_by @person2
+
+			@mail2.mail_it
+			@mail2.deliver
+		end
+
+		it 'must return the number of mail that is delivered to a person' do
+			num_unread = @person2.number_unread_mail
+			num_unread.must_equal 1
+		end
+
+	end
+
 end
