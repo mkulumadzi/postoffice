@@ -210,8 +210,8 @@ task :test_notification_of_recipients do
 
 	f2 = Postoffice::Person.find_by(username: "evan.waters")
 	t2 = Postoffice::Person.find_by(username: "postman")
-	fp2 = Postoffice::FromPerson.new(person_id: f.id)
-	tp2 = Postoffice::ToPerson.new(person_id: t.id)
+	fp2 = Postoffice::FromPerson.new(person_id: f2.id)
+	tp2 = Postoffice::ToPerson.new(person_id: t2.id)
 	n2 = Postoffice::Note.new(content: "Yes, I did!")
 
 	image2 = File.open('spec/resources/image1.jpg')
