@@ -188,6 +188,29 @@ task :test_notification do
   APNS.send_notifications(notifications)
 end
 
+task :test_notification_of_recipients do
+	f = Postoffice::Person.find_by(username: "postman")
+	t = Postoffice::Person.find_by(username: "evan.waters")
+	fp = Postoffice::FromPerson.new(person_id: f.id)
+	tp = Postoffice::ToPerson.new(person_id: t.id)
+	te = Postoffice::Email.new(email: "evan@slowpost.me")
+	n = Postoffice::Note.new(content: "Did ya get this?")
+
+	image = File.open('spec/resources/image1.jpg')
+	uid = Dragonfly.app.store(image.read, 'name' => 'image1.jpg')
+	image.close
+	i = Postoffice::ImageAttachment.new(image_uid: uid)
+
+	mail = Postoffice::Mail.create!({
+		correspondents: [fp, tp, te],
+		attachments: [n, i]
+	})
+	mail.mail_it
+	mail.arrive_now
+
+	Postoffice::MailService.deliver_mail_and_notify_correspondents ENV["POSTMARK_API_KEY"]
+end
+
 task :migrate_data do
   require_relative 'db/migrate.rb'
 end
