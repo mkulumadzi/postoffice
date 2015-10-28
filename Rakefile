@@ -208,6 +208,11 @@ task :test_notification_of_recipients do
 	mail.mail_it
 	mail.arrive_now
 
+	Postoffice::MailService.deliver_mail_and_notify_correspondents ENV["POSTMARK_API_KEY"]
+end
+
+task :test_notification_of_sender do
+
 	f2 = Postoffice::Person.find_by(username: "evan.waters")
 	t2 = Postoffice::Person.find_by(username: "postman")
 	fp2 = Postoffice::FromPerson.new(person_id: f2.id)
