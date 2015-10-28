@@ -208,6 +208,24 @@ task :test_notification_of_recipients do
 	mail.mail_it
 	mail.arrive_now
 
+	f2 = Postoffice::Person.find_by(username: "evan.waters")
+	t2 = Postoffice::Person.find_by(username: "postman")
+	fp2 = Postoffice::FromPerson.new(person_id: f.id)
+	tp2 = Postoffice::ToPerson.new(person_id: t.id)
+	n2 = Postoffice::Note.new(content: "Yes, I did!")
+
+	image2 = File.open('spec/resources/image1.jpg')
+	uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
+	image2.close
+	i2 = Postoffice::ImageAttachment.new(image_uid: uid2)
+
+	mail2 = Postoffice::Mail.create!({
+		correspondents: [fp2, tp2],
+		attachments: [n2, i2]
+	})
+	mail2.mail_it
+	mail2.arrive_now
+
 	Postoffice::MailService.deliver_mail_and_notify_correspondents ENV["POSTMARK_API_KEY"]
 end
 
