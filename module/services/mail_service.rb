@@ -6,10 +6,18 @@ module Postoffice
 
 		def self.create_mail params, json_data
 			person = Postoffice::Person.find(params[:id])
+			validate_recipients json_data
 			mail_hash = self.create_mail_hash person.id, json_data
 			mail = Postoffice::Mail.create!(mail_hash)
 			self.create_conversation_if_none_exists mail
 			mail
+		end
+
+		def self.validate_recipients json_data
+			json_data["correspondents"]["to_people"].each do |person_id|
+				raise "Invalid recipients" unless Postoffice::Person.where(id: person_id).exists? == true
+			end
+			true
 		end
 
 		def self.create_mail_hash person_id, json_data
@@ -224,12 +232,6 @@ module Postoffice
 		def self.send_notifications_to_people_receiving_mail to_people
 			people = self.get_people_from_correspondents to_people
 			notifications = Postoffice::NotificationService.create_notification_for_people people, "You've received new mail!", "New Mail"
-			puts ("Sending notifications")
-			puts notifications
-			notifications.each do |notification|
-				puts notification.device_token
-				puts notification.badge
-			end
 			APNS.send_notifications(notifications)
 			self.mark_attempted_notification to_people
 		end

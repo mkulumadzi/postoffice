@@ -20,6 +20,22 @@ describe Postoffice::MailService do
 			@json_data = JSON.parse(@data)
 		end
 
+		describe 'validate recipients' do
+
+			it 'must raise a RuntimeError if a person_id is submitted that is not valid' do
+				json_data = JSON.parse('{"correspondents": {"to_people": ["abc"]}}')
+				assert_raises RuntimeError do
+					Postoffice::MailService.validate_recipients json_data
+				end
+			end
+
+			it 'must return true if the recipients are valid' do
+				json_data = JSON.parse('{"correspondents": {"to_people": ["' + @person2.id + '","' + @person3.id + '"]}}')
+				Postoffice::MailService.validate_recipients(json_data).must_equal true
+			end
+
+		end
+
 		describe 'create mail hash' do
 
 			describe 'initialize mail hash with from person' do
@@ -172,13 +188,6 @@ describe Postoffice::MailService do
 
 				end
 
-				# def self.add_attachments mail_hash, json_data
-				# 	attachments = self.add_embedded_documents json_data["attachments"]["notes"], self.add_note
-				# 	attachments += self.create_image_attachments json_data["attachments"]["image_attachments"], self.add_image_attachment
-				# 	mail_hash[:attachments] = attachments
-				# 	mail_hash
-				# end
-
 				describe 'add the attachments' do
 
 					before do
@@ -296,6 +305,22 @@ describe Postoffice::MailService do
 
 			it 'must have created the conversation for the mail' do
 				Postoffice::Conversation.where(hex_hash: @mail.conversation_hash[:hex_hash]).count.must_equal 1
+			end
+
+		end
+
+		describe 'error conditions' do
+
+			before do
+				@params = Hash(id: @person1.id.to_s)
+				data = '{"correspondents": {"to_people": ["abc"]}, "attachments": {"notes": ["Hey there"]}}'
+				@json_data = JSON.parse(data)
+			end
+
+			it 'must raise a RuntimeError' do
+				assert_raises RuntimeError do
+					Postoffice::MailService.create_mail @params, @json_data
+				end
 			end
 
 		end
