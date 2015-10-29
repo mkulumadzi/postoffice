@@ -14,8 +14,10 @@ module Postoffice
 		end
 
 		def self.validate_recipients json_data
-			json_data["correspondents"]["to_people"].each do |person_id|
-				raise "Invalid recipients" unless Postoffice::Person.where(id: person_id).exists? == true
+			if json_data["correspondents"]["to_people"]
+				json_data["correspondents"]["to_people"].each do |person_id|
+					raise "Invalid recipients" unless Postoffice::Person.where(id: person_id).exists? == true
+				end
 			end
 			true
 		end

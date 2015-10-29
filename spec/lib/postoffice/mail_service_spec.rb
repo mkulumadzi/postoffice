@@ -34,6 +34,11 @@ describe Postoffice::MailService do
 				Postoffice::MailService.validate_recipients(json_data).must_equal true
 			end
 
+			it 'must return true if there are no to_people but there are to_emails)' do
+				json_data = JSON.parse('{"correspondents": {"to_emails": ["test.test.com"]}}')
+				Postoffice::MailService.validate_recipients(json_data).must_equal true
+			end
+
 		end
 
 		describe 'create mail hash' do
