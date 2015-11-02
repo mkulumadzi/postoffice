@@ -23,6 +23,20 @@ describe Postoffice::AppService do
     @person2_token = Postoffice::AuthService.generate_token_for_person @person2
   end
 
+  describe 'get token from authorization header' do
+
+    it 'must return the token if one is provided' do
+      get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@admin_token}"}
+      Postoffice::AppService.get_token_from_authorization_header(last_request).must_equal @admin_token
+    end
+
+    it 'must return nil if no token was provided' do
+      get "/"
+      Postoffice::AppService.get_token_from_authorization_header(last_request).must_equal nil
+    end
+
+  end
+
   describe 'get payload from request bearer' do
 
     describe 'get a valid token' do
@@ -94,9 +108,23 @@ describe Postoffice::AppService do
       Postoffice::AppService.unauthorized?(last_request, "admin").must_equal true
     end
 
+    it 'must return true is the token has been marked as invalid in the database' do
+      token = Postoffice::AuthService.get_test_token
+      db_token = Postoffice::Token.create(value: token, is_invalid: true)
+      db_token.save
+      get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{token}"}
+      Postoffice::AppService.unauthorized?(last_request, "admin").must_equal true
+    end
+
   end
 
   describe 'check authorized ownership' do
+
+    it 'must return true if the token has been marked as invalid' do
+      db_token = Postoffice::Token.create(value: @person1_token, is_invalid: true)
+      get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+      Postoffice::AppService.not_authorized_owner?(last_request, "can-read", @person1.id.to_s).must_equal true
+    end
 
     it 'must return false if the person_id is in the payload and it has the required scope' do
       get "/", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}

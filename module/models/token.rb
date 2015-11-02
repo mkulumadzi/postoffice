@@ -13,6 +13,11 @@ module Postoffice
       self.save
     end
 
+		def mark_as_valid
+			self.is_invalid = false
+			self.save
+		end
+
 	end
 
 end

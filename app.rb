@@ -47,6 +47,7 @@ end
 get '/available' do
   content_type :json
 
+  
   if Postoffice::AppService.unauthorized?(request, "create-person") then return [401, nil] end
 
   begin

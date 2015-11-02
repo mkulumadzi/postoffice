@@ -322,3 +322,17 @@ task :test_preview_email do
 	mail.send_preview_email ENV["POSTMARK_API_KEY"]
 
 end
+
+task :get_admin_token do
+	puts Postoffice::AuthService.get_admin_token
+end
+
+task :mark_token_as_invalid, [:token] do |t, args|
+	token = Postoffice::Token.find_or_create_by(value: args[:token])
+	token.mark_as_invalid
+end
+
+task :mark_token_as_valid, [:token] do |t, args|
+	token = Postoffice::Token.find_or_create_by(value: args[:token])
+	token.mark_as_valid
+end

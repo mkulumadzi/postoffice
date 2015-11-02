@@ -36,7 +36,7 @@ module Postoffice
 		def self.generate_payload_for_user_type user_type
 			raise "Unrecognized user type" unless user_type == "app" || user_type == "admin"
 			scope = self.get_scopes_for_user_type user_type
-			payload = {:scope => scope }
+			payload = {:scope => scope}
 		end
 
 		def self.generate_payload_for_person person
@@ -114,11 +114,18 @@ module Postoffice
 
 		def self.get_admin_token
 			payload = self.generate_payload_for_user_type "admin"
+			payload[:exp] = Time.now.to_i + 3600
 			self.generate_token payload
 		end
 
 		def self.get_app_token
 			payload = self.generate_payload_for_user_type "app"
+			self.generate_token payload
+		end
+
+		def self.get_test_token
+			exp = Time.now.to_i + 60
+			payload = Hash(scope: "test", exp: exp)
 			self.generate_token payload
 		end
 

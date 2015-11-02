@@ -18,7 +18,11 @@ module Postoffice
 
     def self.get_token_from_authorization_header request
       token_header = request.env["HTTP_AUTHORIZATION"]
-      token_header.split(' ')[1]
+      if token_header
+        token_header.split(' ')[1]
+      else
+        nil
+      end
     end
 
     def self.get_payload_from_authorization_header request
@@ -41,7 +45,10 @@ module Postoffice
 
     def self.unauthorized? request, required_scope
       payload = self.get_payload_from_authorization_header request
-      if payload["scope"] == nil
+      token = self.get_token_from_authorization_header request
+      if Postoffice::AuthService.token_is_invalid(token)
+        true
+      elsif payload["scope"] == nil
         true
       elsif payload["scope"].include? required_scope
         false
@@ -53,8 +60,11 @@ module Postoffice
     def self.not_authorized_owner? request, required_scope, person_id
       payload = self.get_payload_from_authorization_header request
       id = payload["id"]
+      token = self.get_token_from_authorization_header request
 
-      if payload["scope"] == nil
+      if Postoffice::AuthService.token_is_invalid(token)
+        true
+      elsif payload["scope"] == nil
         true
       elsif payload["scope"].include?(required_scope) && id == person_id
         false

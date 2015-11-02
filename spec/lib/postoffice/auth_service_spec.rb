@@ -147,6 +147,33 @@ describe Postoffice::AuthService do
 
     end
 
+		describe 'get admin token' do
+
+			before do
+				token = Postoffice::AuthService.get_admin_token
+				@decoded_token = Postoffice::AuthService.decode_token(token)
+			end
+
+			it 'must have the scope for an admin user' do
+				@decoded_token[0]["scope"].must_equal Postoffice::AuthService.get_scopes_for_user_type "admin"
+			end
+
+			it 'must expire in 1 hour' do
+				@decoded_token[0]["exp"].must_equal Time.now.to_i + 3600
+			end
+
+		end
+
+		describe 'get app token' do
+
+			it 'must be able to generate a token with the app scope' do
+				app_token = Postoffice::AuthService.get_app_token
+				decoded = Postoffice::AuthService.decode_token app_token
+				decoded[0]["scope"].must_equal Postoffice::AuthService.get_scopes_for_user_type "app"
+			end
+
+		end
+
     describe 'tokens' do
 
       it 'must be able to generate a token with the admin scope' do
@@ -155,13 +182,24 @@ describe Postoffice::AuthService do
         decoded[0]["scope"].must_equal Postoffice::AuthService.get_scopes_for_user_type "admin"
       end
 
-      it 'must be able to generate a token with the app scope' do
-        app_token = Postoffice::AuthService.get_app_token
-        decoded = Postoffice::AuthService.decode_token app_token
-        decoded[0]["scope"].must_equal Postoffice::AuthService.get_scopes_for_user_type "app"
-      end
-
     end
+
+	end
+
+	describe 'temporary test token' do
+
+		before do
+			token = Postoffice::AuthService.get_test_token
+			@decoded_token = Postoffice::AuthService.decode_token token
+		end
+
+		it 'must set the scope to test' do
+			@decoded_token[0]["scope"].must_equal "test"
+		end
+
+		it 'must expire in one minute' do
+			@decoded_token[0]["exp"].must_equal Time.now.to_i + 60
+		end
 
 	end
 

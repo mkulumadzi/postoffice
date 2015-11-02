@@ -22,9 +22,36 @@ describe Postoffice::Token do
       end
     end
 
-    it 'must be able to be manually flagged as invalid so that it cannot be used again' do
-      @db_token.mark_as_invalid
-      @db_token.is_invalid.must_equal true
+  end
+
+  describe 'mark as invalid' do
+
+    before do
+      @token = Postoffice::AuthService.get_test_token
+      db_token = Postoffice::Token.create(value: @token)
+      db_token.save
+      db_token.mark_as_invalid
+    end
+
+    it 'must mark the token as invalid' do
+      db_token = Postoffice::Token.find_by(value: @token)
+      db_token.is_invalid.must_equal true
+    end
+
+  end
+
+  describe 'mark as valid' do
+
+    before do
+      @token = Postoffice::AuthService.get_test_token
+      db_token = Postoffice::Token.create(value: @token)
+      db_token.save
+      db_token.mark_as_valid
+    end
+
+    it 'must mark the token as valid' do
+      db_token = Postoffice::Token.find_by(value: @token)
+      db_token.is_invalid.must_equal false
     end
 
   end
