@@ -24,6 +24,7 @@ gem 'aws-sdk', '~> 2'
 gem 'jwt'
 gem 'postmark'
 gem 'premailer'
+gem 'newrelic_rpm'
 
 group :test do
 	gem 'turn'

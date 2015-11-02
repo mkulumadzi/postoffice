@@ -10,6 +10,7 @@ require "digest/bubblebabble"
 require "dragonfly"
 require "dragonfly/s3_data_store"
 require "jwt"
+require "newrelic_rpm"
 
 require File.dirname(__FILE__) + '/app.rb'
 
