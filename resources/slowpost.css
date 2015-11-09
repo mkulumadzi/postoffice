@@ -37,10 +37,12 @@
   font-size: 20px;
   margin-top: 0px;
   margin-bottom: 0px;
+  font-family: "OpenSans-Light", Arial, Geneva;
 }
 
 .bold {
-  font-weight: bold;
+  font-size: 20px;
+  font-family: "OpenSans-Regular", Arial, Geneva;
 }
 
 .card {
@@ -141,6 +143,7 @@ h1 {
   color: #ffffff;
 	font-family: "OpenSans-Light", Arial, Geneva;
   font-style: normal;
+  font-weight: normal;
   padding: 10px 10px 10px 10px;
   text-align: center;
   margin: 0px;
@@ -161,6 +164,14 @@ h1 {
   width: 80%;
   padding: 0px;
   margin: 0px;
+}
+
+.app-store-icon {
+  max-width: 200px;
+  width: 80%;
+  padding: 0px;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 body {

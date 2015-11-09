@@ -836,6 +836,10 @@ describe Postoffice::Mail do
 					@hash[:attachments][1]["Name"].must_equal "resources/slowpost_banner.png"
 				end
 
+				it 'must include the Slowpost banner as an attachment' do
+					@hash[:attachments][2]["Name"].must_equal "resources/app_store_icon.png"
+				end
+
 				it 'must render the message body using a template' do
 					mail_image_attachment = @mailA.mail_image_attachment
 					cid = mail_image_attachment["ContentID"]
