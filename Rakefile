@@ -343,7 +343,7 @@ task :manual_notification, [:message, :username_list] do |t, args|
 	usernames.each do |username|
 		person = Postoffice::Person.where(username: username).first
 		if person && person.device_token != nil
-			notifications << APNS::Notification.new(person.device_token, alert: args[:message], badge: nil, other: {type: "Manual"})
+			notifications << APNS::Notification.new(person.device_token, alert: args[:message], badge: nil, sound: 'default', other: {type: "Manual"})
 		end
 	end
 	APNS.send_notifications(notifications)
