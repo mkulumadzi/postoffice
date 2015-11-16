@@ -336,3 +336,15 @@ task :mark_token_as_valid, [:token] do |t, args|
 	token = Postoffice::Token.find_or_create_by(value: args[:token])
 	token.mark_as_valid
 end
+
+task :manual_notification, [:message, :username_list] do |t, args|
+	usernames=args[:username_list].split(' ')
+	notifications = []
+	usernames.each do |username|
+		person = Postoffice::Person.where(username: username).first
+		if person && person.device_token != nil
+			notifications << APNS::Notification.new(person.device_token, alert: args[:message], badge: nil, other: {type: "Manual"})
+		end
+	end
+	APNS.send_notifications(notifications)
+end
