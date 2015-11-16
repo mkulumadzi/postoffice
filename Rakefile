@@ -291,6 +291,11 @@ task :test_email_validation do
 	Postoffice::AuthService.send_email_validation_email person, ENV["POSTMARK_API_KEY"]
 end
 
+task :manual_email_validation, [:username] do |t, args|
+	person = Postoffice::Person.find_by(username: args[:username])
+	Postoffice::AuthService.send_email_validation_email person, ENV["POSTMARK_API_KEY"]
+end
+
 task :test_preview_email do
 	if ENV["RACK_ENV"] == "production"
 		puts "Cannot run this task on production environment"
