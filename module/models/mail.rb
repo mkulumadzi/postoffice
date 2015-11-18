@@ -234,11 +234,12 @@ module Postoffice
 		end
 
 		def email_hash correspondent
-			banner_image_attachment = Postoffice::EmailService.image_email_attachment("resources/slowpost_banner.png")
-			app_store_icon = Postoffice::EmailService.image_email_attachment("resources/app_store_icon.png")
+			attachments = correspondent.image_attachments
 			mail_image_attachment = self.mail_image_attachment
 			mail_image_cid = mail_image_attachment["ContentID"]
-			template = 'resources/email_template.html'
+			attachments << mail_image_attachment
+
+			template = correspondent.template
 			variables = Hash(mail: self, image_cid: mail_image_cid)
 
 			Hash[
@@ -247,7 +248,7 @@ module Postoffice
 				subject: "#{self.from_person.full_name} sent you a Slowpost!",
 				html_body: Postoffice::EmailService.generate_email_message_body(template, variables),
 				track_opens: true,
-				attachments: [mail_image_attachment, banner_image_attachment, app_store_icon]
+				attachments: attachments
 			]
 		end
 

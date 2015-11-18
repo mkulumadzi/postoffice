@@ -1,0 +1,45 @@
+<head>
+	<link rel="stylesheet" type="text/css" href="../resources/slowpost.css">
+</head>
+<html>
+	<table class="container">
+		<tr>
+			<td class="column">
+				<table class="header">
+					<tr>
+						<td class="column">
+							<img src="cid:resources/slowpost_banner.png" class="header-image">
+							<p class="emphasis">Your friend <%= hash[:mail].from_person.full_name %> sent you a Slowpost.</p>
+							<p class="emphasis bold"><a class="yellow-link" href="https://ad.apps.fm/m4m2xe8L1fQw82dpebzqWfE7og6fuV2oOMeOQdRqrE27j-ERwjcsNO7J1qdLzXLoywc1PyCCvxpi1X1ucb0u0foUtC1jiV5faXlztvaffRPwmGoCp43dyUyi8sCzsPeK">Download the app</a> on iOS now!</p>
+						</td>
+					</tr>
+				</table>
+				<table class="card">
+					<tr>
+						<td class="column">
+							<img src= <%= hash[:image_cid] %> class="card-image">
+							<table class="from-container">
+								<p class="avatar"> <%= hash[:mail].from_person.initials %></p>
+								<p class="from-name"><%= hash[:mail].from_person.name %></p>
+							</table>
+							<p class="to-names">To <%= hash[:mail].to_list %></p>
+							<p class="date"> Sent on <%= hash[:mail].date_sent.to_date.to_s %></p>
+							<p class="date"> Delivered on <%= hash[:mail].date_delivered.to_date.to_s %></p>
+							<p class="text"> <%= hash[:mail].message_content %></p>
+						</td>
+					</tr>
+				</table>
+				<table class="footer">
+					<tr>
+						<td class="column">
+							<a href="https://ad.apps.fm/m4m2xe8L1fQw82dpebzqWfE7og6fuV2oOMeOQdRqrE27j-ERwjcsNO7J1qdLzXLoywc1PyCCvxpi1X1ucb0u0foUtC1jiV5faXlztvaffRPwmGoCp43dyUyi8sCzsPeK">
+								<img src="cid:resources/app_store_icon.png" class="app-store-icon" alt="Download on the App Store.">
+							</a>
+							<p class="emphasis bold"> Learn more at <a class="yellow-link" href="http://slowpost.me">http://slowpost.me</a>.</p>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+</html>

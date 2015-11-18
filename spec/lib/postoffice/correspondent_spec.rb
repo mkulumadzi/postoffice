@@ -120,6 +120,68 @@ describe Postoffice::Correspondent do
 			@email.attempted_to_send.must_equal true
 		end
 
+    describe 'template' do
+
+      it 'must return the correct template for an existing user' do
+        person = create(:person, email: "#{random_username}@test.com", username: random_username)
+        mail = create(:mail, correspondents: [build(:from_person, person_id: @person.id), build(:email, email: person.email)])
+        email_correspondent = mail.correspondents.where(_type: "Postoffice::Email")[0]
+        email_correspondent.template.must_equal 'resources/existing_user_email_template.html'
+      end
+
+      it 'must return the new recipient template for a new email address' do
+        email_address = "#{random_username}@test.com"
+        mail = create(:mail, correspondents: [build(:from_person, person_id: @person.id), build(:email, email: email_address)])
+        correspondent = mail.correspondents.where(_type: "Postoffice::Email")[0]
+        correspondent.template.must_equal 'resources/new_recipient_email_template.html'
+      end
+
+      describe 'repeat recipient' do
+
+        before do
+          email_address = "#{random_username}@test.com"
+          @mail1 = create(:mail, correspondents: [build(:from_person, person_id: @person.id), build(:email, email: email_address)])
+          @mail2 = create(:mail, correspondents: [build(:from_person, person_id: @person.id), build(:email, email: email_address)])
+
+          @first_correspondent = @mail1.correspondents.where(_type: "Postoffice::Email")[0]
+        end
+
+        it 'must return the new recipient template if the address has not been emailed yet' do
+          @first_correspondent.template.must_equal 'resources/new_recipient_email_template.html'
+        end
+
+        it 'must return the repeat template for a repeat recipient' do
+          @first_correspondent.attempted_to_send = true
+          @mail1.save
+
+          second_correspondent = @mail2.correspondents.where(_type: "Postoffice::Email")[0]
+          second_correspondent.template.must_equal 'resources/repeat_recipient_email_template.html'
+        end
+
+      end
+
+    end
+
+    describe 'image attachments' do
+
+      it 'must only return the banner image if the correspondent is an existing user' do
+        person = create(:person, email: "#{random_username}@test.com", username: random_username)
+        mail = create(:mail, correspondents: [build(:from_person, person_id: @person.id), build(:email, email: person.email)])
+        email_correspondent = mail.correspondents.where(_type: "Postoffice::Email")[0]
+
+        email_correspondent.image_attachments.must_equal [Postoffice::EmailService.image_email_attachment("resources/slowpost_banner.png")]
+      end
+
+      it 'must return both the banner image and the app store icon if the correspondent is not an existing user' do
+        email_address = "#{random_username}@test.com"
+        mail = create(:mail, correspondents: [build(:from_person, person_id: @person.id), build(:email, email: email_address)])
+        correspondent = mail.correspondents.where(_type: "Postoffice::Email")[0]
+
+        correspondent.image_attachments.must_equal [Postoffice::EmailService.image_email_attachment("resources/slowpost_banner.png"), Postoffice::EmailService.image_email_attachment("resources/app_store_icon.png")]
+      end
+
+    end
+
 	end
 
 end

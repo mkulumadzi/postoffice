@@ -1,0 +1,34 @@
+<head>
+	<link rel="stylesheet" type="text/css" href="../resources/slowpost.css">
+</head>
+<html>
+	<table class="container">
+		<tr>
+			<td class="column">
+				<table class="header">
+					<tr>
+						<td class="column">
+							<img src="cid:resources/slowpost_banner.png" class="header-image">
+							<p class="emphasis">Your friend <%= hash[:mail].from_person.full_name %> sent you a Slowpost.</p>
+						</td>
+					</tr>
+				</table>
+				<table class="card">
+					<tr>
+						<td class="column">
+							<img src= <%= hash[:image_cid] %> class="card-image">
+							<table class="from-container">
+								<p class="avatar"> <%= hash[:mail].from_person.initials %></p>
+								<p class="from-name"><%= hash[:mail].from_person.name %></p>
+							</table>
+							<p class="to-names">To <%= hash[:mail].to_list %></p>
+							<p class="date"> Sent on <%= hash[:mail].date_sent.to_date.to_s %></p>
+							<p class="date"> Delivered on <%= hash[:mail].date_delivered.to_date.to_s %></p>
+							<p class="text"> <%= hash[:mail].message_content %></p>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+</html>

@@ -731,7 +731,10 @@ describe Postoffice::Mail do
 	describe 'generate emails for mail' do
 
 		before do
-			@mailA = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")], attachments: [build(:note, content: "Hey what is up"), build(:image_attachment, image_uid: @uid)])
+			@email1 = "#{random_username}@test.com"
+			@email2 = "#{random_username}@test.com"
+
+			@mailA = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: @email1), build(:email, email: @email2)], attachments: [build(:note, content: "Hey what is up"), build(:image_attachment, image_uid: @uid)])
 			@mailA.mail_it
 			@mailA.deliver
 		end
@@ -795,7 +798,7 @@ describe Postoffice::Mail do
 					end
 
 					it 'must use a default card if there is no image attachment' do
-						mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: "test@test.com"), build(:email, email: "test2@test.com")], attachments: [build(:note, content: "Hey what is up")])
+						mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id), build(:to_person, person_id: @person2.id), build(:email, email: @email1), build(:email, email: @email2)], attachments: [build(:note, content: "Hey what is up")])
 
 						mail.mail_image_attachment["Name"].must_equal "resources/default_card.png"
 					end
@@ -807,8 +810,8 @@ describe Postoffice::Mail do
 			describe 'generate the email hash' do
 
 				before do
-					@correspondnet = @mailA.correspondents.where(_type: "Postoffice::Email").first
-					@hash = @mailA.email_hash @correspondnet
+					@correspondent = @mailA.correspondents.where(_type: "Postoffice::Email").first
+					@hash = @mailA.email_hash @correspondent
 				end
 
 				it 'must be from the Postman email account' do
@@ -816,7 +819,7 @@ describe Postoffice::Mail do
 				end
 
 				it 'must be to the correct email address' do
-					@hash[:to].must_equal @correspondnet.email
+					@hash[:to].must_equal @correspondent.email
 				end
 
 				it 'must indicate that the person has received a Slowpost from the sender' do
@@ -833,18 +836,18 @@ describe Postoffice::Mail do
 				end
 
 				it 'must include the Slowpost banner as an attachment' do
-					@hash[:attachments][1]["Name"].must_equal "resources/slowpost_banner.png"
+					@hash[:attachments][0]["Name"].must_equal "resources/slowpost_banner.png"
 				end
 
-				it 'must include the Slowpost banner as an attachment' do
-					@hash[:attachments][2]["Name"].must_equal "resources/app_store_icon.png"
+				it 'must include the app store icon as an attachment if the correspondent is not a registered user' do
+					@hash[:attachments][1]["Name"].must_equal "resources/app_store_icon.png"
 				end
 
-				it 'must render the message body using a template' do
+				it 'must render the message body using the appropriate email template' do
 					mail_image_attachment = @mailA.mail_image_attachment
 					cid = mail_image_attachment["ContentID"]
 					variables = Hash(mail: @mailA, image_cid: cid)
-					template = "resources/email_template.html"
+					template = "resources/new_recipient_email_template.html"
 					expected_result = 				 	Postoffice::EmailService.generate_email_message_body template, variables
 					@hash[:html_body].must_equal expected_result
 				end

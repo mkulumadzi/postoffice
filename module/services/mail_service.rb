@@ -204,6 +204,7 @@ module Postoffice
 
 		def self.deliver_mail_and_notify_correspondents email_api_key = "POSTMARK_API_TEST"
 			delivered_mail = self.deliver_mail_that_has_arrived
+			self.add_slowpost_correspondents_for_existing_user_emails delivered_mail
 			self.send_notifications_for_mail delivered_mail
 			self.send_emails_for_mail delivered_mail, email_api_key
 		end
@@ -216,6 +217,19 @@ module Postoffice
 
 		def self.find_mail_that_has_arrived
 			Postoffice::Mail.where({status: "SENT", scheduled_to_arrive: { "$lte" => Time.now } }).to_a
+		end
+
+		def self.add_slowpost_correspondents_for_existing_user_emails delivered_mail
+			delivered_mail.each do |mail|
+				correspondents = mail.correspondents.where(_type: "Postoffice::Email").each do |correspondent|
+					if Postoffice::Person.where(email: correspondent.email).count > 0
+						person = Postoffice::Person.find_by(email: correspondent.email)
+						to_person = Postoffice::ToPerson.new(person_id: person.id)
+						mail.correspondents << to_person
+					end
+				end
+				mail.save
+			end
 		end
 
 		def self.send_notifications_for_mail delivered_mail

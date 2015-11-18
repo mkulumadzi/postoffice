@@ -266,10 +266,11 @@ task :test_email do
 	f = Postoffice::FromPerson.new(person_id: person.id)
 	t1 = Postoffice::Email.new(email: "bigedubs44@yahoo.com")
 	t2 = Postoffice::Email.new(email: "evan@slowpost.me")
+	t3 = Postoffice::Email.new(email: "evan.waters@gmail.com")
 	n = Postoffice::Note.new(content: "Can't wait to celebrate Slowpost's birthday!")
 	i = Postoffice::ImageAttachment.new(image_uid: uid)
 	mail = Postoffice::Mail.create!({
-		correspondents: [f, t1, t2],
+		correspondents: [f, t1, t2, t3],
 		attachments: [n, i],
 		scheduled_to_arrive: Time.now,
 		type: "SCHEDULED"
@@ -314,10 +315,11 @@ task :test_preview_email do
 	f = Postoffice::FromPerson.new(person_id: person.id)
 	t1 = Postoffice::Email.new(email: "bigedubs44@yahoo.com")
 	t2 = Postoffice::Email.new(email: "evan@slowpost.me")
+	t3 = Postoffice::Email.new(email: "evan.waters@gmail.com")
 	n = Postoffice::Note.new(content: "Can't wait to celebrate Slowpost's birthday!")
 	i = Postoffice::ImageAttachment.new(image_uid: uid)
 	mail = Postoffice::Mail.create!({
-		correspondents: [f, t1, t2],
+		correspondents: [f, t1, t2, t3],
 		attachments: [n, i],
 		scheduled_to_arrive: Time.now,
 		type: "SCHEDULED"
