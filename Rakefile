@@ -262,7 +262,7 @@ task :test_email do
 	uid = Dragonfly.app.store(image.read, 'name' => 'image1.jpg')
 	image.close
 
-	person = Postoffice::Person.find_by(username:"evan.waters")
+	person = Postoffice::Person.find_by(username:"demo")
 	f = Postoffice::FromPerson.new(person_id: person.id)
 	t1 = Postoffice::Email.new(email: "bigedubs44@yahoo.com")
 	t2 = Postoffice::Email.new(email: "evan@slowpost.me")
