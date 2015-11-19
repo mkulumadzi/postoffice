@@ -65,113 +65,113 @@ task :setup_demo_data do
 		})
 
   data =  JSON.parse '{"given_name": "Evan", "family_name": "Waters", "username": "evan.waters", "email": "evan.waters@gmail.com", "phone": "(555) 444-1324", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
-  person = Postoffice::PersonService.create_person data
-	Postoffice::MailService.generate_welcome_message person
+  evan = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message evan
 
-	data =  JSON.parse '{"given_name": "Neal", "family_name": "Waters", "username": "nwaters4", "email": "nwaters4@gmail.com", "phone": "(555) 444-1234", "address1": "44 Prichard St", "city": "Somerville", "state": "MA", "zip": "02132", "password": "password"}'
-	person1 = Postoffice::PersonService.create_person data
-	Postoffice::MailService.generate_welcome_message person1
+	data =  JSON.parse '{"given_name": "George", "family_name": "Byron", "username": "gbyron", "email": "gbyron@thebyrons.com", "phone": "(555) 444-1234", "address1": "1 White Hard Lane", "city": "London", "state": "UK", "zip": "NA", "password": "password"}'
+	byron = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message byron
 
-	data =  JSON.parse '{"given_name": "Kristen", "family_name": "Ulwelling", "username": "kulwelling", "email": "kulwelling@gmail.com", "phone": "(555) 444-4321", "address1": "121 W 3rd St", "city": "New York", "state": "NY", "zip": "10012", "password": "password"}'
-	person2 = Postoffice::PersonService.create_person data
-	Postoffice::MailService.generate_welcome_message person2
+	data =  JSON.parse '{"given_name": "Ada", "family_name": "Lovelace", "username": "alovelace", "email": "ada@thelovelaces.com", "phone": "(555) 444-4321", "password": "password"}'
+	ada = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message ada
 
-	data =  JSON.parse '{"given_name": "Cathie", "family_name": "Murray", "username": "cmurray", "email": "cathie.murray@gmail.com", "phone": "555-444-5671", "password": "password"}'
-	person3 = Postoffice::PersonService.create_person data
-	Postoffice::MailService.generate_welcome_message person3
+	data =  JSON.parse '{"given_name": "William", "family_name": "Lovelace", "username": "wlovelace", "email": "wlovelace@thelovelaces.com", "password": "password"}'
+	william = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message william
 
 	data =  JSON.parse '{"given_name": "Annie", "family_name": "Haro", "username": "aharo", "email": "anna-haro@mac.com", "phone": "555-444-5431", "password": "password"}'
-	person4 = Postoffice::PersonService.create_person data
-	Postoffice::MailService.generate_welcome_message person4
+	annie = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message annie
 
 	data =  JSON.parse '{"given_name": "Demo", "family_name": "User", "username": "demo", "email": "demo@test.com", "phone": "(555) 444-4555", "password": "password"}'
 	demo = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message demo
 
-		image1 = File.open('spec/resources/image1.jpg')
-		uid1 = Dragonfly.app.store(image1.read, 'name' => 'image1.jpg')
-		image1.close
+	image1 = File.open('spec/resources/image1.jpg')
+	uid1 = Dragonfly.app.store(image1.read, 'name' => 'image1.jpg')
+	image1.close
 
-		image2 = File.open('spec/resources/image2.jpg')
-		uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
-		image2.close
+	image2 = File.open('spec/resources/image2.jpg')
+	uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
+	image2.close
 
 
-		f1 = Postoffice::FromPerson.new(person_id: person1.id)
-		t1 = Postoffice::ToPerson.new(person_id: person.id)
-		n1 = Postoffice::Note.new(content: "Hey bro, how's it going? Would you like to watch the game?")
-		i1 = Postoffice::ImageAttachment.new(image_uid: uid1)
-    mail1 = Postoffice::Mail.create!({
-			correspondents: [f1, t1],
-			attachments: [n1, i1]
-    })
+	f1 = Postoffice::FromPerson.new(person_id: byron.id)
+	t1 = Postoffice::ToPerson.new(person_id: ada.id)
+	n1 = Postoffice::Note.new(content: "Dearest Ada, it was so lovely to see you and William on your recent visit. I reall do think your counting machine is going to be something special. Do write as soon as you are home! Yours, Lord Byron")
+	i1 = Postoffice::ImageAttachment.new(image_uid: uid1)
+  mail1 = Postoffice::Mail.create!({
+		correspondents: [f1, t1],
+		attachments: [n1, i1]
+  })
 
-    mail1.mail_it
-    mail1.deliver
-		mail1.read_by person
+  mail1.mail_it
+  mail1.deliver
+	mail1.read_by person
 
-		f2 = Postoffice::FromPerson.new(person_id: person2.id)
-		t2 = Postoffice::ToPerson.new(person_id: person.id)
-		t2b = Postoffice::ToPerson.new(person_id: person1.id)
-		t2c = Postoffice::Email.new(email: "test@test.com")
-		n2 = Postoffice::Note.new(content: "Greetings from NOLA!")
-		i2 = Postoffice::ImageAttachment.new(image_uid: uid2)
-    mail2 = Postoffice::Mail.create!({
-			correspondents: [f2, t2, t2b, t2c],
-			attachments: [n2, i2]
-    })
+	f2 = Postoffice::FromPerson.new(person_id: byron.id)
+	t2 = Postoffice::ToPerson.new(person_id: william.id)
+	t2b = Postoffice::ToPerson.new(person_id: ada.id)
+	t2c = Postoffice::Email.new(email: "thepress@thepress.com")
+	n2 = Postoffice::Note.new(content: "Greetings from NOLA!")
+	i2 = Postoffice::ImageAttachment.new(image_uid: uid2)
+  mail2 = Postoffice::Mail.create!({
+		correspondents: [f2, t2, t2b, t2c],
+		attachments: [n2, i2]
+  })
 
-    mail2.mail_it
-    mail2.deliver
+  mail2.mail_it
+  mail2.deliver
 
-		f3 = Postoffice::FromPerson.new(person_id: person1.id)
-		t3 = Postoffice::ToPerson.new(person_id: person.id)
-		n3 = Postoffice::Note.new(content: "Go U of A!")
-		i3 = Postoffice::ImageAttachment.new(image_uid: uid1)
-		i3b = Postoffice::ImageAttachment.new(image_uid: uid2)
-    mail3 = Postoffice::Mail.create!({
-			correspondents: [f3, t3],
-			attachments: [n3, i3]
-    })
+	f3 = Postoffice::FromPerson.new(person_id: ada.id)
+	t3 = Postoffice::ToPerson.new(person_id: byron.id)
+	n3 = Postoffice::Note.new(content: "What a lovely view.")
+	i3 = Postoffice::ImageAttachment.new(image_uid: uid1)
+	i3b = Postoffice::ImageAttachment.new(image_uid: uid2)
+  mail3 = Postoffice::Mail.create!({
+		correspondents: [f3, t3],
+		attachments: [n3, i3]
+  })
 
-		mail3.mail_it
+	mail3.mail_it
 
-		f4 = Postoffice::FromPerson.new(person_id: person.id)
-		t4 = Postoffice::ToPerson.new(person_id: demo.id)
-		n4 = Postoffice::Note.new(content: "Thanks for checking out the app! Looking forward to getting your feedback.")
-		mail4 = Postoffice::Mail.create!({
-			correspondents: [f4, t4],
-			attachments: [n4]
-		})
+	f4 = Postoffice::FromPerson.new(person_id: evan.id)
+	t4 = Postoffice::ToPerson.new(person_id: demo.id)
+	n4 = Postoffice::Note.new(content: "Thanks for checking out the app! Looking forward to getting your feedback.")
+	mail4 = Postoffice::Mail.create!({
+		correspondents: [f4, t4],
+		attachments: [n4]
+	})
 
-		mail4.mail_it
-		mail4.deliver
+	mail4.mail_it
+	mail4.deliver
 
-		f5 = Postoffice::FromPerson.new(person_id: demo.id)
-		t5 = Postoffice::ToPerson.new(person_id: person.id)
-		n5 = Postoffice::Note.new(content: "Can't wait to receive a few more Slowposts!")
-		i5 = Postoffice::ImageAttachment.new(image_uid: uid1)
-		mail5 = Postoffice::Mail.create!({
-			correspondents: [f5, t5],
-			attachments: [n5, i5]
-		})
+	f5 = Postoffice::FromPerson.new(person_id: demo.id)
+	t5 = Postoffice::ToPerson.new(person_id: evan.id)
+	n5 = Postoffice::Note.new(content: "Can't wait to receive a few more Slowposts!")
+	i5 = Postoffice::ImageAttachment.new(image_uid: uid1)
+	mail5 = Postoffice::Mail.create!({
+		correspondents: [f5, t5],
+		attachments: [n5, i5]
+	})
 
-		mail5.mail_it
+	mail5.mail_it
 
-		f6 = Postoffice::FromPerson.new(person_id: demo.id)
-		t6 = Postoffice::ToPerson.new(person_id: person.id)
-		n6 = Postoffice::Note.new(content: "Can't wait to receive a few more Slowposts!")
-		i6 = Postoffice::ImageAttachment.new(image_uid: uid1)
-		mail6 = Postoffice::Mail.create!({
-			correspondents: [f6, t6],
-			attachments: [n6, i6]
-		})
+	f6 = Postoffice::FromPerson.new(person_id: demo.id)
+	t6 = Postoffice::ToPerson.new(person_id: person.id)
+	n6 = Postoffice::Note.new(content: "Now I have to get to writing.")
+	i6 = Postoffice::ImageAttachment.new(image_uid: uid1)
+	mail6 = Postoffice::Mail.create!({
+		correspondents: [f6, t6],
+		attachments: [n6, i6]
+	})
 
-		mail6.mail_it
-		mail6.scheduled_to_arrive = Time.now
-		mail6.save
+	mail6.mail_it
+	mail6.scheduled_to_arrive = Time.now
+	mail6.save
 
-		Postoffice::ConversationService.initialize_conversations_for_all_mail
+	Postoffice::ConversationService.initialize_conversations_for_all_mail
 
 end
 
