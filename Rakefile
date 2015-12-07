@@ -175,6 +175,35 @@ task :setup_demo_data do
 
 end
 
+task :setup_minimal_demo_data do
+	if ENV["RACK_ENV"] == "production"
+		puts "Cannot setup demo data on production environment"
+		return nil
+	end
+
+	Mongoid.load!("config/mongoid.yml", ENV['RACK_ENV'])
+	Mongoid.logger.level = Logger::INFO
+	Mongo::Logger.logger.level = Logger::INFO
+
+	Postoffice::Mail.delete_all
+	Postoffice::Person.delete_all
+	Postoffice::Token.delete_all
+	Postoffice::Conversation.delete_all
+	Postoffice::QueueItem.delete_all
+
+	Postoffice::Person.create!({
+			username: "postman",
+			email: "postman@slowpost.me",
+			given_name: "Slowpost",
+			family_name: "Postman",
+			phone: "5554441234",
+			address1: nil,
+			city: nil,
+			state: nil,
+			zip: nil
+		})
+end
+
 task :notify_recipients do
   puts "Notifying recipients for #{ENV['RACK_ENV']} environment"
   Postoffice::MailService.deliver_mail_and_notify_correspondents ENV["POSTMARK_API_KEY"]
