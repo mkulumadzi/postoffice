@@ -35,7 +35,8 @@ module Postoffice
 		      zip: data["zip"],
 		      salt: salt,
 		      hashed_password: hashed_password,
-		      device_token: data["device_token"]
+		      device_token: data["device_token"],
+					facebook_id: data["facebook_id"]
 		    })
 		end
 

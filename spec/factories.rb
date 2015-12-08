@@ -10,6 +10,7 @@ FactoryGirl.define do
     hashed_password "hash"
     salt "salt"
     device_token "abc123"
+    facebook_id "123"
   end
 
   factory :mail, class: Postoffice::Mail do

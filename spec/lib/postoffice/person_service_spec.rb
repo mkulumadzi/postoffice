@@ -10,7 +10,7 @@ describe Postoffice::PersonService do
 			@phone = rand(1000000000).to_s
 			@email = SecureRandom.uuid()
 
-			data = Hash["given_name", "Evan", "family_name", "Waters", "username", @username, "email", @email, "phone", @phone, "address1", "121 W 3rd St", "city", "New York", "state", "NY", "zip", "10012", "password", "password"]
+			data = Hash["given_name", "Evan", "family_name", "Waters", "username", @username, "email", @email, "phone", @phone, "address1", "121 W 3rd St", "city", "New York", "state", "NY", "zip", "10012", "password", "password", "facebook_id", "123"]
 			@person = Postoffice::PersonService.create_person data
 		end
 
@@ -164,6 +164,10 @@ describe Postoffice::PersonService do
 
 		it 'must store the hashed password as a String' do
 			@person.hashed_password.must_be_instance_of String
+		end
+
+		it 'must store the facebook id' do
+			@person.facebook_id.must_equal "123"
 		end
 
 	end

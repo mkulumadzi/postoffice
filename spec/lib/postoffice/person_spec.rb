@@ -64,6 +64,10 @@ describe Postoffice::Person do
 				@person.device_token.must_equal @expected_attrs[:device_token]
 			end
 
+			it 'must store the facebook id' do
+				@person.facebook_id.must_equal @expected_attrs[:facebook_id]
+			end
+
 		end
 
 	end
