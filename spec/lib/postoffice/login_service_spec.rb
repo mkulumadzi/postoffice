@@ -85,27 +85,87 @@ describe Postoffice::LoginService do
 			describe 'check facebook login' do
 
 				before do
-					@fb_person = create(:person, username: random_username, email: "#{random_username}@test.com", facebook_id: "123")
+
+					@test_facebook_email = 'open_plpraxu_user@tfbnw.net'
+					@test_access_token = 'CAAF497CdlJ0BABtlRZAzUvDlTXhjHfv9gW7oybN64j9rfhg889ODuRFrYMsVRypXoJFI2VO2AVqeCI8JL6fmkwbwRrUoGfSQ2dCmFTWeglq1mhtw5eqZCq6LKOb7TppF0cGBUByAI0SnYyS1UcOCvLLPlaZCfAkirMTw5TriMg2UmZBtEYdEINiXIxqiuqxmT5EWxzsj1B8O5RGwb6dK71uTFmkrLoZCt44HUcKYMzAZDZD'
+					@test_facebook_id = '117936888576358'
+					@test_password = 'postoffice'
+
+					if Postoffice::Person.where(email: @test_facebook_email).count == 0
+						create(:person, username: random_username, email: @test_facebook_email)
+					end
+
+					@fb_user = Postoffice::Person.find_by(email: @test_facebook_email)
+
 				end
 
-				it 'must return a person if the correct combination of email and facebook_id is submitted' do
-					data = JSON.parse '{"email": "' + @fb_person.email + '", "facebook_id": "123"}'
-					result = Postoffice::LoginService.check_facebook_login data
-					result.must_be_instance_of Postoffice::Person
+				describe 'get user details from facebook' do
+
+					it 'must return a hash with the user details if a valid access token is used' do
+						result = Postoffice::LoginService.get_user_details_from_facebook @test_access_token
+						result.must_be_instance_of Hash
+					end
+
+					it 'must include the email for the user' do
+						result = Postoffice::LoginService.get_user_details_from_facebook @test_access_token
+						result['email'].must_equal @test_facebook_email
+					end
+
+					it 'must return nil if an invalid token is used' do
+						result = Postoffice::LoginService.get_user_details_from_facebook "abc"
+						result.must_equal nil
+					end
+
 				end
 
-				it 'must return nil if an incorrect facebook_id is submitted' do
-					data = JSON.parse '{"email": "' + @fb_person.email + '", "facebook_id": "abc"}'
-					result = Postoffice::LoginService.check_login data
-					result.must_equal nil
+				describe 'authenticate facebook user' do
+
+					it 'must return true if the user is successfully authenticated' do
+						Postoffice::LoginService.authenticate_fb_user(@test_access_token, @test_facebook_email).must_equal true
+					end
+
+					it 'must return false if an invalid token is submitted' do
+						Postoffice::LoginService.authenticate_fb_user('abc', @test_facebook_email).must_equal false
+					end
+
+					it 'must return false if the id does not match the id returned' do
+						Postoffice::LoginService.authenticate_fb_user(@test_access_token, '123').must_equal false
+					end
+
 				end
 
-				it 'must return nil if a facebook_id is not submitted' do
-					data = JSON.parse '{"email": "' + @fb_person.email + '"}'
-					result = Postoffice::LoginService.check_login data
-					result.must_equal nil
-				end
+				describe 'check facebook login' do
 
+					describe 'sucessful login' do
+
+						before do
+							@data = JSON.parse('{"fb_access_token": "' + @test_access_token + '", "email": "' + @test_facebook_email + '"}')
+							@person = Postoffice::LoginService.check_facebook_login @data
+						end
+
+						it 'must return a Person' do
+							@person.must_be_instance_of Postoffice::Person
+						end
+
+						it 'must return the correct person' do
+							@person.email.must_equal @test_facebook_email
+						end
+
+					end
+
+					it 'must return nil if the authentication fails' do
+						data = JSON.parse('{"fb_access_token": "' + 'abc' + '", "email": "' + @test_facebook_email + '"}')
+ 						Postoffice::LoginService.check_facebook_login(data).must_equal nil
+					end
+
+					it 'must return nil if the person record does not exist yet' do
+						Postoffice::Person.find_by(email: @test_facebook_email).delete
+						data = JSON.parse('{"fb_access_token": "' + @test_access_token + '", "email": "' + @test_facebook_email + '"}')
+						person = Postoffice::LoginService.check_facebook_login data
+						person.must_equal nil
+					end
+
+				end
 
 			end
 

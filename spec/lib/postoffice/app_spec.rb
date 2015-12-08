@@ -522,11 +522,25 @@ describe app do
 
   describe '/login/facebook' do
 
+    before do
+
+      @test_facebook_email = 'open_plpraxu_user@tfbnw.net'
+      @test_access_token = 'CAAF497CdlJ0BABtlRZAzUvDlTXhjHfv9gW7oybN64j9rfhg889ODuRFrYMsVRypXoJFI2VO2AVqeCI8JL6fmkwbwRrUoGfSQ2dCmFTWeglq1mhtw5eqZCq6LKOb7TppF0cGBUByAI0SnYyS1UcOCvLLPlaZCfAkirMTw5TriMg2UmZBtEYdEINiXIxqiuqxmT5EWxzsj1B8O5RGwb6dK71uTFmkrLoZCt44HUcKYMzAZDZD'
+      @test_facebook_id = '117936888576358'
+      @test_password = 'postoffice'
+
+      if Postoffice::Person.where(email: @test_facebook_email).count == 0
+        create(:person, username: random_username, email: @test_facebook_email)
+      end
+
+      @fb_user = Postoffice::Person.find_by(email: @test_facebook_email)
+
+    end
+
     describe 'successful login' do
 
       before do
-        @fb_person = create(:person, username: random_username, email: "#{random_username}@test.com", facebook_id: "123")
-        data = '{"email": "' + @fb_person.email + '", "facebook_id": "123"}'
+        data = '{"email": "' + @fb_user.email + '", "fb_access_token": "' + @test_access_token + '"}'
         post "/login/facebook", data
         @response = JSON.parse(last_response.body)
       end
@@ -542,15 +556,15 @@ describe app do
         end
 
         it 'must include the person record in the response body, including the id' do
-          BSON::ObjectId.from_string(@response["person"]["_id"]["$oid"]).must_equal @fb_person.id
+          BSON::ObjectId.from_string(@response["person"]["_id"]["$oid"]).must_equal @fb_user.id
         end
 
       end
 
-      describe 'incorrect facebook_id' do
+      describe 'incorrect facebook access token' do
 
         it 'must return a 401 status code for an incorrect facebook_id' do
-          data = '{"email": "' + @fb_person.email + '", "facebook_id": "abc"}'
+          data = '{"email": "' + @fb_user.email + '", "fb_access_token": "123"}'
           post "/login/facebook", data
           last_response.status.must_equal 401
         end
@@ -562,7 +576,7 @@ describe app do
     describe 'unrecognized email' do
 
       before do
-        data = '{"email": "unrecognized_email", "facebook_id": "123"}'
+        data = '{"email": "foo", "fb_access_token": "' + @test_access_token + '"}'
         post "/login/facebook", data
       end
 

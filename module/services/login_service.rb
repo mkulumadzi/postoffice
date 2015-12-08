@@ -49,14 +49,31 @@ module Postoffice
 		end
 
 		def self.check_facebook_login data
-			begin
-				if data["facebook_id"] != nil && data["facebook_id"] != ""
-					person = Postoffice::Person.find_by(email: data["email"], facebook_id: data["facebook_id"])
-					return person
+			fb_user_authenticated = self.authenticate_fb_user data["fb_access_token"], data["email"]
+			if fb_user_authenticated
+				begin
+					return Postoffice::Person.find_by(email: data["email"])
+				rescue Mongoid::Errors::DocumentNotFound
 				end
-			rescue Mongoid::Errors::DocumentNotFound
 			end
 			nil
+		end
+
+		def self.authenticate_fb_user user_access_token, email
+			facebook_user_details = self.get_user_details_from_facebook user_access_token
+			if facebook_user_details && facebook_user_details["email"] == email
+				true
+			else
+				false
+			end
+		end
+
+		def self.get_user_details_from_facebook user_access_token
+			begin
+				JSON.parse(RestClient.get "https://graph.facebook.com/me?fields=email&access_token=#{user_access_token}")
+			rescue RestClient::BadRequest
+				nil
+			end
 		end
 
 		def self.response_for_successful_login person

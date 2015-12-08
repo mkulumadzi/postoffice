@@ -87,7 +87,7 @@ module Postoffice
 	    if data["email"] != nil && data["email"] != old_email
 				person.email_address_validated = false
 				person.save
-	      Postoffice::AuthService.send_email_validation_email person, api_key
+	      Postoffice::AuthService.send_email_validation_email_if_necessary person, api_key
 	    end
 		end
 

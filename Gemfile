@@ -25,6 +25,7 @@ gem 'jwt'
 gem 'postmark'
 gem 'premailer'
 gem 'newrelic_rpm'
+gem 'rest-client'
 
 group :test do
 	gem 'turn'
