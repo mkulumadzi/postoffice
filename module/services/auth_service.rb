@@ -76,10 +76,14 @@ module Postoffice
 			]
 		end
 
-		def self.send_email_validation_email person, api_key = "POSTMARK_API_TEST"
-			token = self.get_email_validation_token person
-			email_hash = self.get_email_validation_hash person, token
-			Postoffice::EmailService.send_email email_hash, api_key
+		def self.send_email_validation_email_if_necessary person, api_key = "POSTMARK_API_TEST"
+			if person.email_address_validated == true
+				nil
+			else
+				token = self.get_email_validation_token person
+				email_hash = self.get_email_validation_hash person, token
+				Postoffice::EmailService.send_email email_hash, api_key
+			end
 		end
 
 		def self.get_email_validation_token person

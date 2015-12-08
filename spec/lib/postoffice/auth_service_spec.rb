@@ -287,7 +287,13 @@ describe Postoffice::AuthService do
 
 	end
 
-	describe 'send password email validation email' do
+	describe 'send password email validation email if necessary' do
+
+		it 'must not send the email if the email address has already been validated' do
+			person = build(:person, username: random_username)
+			person.email_address_validated = true
+			Postoffice::AuthService.send_email_validation_email_if_necessary(person).must_equal nil
+		end
 
 		describe 'get email validation token' do
 
@@ -365,7 +371,7 @@ describe Postoffice::AuthService do
 		end
 
 		it 'must send the email without errors' do
-			result = Postoffice::AuthService.send_email_validation_email @person
+			result = Postoffice::AuthService.send_email_validation_email_if_necessary @person
 			result[:error_code].must_equal 0
 		end
 

@@ -22,12 +22,19 @@ module Postoffice
 
 			self.validate_required_fields data
 
+			email_validated = nil
+			if data["facebook_id"] != nil && data["facebook_id"] != ""
+				email_validated = true
+			else
+				email_validated = false
+			end
+
 			Postoffice::Person.create!({
 		      username: data["username"],
 					given_name: data["given_name"],
 					family_name: data["family_name"],
 		      email: data["email"],
-					email_address_validated: false,
+					email_address_validated: email_validated,
 		      phone: phone,
 		      address1: data["address1"],
 		      city: data["city"],

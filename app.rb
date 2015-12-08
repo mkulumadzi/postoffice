@@ -27,9 +27,8 @@ post '/person/new' do
     person = Postoffice::PersonService.create_person data
     Postoffice::MailService.generate_welcome_message person
     api_key = Postoffice::AppService.email_api_key request
-    Postoffice::AuthService.send_email_validation_email person, api_key
+    Postoffice::AuthService.send_email_validation_email_if_necessary person, api_key
     person_link = "#{ENV['POSTOFFICE_BASE_URL']}/person/id/#{person.id}"
-
     headers = { "location" => person_link }
     [201, headers, nil]
   rescue Mongo::Error::OperationFailure => error
@@ -47,7 +46,7 @@ end
 get '/available' do
   content_type :json
 
-  
+
   if Postoffice::AppService.unauthorized?(request, "create-person") then return [401, nil] end
 
   begin

@@ -115,8 +115,28 @@ describe Postoffice::PersonService do
 			@person.email.must_equal @email
 		end
 
-		it 'must indicate that the email address has not been validated' do
-			@person.email_address_validated.must_equal false
+		describe 'email validation' do
+
+			it 'must indicate that the email address has been validated if the data includes a facebook_id' do
+				@person.email_address_validated.must_equal true
+			end
+
+			it 'must indicate the email has not been validated if the data does not include a facebook_id' do
+				username = random_username
+				email = random_username + "@test.com"
+				data = Hash["given_name", "Evan", "family_name", "Waters", "username", username, "email", email, "address1", "121 W 3rd St", "city", "New York", "state", "NY", "zip", "10012", "password", "password"]
+				person = Postoffice::PersonService.create_person data
+				person.email_address_validated.must_equal false
+			end
+
+			it 'must indicate the email has not been validated if the data includes an empty facebook_id' do
+				username = random_username
+				email = random_username + "@test.com"
+				data = Hash["given_name", "Evan", "family_name", "Waters", "username", username, "email", email, "address1", "121 W 3rd St", "city", "New York", "state", "NY", "zip", "10012", "password", "password", "facebook_id", ""]
+				person = Postoffice::PersonService.create_person data
+				person.email_address_validated.must_equal false
+			end
+
 		end
 
 		describe 'store the phone number' do
@@ -209,7 +229,7 @@ describe Postoffice::PersonService do
 				end
 			end
 
-			it 'must raise a RuntimeError if the data includes an emial address that already exists' do
+			it 'must raise a RuntimeError if the data includes an email address that already exists' do
 				another_person = create(:person, username: random_username, email: "#{random_username}@test.com")
 				data = Hash("email" => another_person.email)
 				assert_raises RuntimeError do
