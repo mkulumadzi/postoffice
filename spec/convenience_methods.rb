@@ -22,7 +22,7 @@ def convert_mail_to_json mail
 end
 
 def expected_json_fields_for_person person
-	JSON.parse(person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] ))
+	JSON.parse(person.as_document.to_json( :except => ["salt", "hashed_password", "device_token", "facebook_id"] ))
 end
 
 def expected_json_fields_for_mail mail

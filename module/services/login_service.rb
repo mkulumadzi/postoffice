@@ -48,6 +48,17 @@ module Postoffice
 			end
 		end
 
+		def self.check_facebook_login data
+			begin
+				if data["facebook_id"] != nil && data["facebook_id"] != ""
+					person = Postoffice::Person.find_by(email: data["email"], facebook_id: data["facebook_id"])
+					return person
+				end
+			rescue Mongoid::Errors::DocumentNotFound
+			end
+			nil
+		end
+
 		def self.response_for_successful_login person
 			token = Postoffice::AuthService.generate_token_for_person person
 			exp_in = 3600 * 24 * 72

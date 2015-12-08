@@ -75,6 +75,24 @@ post '/login' do
   end
 end
 
+# Login with email and facebook id
+# Scope: nil
+post '/login/facebook' do
+  content_type :json
+  data = JSON.parse request.body.read
+  begin
+    person = Postoffice::LoginService.check_facebook_login data
+    if person
+      response_body = Postoffice::LoginService.response_for_successful_login person
+      [200, response_body]
+    else
+      [401, nil]
+    end
+  rescue Mongoid::Errors::DocumentNotFound
+    [401, nil]
+  end
+end
+
 # Retrieve a single person record
 # Scope: can-read
 get '/person/id/:id' do
@@ -83,7 +101,7 @@ get '/person/id/:id' do
 
   begin
     person = Postoffice::Person.find(params[:id])
-    person_response = person.as_document.to_json( :except => ["salt", "hashed_password", "device_token"] )
+    person_response = Postoffice::AppService.json_document_for_person person
 
     if request.env["HTTP_IF_MODIFIED_SINCE"] == nil
       [200, person_response]
@@ -227,7 +245,8 @@ get '/people' do
   if Postoffice::AppService.unauthorized?(request, "admin") then return [401, nil] end
 
   Postoffice::AppService.add_if_modified_since_to_request_parameters self
-  response_body = Postoffice::PersonService.get_people(params).to_json( :except => ["salt", "hashed_password", "device_token"] )
+  people_docs = Postoffice::PersonService.get_people(params)
+  response_body = Postoffice::AppService.json_document_for_people_documents people_docs
   [200, response_body]
 
 end
@@ -240,13 +259,11 @@ get '/people/search' do
 
   begin
     people_returned = Postoffice::PersonService.search_people params
-
-    people_bson = []
+    people_docs = []
     people_returned.each do |person|
-      people_bson << person.as_document
+      people_docs << person.as_document
     end
-
-    response_body = people_bson.to_json( :except => ["salt", "hashed_password", "device_token"] )
+    response_body = Postoffice::AppService.json_document_for_people_documents people_docs
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, response_body]
@@ -261,7 +278,7 @@ post '/people/find_matches' do
   begin
     people = Postoffice::PersonService.find_people_from_list_of_emails data["emails"]
     documents = Postoffice::AppService.convert_objects_to_documents people
-    response_body = documents.to_json( :except => ["salt", "hashed_password", "device_token"])
+    response_body = Postoffice::AppService.json_document_for_people_documents documents
     [201, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
@@ -520,7 +537,7 @@ get '/person/id/:id/contacts' do
   begin
     people = Postoffice::ConversationService.people_from_conversations(params)
     people_docs = Postoffice::AppService.convert_objects_to_documents(people)
-    response_body = people_docs.to_json( :except => ["salt", "hashed_password", "device_token"] )
+    response_body = Postoffice::AppService.json_document_for_people_documents people_docs
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]

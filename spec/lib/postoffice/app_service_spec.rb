@@ -305,4 +305,58 @@ describe Postoffice::AppService do
 
   end
 
+  describe 'json document for person' do
+
+    before do
+      @person = build(:person, username: random_username)
+      @person.hashed_password = "abc"
+      @person.salt = "def"
+      @person.facebook_id = "123"
+      @person.device_token = "456"
+      @json_document = Postoffice::AppService.json_document_for_person @person
+      @parsed_document = JSON.parse(@json_document)
+    end
+
+    it 'must return a parseable json document' do
+      @parsed_document.must_be_instance_of Hash
+    end
+
+    it 'must include the person info' do
+      @parsed_document["username"].must_equal @person.username
+    end
+
+    it 'must not include the salt' do
+      @parsed_document["salt"].must_equal nil
+    end
+
+    it 'must not include the hashed_password' do
+      @parsed_document["hashed_passwords"].must_equal nil
+    end
+
+    it 'must not include the device_token' do
+      @parsed_document["device_token"].must_equal nil
+    end
+
+    it 'must not include the facebook_id' do
+      @parsed_document["facebook_id"].must_equal nil
+    end
+
+  end
+
+  describe 'json document for people documents' do
+
+    it 'must return a json document from the people documents, minus the fields that should be omitted' do
+
+      person1 = build(:person, username: random_username, facebook_id: "abc")
+      person2 = build(:person, username: random_username, facebook_id: "def")
+      people_array = [person1, person2]
+      documents = Postoffice::AppService.convert_objects_to_documents people_array
+      result = Postoffice::AppService.json_document_for_people_documents documents
+
+      result.must_equal documents.to_json( :except => ["salt", "hashed_password", "device_token", "facebook_id"] )
+
+    end
+
+  end
+
 end

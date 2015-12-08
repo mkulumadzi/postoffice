@@ -520,6 +520,60 @@ describe app do
 
 	end
 
+  describe '/login/facebook' do
+
+    describe 'successful login' do
+
+      before do
+        @fb_person = create(:person, username: random_username, email: "#{random_username}@test.com", facebook_id: "123")
+        data = '{"email": "' + @fb_person.email + '", "facebook_id": "123"}'
+        post "/login/facebook", data
+        @response = JSON.parse(last_response.body)
+      end
+
+      it 'must return a 200 status code' do
+        last_response.status.must_equal 200
+      end
+
+      describe 'response body' do
+
+        it 'must include the token in the response body' do
+          @response["access_token"].must_be_instance_of String
+        end
+
+        it 'must include the person record in the response body, including the id' do
+          BSON::ObjectId.from_string(@response["person"]["_id"]["$oid"]).must_equal @fb_person.id
+        end
+
+      end
+
+      describe 'incorrect facebook_id' do
+
+        it 'must return a 401 status code for an incorrect facebook_id' do
+          data = '{"email": "' + @fb_person.email + '", "facebook_id": "abc"}'
+          post "/login/facebook", data
+          last_response.status.must_equal 401
+        end
+
+      end
+
+    end
+
+    describe 'unrecognized email' do
+
+      before do
+        data = '{"email": "unrecognized_email", "facebook_id": "123"}'
+        post "/login/facebook", data
+      end
+
+      it 'must return a 401 status code for an unrecognized email' do
+        last_response.status.must_equal 401
+      end
+
+    end
+
+  end
+
 	describe '/person/id/:id/reset_password' do
 
 		before do

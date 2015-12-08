@@ -82,6 +82,33 @@ describe Postoffice::LoginService do
 
 			end
 
+			describe 'check facebook login' do
+
+				before do
+					@fb_person = create(:person, username: random_username, email: "#{random_username}@test.com", facebook_id: "123")
+				end
+
+				it 'must return a person if the correct combination of email and facebook_id is submitted' do
+					data = JSON.parse '{"email": "' + @fb_person.email + '", "facebook_id": "123"}'
+					result = Postoffice::LoginService.check_facebook_login data
+					result.must_be_instance_of Postoffice::Person
+				end
+
+				it 'must return nil if an incorrect facebook_id is submitted' do
+					data = JSON.parse '{"email": "' + @fb_person.email + '", "facebook_id": "abc"}'
+					result = Postoffice::LoginService.check_login data
+					result.must_equal nil
+				end
+
+				it 'must return nil if a facebook_id is not submitted' do
+					data = JSON.parse '{"email": "' + @fb_person.email + '"}'
+					result = Postoffice::LoginService.check_login data
+					result.must_equal nil
+				end
+
+
+			end
+
 			describe 'generate response body for route' do
 
 				before do
