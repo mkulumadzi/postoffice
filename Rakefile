@@ -88,19 +88,34 @@ task :setup_demo_data do
 	demo = Postoffice::PersonService.create_person data
 	Postoffice::MailService.generate_welcome_message demo
 
-	image1 = File.open('spec/resources/image1.jpg')
-	uid1 = Dragonfly.app.store(image1.read, 'name' => 'image1.jpg')
-	image1.close
+	data =  JSON.parse '{"given_name": "Sharon", "family_name": "Alajgghjhdbdb Schrocksky", "username": "sharon", "email": "khpmlbi_schrocksky_1449630136@tfbnw.net", "password": "password"}'
+	sharon = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message sharon
 
-	image2 = File.open('spec/resources/image2.jpg')
-	uid2 = Dragonfly.app.store(image2.read, 'name' => 'image2.jpg')
-	image2.close
+	data =  JSON.parse '{"given_name": "Jennifer", "family_name": "Alajgfeeaeedg Occhinoberg", "username": "jennifer", "email": "thefczq_occhinoberg_1449630140@tfbnw.net", "password": "password"}'
+	jennifer = Postoffice::PersonService.create_person data
+	Postoffice::MailService.generate_welcome_message jennifer
 
+ 	landscape_image = File.open('spec/resources/image1.jpg')
+	landscape_uid = Dragonfly.app.store(landscape_image.read, 'name' => 'image1.jpg')
+	landscape_image.close
+
+	portrait_image = File.open('spec/resources/portrait_image.jpg')
+	portrait_uid = Dragonfly.app.store(portrait_image.read, 'name' => 'portrait_image.jpg')
+	portrait_image.close
+
+	square_image = File.open('spec/resources/square_image.jpg')
+	square_uid = Dragonfly.app.store(square_image.read, 'name' => 'square_image.jpg')
+	square_image.close
+
+	pano_image = File.open('spec/resources/pano_image.jpg')
+	pano_uid = Dragonfly.app.store(pano_image.read, 'name' => 'pano_image.jpg')
+	pano_image.close
 
 	f1 = Postoffice::FromPerson.new(person_id: byron.id)
 	t1 = Postoffice::ToPerson.new(person_id: ada.id)
 	n1 = Postoffice::Note.new(content: "Dearest Ada, it was so lovely to see you and William on your recent visit. I reall do think your counting machine is going to be something special. Do write as soon as you are home! Yours, Lord Byron")
-	i1 = Postoffice::ImageAttachment.new(image_uid: uid1)
+	i1 = Postoffice::ImageAttachment.new(image_uid: landscape_uid)
   mail1 = Postoffice::Mail.create!({
 		correspondents: [f1, t1],
 		attachments: [n1, i1]
@@ -115,7 +130,7 @@ task :setup_demo_data do
 	t2b = Postoffice::ToPerson.new(person_id: ada.id)
 	t2c = Postoffice::Email.new(email: "thepress@thepress.com")
 	n2 = Postoffice::Note.new(content: "Greetings from NOLA!")
-	i2 = Postoffice::ImageAttachment.new(image_uid: uid2)
+	i2 = Postoffice::ImageAttachment.new(image_uid: portrait_uid)
   mail2 = Postoffice::Mail.create!({
 		correspondents: [f2, t2, t2b, t2c],
 		attachments: [n2, i2]
@@ -127,14 +142,14 @@ task :setup_demo_data do
 	f3 = Postoffice::FromPerson.new(person_id: ada.id)
 	t3 = Postoffice::ToPerson.new(person_id: byron.id)
 	n3 = Postoffice::Note.new(content: "What a lovely view.")
-	i3 = Postoffice::ImageAttachment.new(image_uid: uid1)
-	i3b = Postoffice::ImageAttachment.new(image_uid: uid2)
+	i3 = Postoffice::ImageAttachment.new(image_uid: square_uid)
   mail3 = Postoffice::Mail.create!({
 		correspondents: [f3, t3],
 		attachments: [n3, i3]
   })
 
 	mail3.mail_it
+	mail3.deliver
 
 	f4 = Postoffice::FromPerson.new(person_id: evan.id)
 	t4 = Postoffice::ToPerson.new(person_id: demo.id)
@@ -150,7 +165,7 @@ task :setup_demo_data do
 	f5 = Postoffice::FromPerson.new(person_id: demo.id)
 	t5 = Postoffice::ToPerson.new(person_id: evan.id)
 	n5 = Postoffice::Note.new(content: "Can't wait to receive a few more Slowposts!")
-	i5 = Postoffice::ImageAttachment.new(image_uid: uid1)
+	i5 = Postoffice::ImageAttachment.new(image_uid: landscape_uid)
 	mail5 = Postoffice::Mail.create!({
 		correspondents: [f5, t5],
 		attachments: [n5, i5]
@@ -161,7 +176,7 @@ task :setup_demo_data do
 	f6 = Postoffice::FromPerson.new(person_id: demo.id)
 	t6 = Postoffice::ToPerson.new(person_id: evan.id)
 	n6 = Postoffice::Note.new(content: "Now I have to get to writing.")
-	i6 = Postoffice::ImageAttachment.new(image_uid: uid1)
+	i6 = Postoffice::ImageAttachment.new(image_uid: landscape_uid)
 	mail6 = Postoffice::Mail.create!({
 		correspondents: [f6, t6],
 		attachments: [n6, i6]
@@ -170,6 +185,18 @@ task :setup_demo_data do
 	mail6.mail_it
 	mail6.scheduled_to_arrive = Time.now
 	mail6.save
+
+	f7 = Postoffice::FromPerson.new(person_id: ada.id)
+	t7 = Postoffice::ToPerson.new(person_id: byron.id)
+	n7 = Postoffice::Note.new(content: "This one too.")
+	i7 = Postoffice::ImageAttachment.new(image_uid: pano_uid)
+	mail7 = Postoffice::Mail.create!({
+		correspondents: [f7, t7],
+		attachments: [n7, i7]
+	})
+
+	mail7.mail_it
+	mail7.deliver
 
 	Postoffice::ConversationService.initialize_conversations_for_all_mail
 
