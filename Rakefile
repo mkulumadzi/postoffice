@@ -159,7 +159,7 @@ task :setup_demo_data do
 	mail5.mail_it
 
 	f6 = Postoffice::FromPerson.new(person_id: demo.id)
-	t6 = Postoffice::ToPerson.new(person_id: person.id)
+	t6 = Postoffice::ToPerson.new(person_id: evan.id)
 	n6 = Postoffice::Note.new(content: "Now I have to get to writing.")
 	i6 = Postoffice::ImageAttachment.new(image_uid: uid1)
 	mail6 = Postoffice::Mail.create!({
