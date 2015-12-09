@@ -341,6 +341,10 @@ describe Postoffice::AppService do
       @parsed_document["facebook_id"].must_equal nil
     end
 
+    it 'must not include the facebook token' do
+      @parsed_document["facebook_token"].must_equal nil
+    end
+
   end
 
   describe 'json document for people documents' do
@@ -353,7 +357,7 @@ describe Postoffice::AppService do
       documents = Postoffice::AppService.convert_objects_to_documents people_array
       result = Postoffice::AppService.json_document_for_people_documents documents
 
-      result.must_equal documents.to_json( :except => ["salt", "hashed_password", "device_token", "facebook_id"] )
+      result.must_equal documents.to_json( :except => ["salt", "hashed_password", "device_token", "facebook_id", "facebook_token"] )
 
     end
 

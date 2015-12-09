@@ -140,12 +140,12 @@ module Postoffice
     end
 
     def self.json_document_for_person person
-      person.as_document.to_json( :except => ["salt", "hashed_password", "device_token", "facebook_id"] )
+      person.as_document.to_json( :except => ["salt", "hashed_password", "device_token", "facebook_id", "facebook_token"] )
     end
 
     #To Do: Refactor the app so as not to need this method, or the one above
     def self.json_document_for_people_documents people_documents
-      people_documents.to_json( :except => ["salt", "hashed_password", "device_token", "facebook_id"] )
+      people_documents.to_json( :except => ["salt", "hashed_password", "device_token", "facebook_id", "facebook_token"] )
     end
 
   end

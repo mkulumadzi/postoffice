@@ -36,7 +36,7 @@ describe Postoffice::Person do
 				@person.given_name.must_equal @expected_attrs[:given_name]
 			end
 
-			it 'must stor the family_name' do
+			it 'must store the family_name' do
 				@person.family_name.must_equal @expected_attrs[:family_name]
 			end
 
@@ -66,6 +66,10 @@ describe Postoffice::Person do
 
 			it 'must store the facebook id' do
 				@person.facebook_id.must_equal @expected_attrs[:facebook_id]
+			end
+
+			it 'must store the facebook token' do
+				@person.facebook_token.must_equal @expected_attrs[:facebook_token]
 			end
 
 		end

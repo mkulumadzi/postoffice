@@ -43,7 +43,8 @@ module Postoffice
 		      salt: salt,
 		      hashed_password: hashed_password,
 		      device_token: data["device_token"],
-					facebook_id: data["facebook_id"]
+					facebook_id: data["facebook_id"],
+					facebook_token: data["facebook_token"]
 		    })
 		end
 

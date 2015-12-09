@@ -11,6 +11,7 @@ FactoryGirl.define do
     salt "salt"
     device_token "abc123"
     facebook_id "123"
+    facebook_token "abcdef"
   end
 
   factory :mail, class: Postoffice::Mail do

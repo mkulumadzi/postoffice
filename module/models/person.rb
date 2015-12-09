@@ -21,6 +21,7 @@ module Postoffice
 		field :zip, type: String
 		field :device_token, type: String
 		field :facebook_id, type: String
+		field :facebook_token, type: String
 
 		index({ username: 1 }, { unique: true })
 		index({ email: 1 })
