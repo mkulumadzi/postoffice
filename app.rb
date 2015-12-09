@@ -335,6 +335,34 @@ post '/person/id/:id/mail/send' do
 
 end
 
+# Send mail and deliver instantly
+# Scope: admin OR (can-write, is person)
+post '/person/id/:id/mail/instant' do
+  content_type :json
+  data = JSON.parse request.body.read
+  data["type"] = "INSTANT"
+  if Postoffice::AppService.not_admin_or_owner?(request, "can-write", params[:id]) then return [401, nil] end
+
+  begin
+    mail = Postoffice::MailService.create_mail params, data
+    mail.mail_it
+    api_key = Postoffice::AppService.email_api_key request
+    mail.deliver_and_notify_recipients api_key
+    mail.send_preview_email_if_necessary api_key
+    mail_link = "#{ENV['POSTOFFICE_BASE_URL']}/mail/id/#{mail.id}"
+    headers = { "location" => mail_link }
+    [201, headers, nil]
+  rescue Mongoid::Errors::DocumentNotFound
+    [404, nil]
+  rescue Mongo::Error::OperationFailure
+    [403, nil]
+  rescue RuntimeError => error
+    response_body = Hash["message", error.to_s].to_json
+    [403, nil, response_body]
+  end
+
+end
+
 # Retrieve a piece of mail
 # Scope: admin OR (can-read, is to or from person)
 get '/mail/id/:id' do

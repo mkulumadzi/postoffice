@@ -1015,6 +1015,71 @@ describe app do
 
 	end
 
+  describe '/person/id/:id/mail/instant' do
+
+    before do
+      @data = '{"correspondents": {"to_people": ["' + @person2.id.to_s + '"], "emails": ["test@test.com", "test2@test.com"]}, "attachments": {"notes": ["Hey what is up"]}}'
+    end
+
+    describe 'post /person/id/:id/mail/instant' do
+
+      before do
+        post "/person/id/#{@person1.id}/mail/instant?test=true", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+      end
+
+      it 'must get a status of 201' do
+        last_response.status.must_equal 201
+      end
+
+      it 'must return an empty body' do
+        last_response.body.must_equal ""
+      end
+
+      it 'must include a link to the mail in the header' do
+        assert_match(/#{ENV['POSTOFFICE_BASE_URL']}\/mail\/id\/\w{24}/, last_response.header["location"])
+      end
+
+      it 'must have delivered the mail' do
+        mail_id = last_response.header["location"].split("/").pop
+        mail = Postoffice::Mail.find(mail_id)
+        mail.status.must_equal "DELIVERED"
+      end
+
+      it 'must have sent a preview email if this is the first time the person has sent a Slowpost by email' do
+        Postoffice::QueueService.action_has_occurred?("SEND_PREVIEW_EMAIL", @person1.id).must_equal true
+      end
+
+    end
+
+    describe 'unauthorized request' do
+
+      it 'must return a 401 error if a person tries to create mail for another user id' do
+        post "/person/id/#{@person2.id}/mail/instant?test=true", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+        last_response.status.must_equal 401
+      end
+
+    end
+
+    describe 'invalid recipients' do
+
+      before do
+        @data = '{"correspondents": {"to_people": ["abc"], "emails": ["test@test.com", "test2@test.com"]}, "attachments": {"notes": ["Hey what is up"]}}'
+        post "/person/id/#{@person2.id}/mail/instant?test=true", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
+      end
+
+      it 'must return a 403 status' do
+        last_response.status.must_equal 403
+      end
+
+      it 'must return an error message in the response body' do
+        message = JSON.parse(last_response.body)["message"]
+        message.must_be_instance_of String
+      end
+
+    end
+
+  end
+
 	describe '/mail/id/:id' do
 
 		describe 'get /mail/id/:id' do

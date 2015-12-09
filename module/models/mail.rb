@@ -132,11 +132,6 @@ module Postoffice
 			self.save
 		end
 
-		def from_person
-			from_person_id = self.correspondents.where(_type: "Postoffice::FromPerson").first.person_id
-			Postoffice::Person.find(from_person_id)
-		end
-
 		def to_list
 			list = ""
 			index = 0
@@ -305,6 +300,26 @@ module Postoffice
 			elsif self.to_emails.count > 2
 				"#{self.to_emails[0]} and #{self.to_emails.count - 1} others"
 			end
+		end
+
+		def deliver_and_notify_recipients email_api_key = "POSTMARK_API_TEST"
+			self.status == "SENT" ? self.deliver : nil
+			self.notify_slowpost_recipients
+			self.send_emails
+		end
+
+		def notify_slowpost_recipients
+			notifications = self.notifications_for_recipients
+			APNS.send_notifications(notifications)
+		end
+
+		def send_emails email_api_key = "POSTMARK_API_TEST"
+			self.emails.each { |email| Postoffice::EmailService.send_email email, email_api_key }
+		end
+
+		def from_person
+			from_person_id = self.correspondents.where(_type: "Postoffice::FromPerson").first.person_id
+			Postoffice::Person.find(from_person_id)
 		end
 
 	end

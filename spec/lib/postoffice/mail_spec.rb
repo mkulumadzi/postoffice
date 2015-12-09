@@ -1002,4 +1002,47 @@ describe Postoffice::Mail do
 
 	end
 
+	describe 'deliver and notify recipients' do
+
+		before do
+			@person2.device_token = "abc"
+			@person2.save
+
+			@instant_mail = create(:mail, correspondents: [build(:from_person, person_id: @person1.id),build(:to_person, person_id: @person2.id),build(:email)])
+			@instant_mail.mail_it
+		end
+
+		describe 'notify slowpost recipients' do
+
+			# Still do not know how to test that notifications were actually sent...
+			it 'must send notifications for all of the recipients without an error' do
+				result = @instant_mail.notify_slowpost_recipients
+				result.must_equal nil
+			end
+
+		end
+
+		describe 'send emails' do
+
+			it 'must send emails without an error, returning the emails sent' do
+				@instant_mail.deliver
+				result = @instant_mail.send_emails
+				result.must_be_instance_of Array
+			end
+
+		end
+
+		it 'must mark the status of the mail as delivered and complete the other tasks with no errors' do
+			@instant_mail.deliver_and_notify_recipients
+			@instant_mail.status.must_equal "DELIVERED"
+		end
+
+		it 'must not throw an error if the status of the mail is already delivered' do
+			@instant_mail.deliver
+			@instant_mail.deliver_and_notify_recipients
+			@instant_mail.status.must_equal "DELIVERED"
+		end
+
+	end
+
 end
