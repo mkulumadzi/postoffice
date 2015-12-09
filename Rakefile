@@ -108,7 +108,7 @@ task :setup_demo_data do
 
   mail1.mail_it
   mail1.deliver
-	mail1.read_by person
+	mail1.read_by ada
 
 	f2 = Postoffice::FromPerson.new(person_id: byron.id)
 	t2 = Postoffice::ToPerson.new(person_id: william.id)
