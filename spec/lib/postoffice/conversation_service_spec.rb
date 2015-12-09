@@ -96,8 +96,8 @@ describe Postoffice::ConversationService do
     end
 
     it 'must return the conversation metadata' do
-      params = Hash(id: @person1.id)
-      conversation_metadata = Postoffice::ConversationService.get_conversation_metadata params
+      params = Hash.new
+      conversation_metadata = Postoffice::ConversationService.get_conversation_metadata @person1, params
       (conversation_metadata[0].keys - @convo_1.metadata_for_person(@person1).keys).must_equal []
     end
 
@@ -174,8 +174,8 @@ describe Postoffice::ConversationService do
   describe 'get people from conversations' do
 
     before do
-      @params = Hash(id: @person1.id.to_s)
-      @conversation_metadata = Postoffice::ConversationService.get_conversation_metadata @params
+      params = Hash.new
+      @conversation_metadata = Postoffice::ConversationService.get_conversation_metadata @person1, params
     end
 
     describe 'collect all people from conversations' do
@@ -214,7 +214,8 @@ describe Postoffice::ConversationService do
     end
 
     it 'must return a unique list of people the person has commnicated with' do
-      people = Postoffice::ConversationService.people_from_conversations @params
+      params = Hash.new
+      people = Postoffice::ConversationService.people_from_conversations @person1, params
       people.must_equal [@person1, @person2, @person3]
     end
 

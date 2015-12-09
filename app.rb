@@ -501,7 +501,8 @@ get '/person/id/:id/conversations' do
   if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
-    response_body = Postoffice::ConversationService.get_conversation_metadata(params).to_json
+    person = Postoffice::Person.find(params[:id])
+    response_body = Postoffice::ConversationService.get_conversation_metadata(person, params).to_json
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]
@@ -535,9 +536,10 @@ get '/person/id/:id/contacts' do
   if Postoffice::AppService.not_admin_or_owner?(request, "can-read", params[:id]) then return [401, nil] end
 
   begin
-    people = Postoffice::ConversationService.people_from_conversations(params)
-    people_docs = Postoffice::AppService.convert_objects_to_documents(people)
-    response_body = Postoffice::AppService.json_document_for_people_documents people_docs
+    person = Postoffice::Person.find(params[:id])
+    contacts = Postoffice::ContactService.get_contacts_for_person person, params
+    contact_docs = Postoffice::AppService.convert_objects_to_documents(contacts)
+    response_body = Postoffice::AppService.json_document_for_people_documents contact_docs
     [200, response_body]
   rescue Mongoid::Errors::DocumentNotFound
     [404, nil]

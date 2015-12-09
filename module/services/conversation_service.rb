@@ -4,8 +4,7 @@ module Postoffice
 
     ### Get conversation metadata for a person
 
-    def self.get_conversation_metadata params
-      person = Postoffice::Person.find(params[:id])
+    def self.get_conversation_metadata person, params
       conversation_query = self.query_persons_conversations person
       conversations = self.filter_conversations_by_mail_for_person conversation_query, person, params
       conversation_metadata = self.get_conversation_metadata_for_person conversations, person
@@ -52,9 +51,8 @@ module Postoffice
 
     ### Get a list of people the person has sent mail to or received mail from
 
-    def self.people_from_conversations params
-      person = Postoffice::Person.find(params[:id])
-      conversation_metadata = self.get_conversation_metadata params
+    def self.people_from_conversations person, params
+      conversation_metadata = self.get_conversation_metadata person, params
       people_array = self.collect_all_people_from_conversations conversation_metadata
       self.get_unique_people_from_conversation_people_list_and_add_person people_array, person
     end
