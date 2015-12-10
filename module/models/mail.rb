@@ -305,7 +305,7 @@ module Postoffice
 		def deliver_and_notify_recipients email_api_key = "POSTMARK_API_TEST"
 			self.status == "SENT" ? self.deliver : nil
 			self.notify_slowpost_recipients
-			self.send_emails
+			self.send_emails email_api_key
 		end
 
 		def notify_slowpost_recipients
