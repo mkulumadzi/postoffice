@@ -25,10 +25,10 @@ module Postoffice
 			end
 		end
 
-		def self.get_cards
+		def self.get_resources folder
 			bucket = self.get_bucket
-			cards = bucket.objects(prefix: 'resources/cards').collect(&:key)
-			cards.delete('resources/cards/')
+			cards = bucket.objects(prefix: "resources/#{folder}").collect(&:key)
+			cards.delete("resources/#{folder}/")
 			cards
 		end
 

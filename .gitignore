@@ -8,6 +8,8 @@
 /test/tmp/
 /test/version_tmp/
 /tmp/
+.DS_Store
+/spec/.DS_Store
 
 ## Specific to RubyMotion:
 .dat*

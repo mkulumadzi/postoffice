@@ -1766,6 +1766,23 @@ describe app do
 
   end
 
+  describe 'get a list of overlays available' do
+
+    before do
+      get "/overlays", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+    end
+
+    it 'must return a 200 status' do
+      last_response.status.must_equal 200
+    end
+
+    it 'must include an array of cards in the response' do
+      cards = JSON.parse(last_response.body)
+      cards.must_be_instance_of Array
+    end
+
+  end
+
   describe 'get image by its uid' do
 
     describe 'get an image' do

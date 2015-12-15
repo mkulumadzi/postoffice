@@ -104,10 +104,10 @@ describe Postoffice::FileService do
 
   end
 
-  describe 'get card uids' do
+  describe 'get resources' do
 
     before do
-      @cards = Postoffice::FileService.get_cards
+      @cards = Postoffice::FileService.get_resources "cards"
     end
 
     it 'must return an array' do
@@ -182,7 +182,7 @@ describe Postoffice::FileService do
   end
 
   describe 'get image content type from filename' do
-    
+
     it 'must return a string with image/ and the file extension' do
       filename = 'tmp/filename.png'
       Postoffice::FileService.image_content_type(filename).must_equal "image/png"

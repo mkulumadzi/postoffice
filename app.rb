@@ -600,9 +600,17 @@ end
 get '/cards' do
   content_type :json
   if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
-  response_body = Postoffice::FileService.get_cards.to_json
+  response_body = Postoffice::FileService.get_resources("cards").to_json
   [200, response_body]
 end
+
+get '/overlays' do
+  content_type :json
+  if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
+  response_body = Postoffice::FileService.get_resources("overlays").to_json
+  [200, response_body]
+end
+
 
 # Get a specific image
 # Scope: can-read
