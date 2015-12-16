@@ -161,4 +161,15 @@ describe Postoffice::Person do
 
 	end
 
+	describe 'a or b' do
+
+		it 'must return the A or B, based on the last character of the person id' do
+			result = false
+			a_or_b = @person.a_or_b
+			a_or_b == "A" || a_or_b == "B" ? result = true : result = false
+			result.must_equal true
+		end
+
+	end
+
 end

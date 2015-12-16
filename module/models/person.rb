@@ -58,5 +58,10 @@ module Postoffice
 			Postoffice::Mail.where(status: "DELIVERED", :correspondents.elem_match => { :_type => "Postoffice::ToPerson", :person_id => self.id, :status => {"$ne" => "READ"}}).count
 		end
 
+		def a_or_b
+			i = self.id.to_s[-1, 1].to_i(16)
+			i <= 7 ? "A" : "B"
+		end
+
 	end
 end
