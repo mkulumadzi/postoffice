@@ -162,6 +162,22 @@ post '/person/id/:id/reset_password' do
 
 end
 
+# Get default delivery method (using this for AB testing Now versus Standard)
+# Scope: can-read
+get '/person/id/:id/defaults' do
+  content_type :json
+  if Postoffice::AppService.unauthorized?(request, "can-read") then return [401, nil] end
+
+  begin
+    person = Postoffice::Person.find(params[:id])
+    person.a_or_b == "A" ? default_delivery_method = "express" : default_delivery_method = "standard"
+    response = Hash("default_delivery_method": default_delivery_method).to_json
+    [200, response]
+  rescue Mongoid::Errors::DocumentNotFound
+    [404, nil]
+  end
+end
+
 # Validate email using a temporary token, via a webapp
 post '/validate_email' do
   content_type :json

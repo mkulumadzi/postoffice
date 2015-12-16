@@ -1813,4 +1813,26 @@ describe app do
 
   end
 
+  describe 'get defaults' do
+
+    before do
+      get "/person/id/#{@person1.id}/defaults", nil, {"HTTP_AUTHORIZATION" => "Bearer #{@person1_token}"}
+      @response = JSON.parse(last_response.body)
+    end
+
+    it 'must return a 200 status' do
+      last_response.status.must_equal 200
+    end
+
+    it 'must return the correct default delivery method' do
+      delivery_method = @response["default_delivery_method"]
+      if @person1.a_or_b == "A"
+        delivery_method.must_equal "express"
+      else
+        delivery_method.must_equal "standard"
+      end
+    end
+
+  end
+
 end
