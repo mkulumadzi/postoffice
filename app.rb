@@ -372,6 +372,9 @@ post '/person/id/:id/mail/instant' do
     [404, nil]
   rescue Mongo::Error::OperationFailure
     [403, nil]
+  rescue Postmark::InvalidMessageError
+    response_body = Hash["message", "Invalid recipient email address"].to_json
+    [403, nil, response_body]
   rescue RuntimeError => error
     response_body = Hash["message", error.to_s].to_json
     [403, nil, response_body]

@@ -1078,6 +1078,24 @@ describe app do
 
     end
 
+    describe 'invalid emails' do
+
+      before do
+        @data = '{"correspondents": {"emails": ["www.icloud.com"]}, "attachments": {"notes": ["Hey what is up"]}}'
+        post "/person/id/#{@person2.id}/mail/instant?test=true", @data, {"HTTP_AUTHORIZATION" => "Bearer #{@person2_token}"}
+      end
+
+      it 'must return a 403 status' do
+        last_response.status.must_equal 403
+      end
+
+      it 'must return an error message in the response body' do
+        message = JSON.parse(last_response.body)["message"]
+        message.must_be_instance_of String
+      end
+
+    end
+
   end
 
 	describe '/mail/id/:id' do
