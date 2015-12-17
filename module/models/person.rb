@@ -26,6 +26,7 @@ module Postoffice
 		index({ username: 1 }, { unique: true })
 		index({ email: 1 })
 		index({ phone: 1 })
+		index({ facebook_id: 1 })
 
 		def initials
 			if given_name && family_name && given_name.length > 0 && family_name.length > 0

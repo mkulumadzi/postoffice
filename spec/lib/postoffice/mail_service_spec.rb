@@ -1052,6 +1052,23 @@ describe Postoffice::MailService do
 				Postoffice::MailService.send_emails_for_mail @delivered_mail
 			end
 
+			describe 'handle invalid email address' do
+
+				before do
+					@mailE = create(:mail, scheduled_to_arrive: Time.now, correspondents: [build(:from_person, person_id: @personB.id), build(:email, email: "www.icloud.com")], attachments: [build(:note, content: "Hey what is up")])
+					@mailE.mail_it
+
+					@delivered_mail = Postoffice::MailService.deliver_mail_that_has_arrived
+				end
+
+				it 'msut not return an error' do
+					Postoffice::MailService.send_emails_for_mail @delivered_mail
+				end
+
+
+
+			end
+
 		end
 
 		describe 'send the notifications and mail' do
@@ -1068,6 +1085,21 @@ describe Postoffice::MailService do
 
 			it 'must not crash if there is no mail to deliver' do
 				sleep 1
+				Postoffice::MailService.deliver_mail_and_notify_correspondents
+			end
+
+		end
+
+		describe 'handle sending notifications when an invalid email address was entered' do
+
+			before do
+				@mailE = create(:mail, scheduled_to_arrive: Time.now, correspondents: [build(:from_person, person_id: @personB.id), build(:email, email: "www.icloud.com")], attachments: [build(:note, content: "Hey what is up")])
+				@mailE.mail_it
+
+				@delivered_mail = Postoffice::MailService.deliver_mail_that_has_arrived
+			end
+
+			it 'must not throw an error' do
 				Postoffice::MailService.deliver_mail_and_notify_correspondents
 			end
 
