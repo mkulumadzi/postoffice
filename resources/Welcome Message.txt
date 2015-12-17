@@ -2,7 +2,7 @@ Welcome to Slowpost!
 
 Slowpost is a new kind of messaging service designed for meaningful, modern communication.
 
-To send a new Slowpost, simply press the center "Compose" button. Choose a friend (or three), add your own photo or one of our cards, and decide when you want the message to arrive. You can choose to have it arrive right away, after 1 to 2 days, or on a date you choose.
+To create a new Slowpost, simply press the center "Compose" button. Choose a friend (or three), add your own photo or one of our cards, and decide when you want the message to arrive. You can choose to have it arrive right away, after 1 to 2 days, or on a date you choose.
 
 Enjoy!
 

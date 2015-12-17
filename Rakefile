@@ -363,7 +363,7 @@ task :test_preview_email do
 	Mongoid.logger.level = Logger::INFO
 	Mongo::Logger.logger.level = Logger::INFO
 
-	image = File.open('spec/resources/birthday.jpg')
+	image = File.open('spec/resources/portrait_image.jpg')
 	uid = Dragonfly.app.store(image.read, 'name' => 'image1.jpg')
 	image.close
 
