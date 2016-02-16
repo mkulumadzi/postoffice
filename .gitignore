@@ -45,3 +45,6 @@ tmp/*
 
 # New Relic logs
 log/*
+
+# Do not check in certificates
+certificates/*

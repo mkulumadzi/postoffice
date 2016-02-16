@@ -8,7 +8,7 @@ describe Postoffice::ContactService do
 
     @main_facebook_person_email = "wzjjbxh_lison_1449630143@tfbnw.net"
     if Postoffice::Person.where(email: @main_facebook_person_email).count == 0
-      create(:person, username: random_username, email: @main_facebook_person_email, facebook_id: "103485133357479", facebook_token: "CAAF497CdlJ0BAPXTjUvp25xSkjhIkLoogvPZCZAkfDNGYeOGqlZBj4hZBd8Kq6ztenGNPcuCBZBQGQm9Y75Pyxw40IbZAZCVzOEwEDwdlB5BZBZBs0yE4ubTsJWZAxiuWqiTFfanZAA6DAGvt2ALEBF5aFR52lUVhW09Ax1aWdbbBqJjGIJXVVa8wNYlBRPwiEVUCatA3Uq9oz6Fm0oz6kxNIeA")
+      create(:person, username: random_username, email: @main_facebook_person_email, facebook_id: "103485133357479", facebook_token: "CAAF497CdlJ0BAAJIM8h1DQ00ZCNh3RZCuyvUrZB7I3Xlf7ZAuf4lO6E72Wjb3JSruZCu6MthzXg2XOjY5QoCw0hQgglWHzCh4iebIWuNe6RdeG4FZC7aCamnZCahuQf0nsYIqS5CsElbEl5kAKPXduGnNZBPuUGdLHRvlLKMuOqVBvjJG8XU7KwnJ8kB34DepVWlOgKEI1HwcgZDZD")
     end
     @main_person = Postoffice::Person.find_by(email: @main_facebook_person_email)
 
