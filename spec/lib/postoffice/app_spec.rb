@@ -525,7 +525,7 @@ describe app do
     before do
 
       @test_facebook_email = 'open_plpraxu_user@tfbnw.net'
-      @test_access_token = 'CAAF497CdlJ0BABtlRZAzUvDlTXhjHfv9gW7oybN64j9rfhg889ODuRFrYMsVRypXoJFI2VO2AVqeCI8JL6fmkwbwRrUoGfSQ2dCmFTWeglq1mhtw5eqZCq6LKOb7TppF0cGBUByAI0SnYyS1UcOCvLLPlaZCfAkirMTw5TriMg2UmZBtEYdEINiXIxqiuqxmT5EWxzsj1B8O5RGwb6dK71uTFmkrLoZCt44HUcKYMzAZDZD'
+      @test_access_token = 'CAAF497CdlJ0BAAUpW0GvmWIEOSRnZCmNpNeepiNPtQSYKvaGx6xJoFrfbYVjN9DNz0kIZBuGS32YyAqtYgy2Tbuz6aK47reSVITyVcfOqje2scIumld6ff2FUByZAS93MSZBWTZBnyIqpmZAtr4YZCwl1kSlYFEUljOVU9BjPmaCmVDFZAwsqAFzPVZCqdgjFZCbee8vzH15k4lgZDZD'
       @test_facebook_id = '117936888576358'
       @test_password = 'postoffice'
 

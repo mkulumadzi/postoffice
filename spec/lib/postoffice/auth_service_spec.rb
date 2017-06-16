@@ -6,14 +6,16 @@ describe Postoffice::AuthService do
 		@person = build(:person, username: random_username)
 	end
 
-	it 'must be able to open the private key' do
-		key = Postoffice::AuthService.get_private_key
-		key.private?.must_equal true
-	end
+	describe 'get public and private keys' do
+		it 'must be able to open the private key' do
+			key = Postoffice::AuthService.get_private_key
+			key.private?.must_equal true
+		end
 
-	it 'must be able to open the public key' do
-		key = Postoffice::AuthService.get_public_key
-		key.public?.must_equal true
+		it 'must be able to open the public key' do
+			key = Postoffice::AuthService.get_public_key
+			key.public?.must_equal true
+		end
 	end
 
   describe 'get scope by user type' do
@@ -158,8 +160,8 @@ describe Postoffice::AuthService do
 				@decoded_token[0]["scope"].must_equal Postoffice::AuthService.get_scopes_for_user_type "admin"
 			end
 
-			it 'must expire in 1 hour' do
-				@decoded_token[0]["exp"].must_equal Time.now.to_i + 3600
+			it 'must expire in 1 hour or less' do
+				assert_operator @decoded_token[0]["exp"], :<=, Time.now.to_i + 3600
 			end
 
 		end
@@ -197,8 +199,8 @@ describe Postoffice::AuthService do
 			@decoded_token[0]["scope"].must_equal "test"
 		end
 
-		it 'must expire in one minute' do
-			@decoded_token[0]["exp"].must_equal Time.now.to_i + 60
+		it 'must expire in one minute or less' do
+			assert_operator @decoded_token[0]["exp"], :<=, Time.now.to_i + 60
 		end
 
 	end
@@ -225,8 +227,8 @@ describe Postoffice::AuthService do
 					@payload[:scope].must_equal "reset-password"
 				end
 
-				it 'must expire in 24 hours' do
-					@payload[:exp].must_equal Time.now.to_i + 3600 * 24
+				it 'must expire in 24 hours or less' do
+					assert_operator @payload[:exp], :<=, Time.now.to_i + 3600 * 24
 				end
 
 			end
@@ -315,8 +317,8 @@ describe Postoffice::AuthService do
 					@payload[:scope].must_equal "validate-email"
 				end
 
-				it 'must expire in 24 hours' do
-					@payload[:exp].must_equal Time.now.to_i + 3600 * 24
+				it 'must expire in 24 hours or less' do
+					assert_operator @payload[:exp], :<=, Time.now.to_i + 3600 * 24
 				end
 
 			end
