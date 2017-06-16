@@ -17,14 +17,34 @@ Dir[File.dirname(__FILE__) + '/services/*.rb'].each do |file|
 	require file
 end
 
+## Configuring AWS for storing images
+## To Do: Use Dragonfly for storing as well?
+Aws.config.update({
+  region: 'us-west-2',
+  credentials: Aws::Credentials.new(ENV['AWS_ACCESS_KEY_ID'], ENV['AWS_SECRET_ACCESS_KEY'])
+})
+
+# Method for getting certificate files if necessary
+def get_certificate_file_from_aws_if_neccessary filename, directory
+	if !File.exists?(filename) || File.zero?(filename)
+		s3 = Aws::S3::Resource.new
+		bucket = s3.bucket('kuyenda-slowpost-certificates')
+		cert = bucket.object(filename)
+		temp_cert_file = File.new("#{directory}/#{filename}", 'w')
+		cert.get({response_target: temp_cert_file})
+	end
+end
+
 ##Configuring APNS for push notifications
 ## 2195 is the default port for Apple
 APNS.host = 'gateway.sandbox.push.apple.com'
 
 if ENV['RACK_ENV'] == 'staging' || ENV['RACK_ENV'] == 'production'
+	get_certificate_file_from_aws_if_neccessary 'slowpost_production.pem', 'certificates'
 	APNS.pem  = 'certificates/slowpost_production.pem'
 	APNS.host = 'gateway.push.apple.com'
 else
+	get_certificate_file_from_aws_if_neccessary 'slowpost_development.pem', 'certificates'
 	APNS.pem  = 'certificates/slowpost_development.pem'
 	APNS.host = 'gateway.sandbox.push.apple.com'
 end
@@ -49,13 +69,6 @@ end
 if Rack::Utils.respond_to?("key_space_limit=")
   Rack::Utils.key_space_limit = 1048576 # 16 times the default size
 end
-
-## Configuring AWS for storign images
-## To Do: Use Dragonfly for storing as well?
-Aws.config.update({
-  region: 'us-west-2',
-  credentials: Aws::Credentials.new(ENV['AWS_ACCESS_KEY_ID'], ENV['AWS_SECRET_ACCESS_KEY'])
-})
 
 ## Configuring permissions for cross-origin requests
 configure do

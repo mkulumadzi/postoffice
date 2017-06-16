@@ -5,13 +5,18 @@ module Postoffice
 	class AuthService
 
 		def self.get_private_key
-			pem = File.read 'certificates/private_key.pem'
-			key = OpenSSL::PKey::RSA.new pem, ENV['POSTOFFICE_KEYWORD']
-			key
+			get_certificate_file_from_aws_if_neccessary 'private_key.pem', 'certificates'
+			f = File.open('certificates/private_key.pem', 'r')
+			pem = f.read
+			f.close
+			OpenSSL::PKey::RSA.new pem, ENV['POSTOFFICE_KEYWORD']
 		end
 
 		def self.get_public_key
-			pem = File.read 'certificates/public_key.pem'
+			get_certificate_file_from_aws_if_neccessary 'public_key.pem', 'certificates'
+			f = File.open('certificates/public_key.pem', 'r')
+			pem = f.read
+			f.close
 			OpenSSL::PKey::RSA.new pem
 		end
 
